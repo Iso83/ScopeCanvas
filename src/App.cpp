@@ -3,8 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/ext/matrix_inverse.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
@@ -174,14 +174,15 @@ void App::processInput(float deltaTime) {
     m_input.scrollDelta = 0.0f;
 }
 
-glm::vec2 App::screenToWorld(double mouseX, double mouseY) const {
+glm::vec2 App::screenToWorld(double mouseX, double mouseY) {
     const float width = static_cast<float>(m_renderer.viewportWidth());
     const float height = static_cast<float>(m_renderer.viewportHeight());
 
     const float ndcX = (static_cast<float>(mouseX) / width) * 2.0f - 1.0f;
     const float ndcY = 1.0f - (static_cast<float>(mouseY) / height) * 2.0f;
 
-    const glm::mat4 invViewProjection = glm::inverse(m_renderer.camera().viewProjection());
+    const glm::mat4 invViewProjection = m_renderer.camera().invViewProjection();
+    //const glm::mat4 invViewProjection = glm::inverse(m_renderer.camera().viewProjection());
     const glm::vec4 world = invViewProjection * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
     return glm::vec2(world) / world.w;
 }

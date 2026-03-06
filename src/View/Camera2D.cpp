@@ -45,6 +45,10 @@ glm::mat4 Camera2D::viewProjection() const {
     return m_projection * view();
 }
 
+glm::mat4 Camera2D::invViewProjection() const {
+    return glm::inverse(viewProjection());
+}
+
 void Camera2D::updateProjection() {
     const float halfWidth = static_cast<float>(m_viewportWidth) * 0.5f / m_zoom;
     const float halfHeight = static_cast<float>(m_viewportHeight) * 0.5f / m_zoom;

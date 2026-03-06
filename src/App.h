@@ -27,7 +27,7 @@ public:
 private:
     void shutdown();
     void processInput(float deltaTime);
-    glm::vec2 screenToWorld(double mouseX, double mouseY) const;
+    glm::vec2 screenToWorld(double mouseX, double mouseY);
 
     GLFWwindow* m_window;
     Renderer m_renderer;

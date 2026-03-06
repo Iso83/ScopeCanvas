@@ -15,6 +15,7 @@ public:
     const glm::mat4& projection() const;
     glm::mat4 view() const;
     glm::mat4 viewProjection() const;
+    glm::mat4 invViewProjection() const;
 
 private:
     void updateProjection();

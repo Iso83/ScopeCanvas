@@ -21,35 +21,18 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(glfw glm)
 
-# ---------- Executable ----------
+file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
+    src/*.cpp
+)
+
+file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS
+    src/*.h
+)
+
 add_executable(NodeCanvasGL
-    src/main.cpp
-    src/App.cpp
-
+    ${SRC_FILES}
+    ${HEADER_FILES}
     glad/src/glad.c
-
-    src/Engine/DiagramModel.cpp
-    src/Engine/Commands.cpp
-    src/Engine/Serializer.cpp
-
-    src/View/Camera2D.cpp
-    src/View/Viewport.cpp
-
-    src/Render/Renderer.cpp
-    src/Render/GridRenderer.cpp
-    src/Render/NodeRenderer.cpp
-    src/Render/EdgeRenderer.cpp
-    src/Render/Shader.cpp
-
-    src/Interaction/InputState.cpp
-    src/Interaction/CameraController.cpp
-    src/Interaction/SelectionController.cpp
-    src/Interaction/DragController.cpp
-    src/Interaction/ConnectController.cpp
-    src/Interaction/GroupController.cpp
-    src/Interaction/ArrangeController.cpp
-
-    src/Util/Log.cpp
 )
 
 target_include_directories(NodeCanvasGL PRIVATE
