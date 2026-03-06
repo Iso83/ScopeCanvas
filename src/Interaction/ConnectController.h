@@ -25,5 +25,4 @@ private:
     uint32_t m_startNodeId = 0;
     uint32_t m_startConnectorId = 0;
     glm::vec2 m_previewPosition = glm::vec2(0.0f);
-    uint32_t m_nextEdgeId = 1;
 };

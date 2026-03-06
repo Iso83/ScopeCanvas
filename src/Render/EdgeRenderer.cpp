@@ -6,7 +6,7 @@
 
 #include <cmath>
 
-EdgeRenderer::EdgeRenderer() : m_vao(0), m_vbo(0) {}
+EdgeRenderer::EdgeRenderer() : m_vao(0), m_vbo(0), m_vboCapacityBytes(0) {}
 
 EdgeRenderer::~EdgeRenderer() {
     if (m_vbo != 0) {
@@ -30,7 +30,8 @@ bool EdgeRenderer::init(const char* vertexShaderPath, const char* fragmentShader
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 64, nullptr, GL_DYNAMIC_DRAW);
+    m_vboCapacityBytes = sizeof(glm::vec2) * 256;
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_vboCapacityBytes), nullptr, GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
@@ -39,7 +40,7 @@ bool EdgeRenderer::init(const char* vertexShaderPath, const char* fragmentShader
     return true;
 }
 
-void EdgeRenderer::renderEdges(const DiagramModel& model, const glm::mat4& viewProjection) const {
+void EdgeRenderer::renderEdges(const DiagramModel& model, const glm::mat4& viewProjection) {
     constexpr int kSegments = 20;
 
     for (const Edge& edge : model.edges()) {
@@ -54,26 +55,28 @@ void EdgeRenderer::renderEdges(const DiagramModel& model, const glm::mat4& viewP
 
         const glm::vec2 p0 = connectorWorldPosition(*fromNode, *fromConnector);
         const glm::vec2 p3 = connectorWorldPosition(*toNode, *toConnector);
-        const float dx = std::abs(p3.x - p0.x);
-        const glm::vec2 p1 = p0 + glm::vec2(dx * 0.5f, 0.0f);
-        const glm::vec2 p2 = p3 - glm::vec2(dx * 0.5f, 0.0f);
 
-        const std::vector<glm::vec2> points = sampleBezier(p0, p1, p2, p3, kSegments);
-        renderPolyline(points, viewProjection, glm::vec3(0.8f, 0.8f, 0.85f), 2.0f);
+        glm::vec2 p1(0.0f);
+        glm::vec2 p2(0.0f);
+        computeBezierControls(p0, p3, p1, p2);
+
+        m_scratchPoints.clear();
+        appendBezierSamples(m_scratchPoints, p0, p1, p2, p3, kSegments);
+        renderPolyline(m_scratchPoints, viewProjection, glm::vec3(0.8f, 0.8f, 0.85f), 2.0f);
     }
 }
 
-void EdgeRenderer::renderConnectors(const std::vector<Node>& nodes, const glm::mat4& viewProjection) const {
-    std::vector<glm::vec2> points;
-    points.reserve(nodes.size() * 4);
+void EdgeRenderer::renderConnectors(const std::vector<Node>& nodes, const glm::mat4& viewProjection) {
+    m_scratchPoints.clear();
+    m_scratchPoints.reserve(nodes.size() * 4);
 
     for (const Node& node : nodes) {
         for (const Connector& connector : node.connectors) {
-            points.push_back(connectorWorldPosition(node, connector));
+            m_scratchPoints.push_back(connectorWorldPosition(node, connector));
         }
     }
 
-    if (points.empty()) {
+    if (m_scratchPoints.empty()) {
         return;
     }
 
@@ -88,13 +91,14 @@ void EdgeRenderer::renderConnectors(const std::vector<Node>& nodes, const glm::m
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 static_cast<GLsizeiptr>(points.size() * sizeof(glm::vec2)),
-                 points.data(),
-                 GL_DYNAMIC_DRAW);
+    ensureBufferCapacity(m_scratchPoints.size());
+    glBufferSubData(GL_ARRAY_BUFFER,
+                    0,
+                    static_cast<GLsizeiptr>(m_scratchPoints.size() * sizeof(glm::vec2)),
+                    m_scratchPoints.data());
 
     glPointSize(6.0f);
-    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(points.size()));
+    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(m_scratchPoints.size()));
 
     glBindVertexArray(0);
 }
@@ -103,7 +107,7 @@ void EdgeRenderer::renderPreviewEdge(const DiagramModel& model,
                                      uint32_t startNodeId,
                                      uint32_t startConnectorId,
                                      const glm::vec2& previewPosition,
-                                     const glm::mat4& viewProjection) const {
+                                     const glm::mat4& viewProjection) {
     const Node* fromNode = model.findNode(startNodeId);
     const Connector* fromConnector = model.findConnector(startNodeId, startConnectorId);
     if (fromNode == nullptr || fromConnector == nullptr) {
@@ -112,20 +116,22 @@ void EdgeRenderer::renderPreviewEdge(const DiagramModel& model,
 
     const glm::vec2 p0 = connectorWorldPosition(*fromNode, *fromConnector);
     const glm::vec2 p3 = previewPosition;
-    const float dx = std::abs(p3.x - p0.x);
-    const glm::vec2 p1 = p0 + glm::vec2(dx * 0.5f, 0.0f);
-    const glm::vec2 p2 = p3 - glm::vec2(dx * 0.5f, 0.0f);
 
-    const std::vector<glm::vec2> points = sampleBezier(p0, p1, p2, p3, 20);
-    renderPolyline(points, viewProjection, glm::vec3(0.85f, 0.85f, 0.9f), 2.0f);
+    glm::vec2 p1(0.0f);
+    glm::vec2 p2(0.0f);
+    computeBezierControls(p0, p3, p1, p2);
+
+    m_scratchPoints.clear();
+    appendBezierSamples(m_scratchPoints, p0, p1, p2, p3, 20);
+    renderPolyline(m_scratchPoints, viewProjection, glm::vec3(0.85f, 0.85f, 0.9f), 2.0f);
 }
 
-std::vector<glm::vec2> EdgeRenderer::sampleBezier(const glm::vec2& p0,
-                                                  const glm::vec2& p1,
-                                                  const glm::vec2& p2,
-                                                  const glm::vec2& p3,
-                                                  int segments) {
-    std::vector<glm::vec2> points;
+void EdgeRenderer::appendBezierSamples(std::vector<glm::vec2>& points,
+                                       const glm::vec2& p0,
+                                       const glm::vec2& p1,
+                                       const glm::vec2& p2,
+                                       const glm::vec2& p3,
+                                       int segments) {
     points.reserve(static_cast<size_t>(segments) + 1);
 
     for (int i = 0; i <= segments; ++i) {
@@ -138,14 +144,33 @@ std::vector<glm::vec2> EdgeRenderer::sampleBezier(const glm::vec2& p0,
             t * t * t * p3;
         points.push_back(point);
     }
+}
 
-    return points;
+void EdgeRenderer::computeBezierControls(const glm::vec2& p0,
+                                         const glm::vec2& p3,
+                                         glm::vec2& p1,
+                                         glm::vec2& p2) {
+    const float dx = std::abs(p3.x - p0.x);
+    const float controlDistance = glm::max(80.0f, dx * 0.5f);
+    p1 = p0 + glm::vec2(controlDistance, 0.0f);
+    p2 = p3 - glm::vec2(controlDistance, 0.0f);
+}
+
+void EdgeRenderer::ensureBufferCapacity(size_t pointCount) {
+    const size_t requiredBytes = pointCount * sizeof(glm::vec2);
+    if (requiredBytes <= m_vboCapacityBytes) {
+        return;
+    }
+
+    m_vboCapacityBytes = requiredBytes;
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(m_vboCapacityBytes), nullptr, GL_DYNAMIC_DRAW);
 }
 
 void EdgeRenderer::renderPolyline(const std::vector<glm::vec2>& points,
                                   const glm::mat4& viewProjection,
                                   const glm::vec3& color,
-                                  float thickness) const {
+                                  float thickness) {
     if (points.empty()) {
         return;
     }
@@ -161,10 +186,11 @@ void EdgeRenderer::renderPolyline(const std::vector<glm::vec2>& points,
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 static_cast<GLsizeiptr>(points.size() * sizeof(glm::vec2)),
-                 points.data(),
-                 GL_DYNAMIC_DRAW);
+    ensureBufferCapacity(points.size());
+    glBufferSubData(GL_ARRAY_BUFFER,
+                    0,
+                    static_cast<GLsizeiptr>(points.size() * sizeof(glm::vec2)),
+                    points.data());
 
     glLineWidth(thickness);
     glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(points.size()));

@@ -1,6 +1,7 @@
 #include "Engine/DiagramModel.h"
 
 #include <algorithm>
+#include <iostream>
 
 namespace {
 glm::vec2 sidePosition(const Node& node, ConnectorSide side, float offset) {
@@ -31,6 +32,24 @@ std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextCo
         Connector{nextConnectorId++, nodeId, ConnectorSide::Bottom, 0.5f},
         Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.5f},
     };
+}
+
+
+void DiagramModel::addEdge(const Edge& edge) {
+    m_edges.push_back(edge);
+    std::cout << "Edge created: " << edge.id << "\n";
+}
+
+bool DiagramModel::removeEdge(uint32_t edgeId) {
+    const auto oldSize = m_edges.size();
+    m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(),
+                                 [edgeId](const Edge& edge) { return edge.id == edgeId; }),
+                  m_edges.end());
+    const bool removed = m_edges.size() != oldSize;
+    if (removed) {
+        std::cout << "Edge removed: " << edgeId << "\n";
+    }
+    return removed;
 }
 
 Node* DiagramModel::findNode(uint32_t nodeId) {

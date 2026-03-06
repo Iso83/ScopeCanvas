@@ -48,6 +48,9 @@ public:
     std::vector<Edge>& edges() { return m_edges; }
     const std::vector<Edge>& edges() const { return m_edges; }
 
+    void addEdge(const Edge& edge);
+    bool removeEdge(uint32_t edgeId);
+
     Node* findNode(uint32_t nodeId);
     const Node* findNode(uint32_t nodeId) const;
 
