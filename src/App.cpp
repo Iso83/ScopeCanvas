@@ -82,10 +82,11 @@ bool App::init() {
     glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
     glfwSetScrollCallback(m_window, scrollCallback);
 
-    if (!m_renderer.init("../assets/shaders/grid.vert",
+    if (!m_renderer.init(
+        "../assets/shaders/grid.vert",
         "../assets/shaders/grid.frag",
-        "../assets/shaders/basic.vert",
         "../assets/shaders/node.vert",
+        "../assets/shaders/node.frag",
         "../assets/shaders/edge.vert",
         "../assets/shaders/edge.frag",
         width,
