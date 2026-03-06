@@ -3,15 +3,39 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/matrix_inverse.hpp>
 #include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
 
 #include <iostream>
 
 namespace {
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    auto* renderer = static_cast<Renderer*>(glfwGetWindowUserPointer(window));
-    if (renderer != nullptr) {
-        renderer->resize(width, height);
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (app != nullptr) {
+        app->onFramebufferSizeChanged(width, height);
+    }
+}
+
+void cursorPosCallback(GLFWwindow* window, double xPos, double yPos) {
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (app != nullptr) {
+        app->onCursorPos(xPos, yPos);
+    }
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (app != nullptr) {
+        app->onMouseButton(button, action, mods);
+    }
+}
+
+void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (app != nullptr) {
+        app->onScroll(xOffset, yOffset);
     }
 }
 }
@@ -52,8 +76,11 @@ bool App::init() {
     int height = 0;
     glfwGetFramebufferSize(m_window, &width, &height);
 
-    glfwSetWindowUserPointer(m_window, &m_renderer);
+    glfwSetWindowUserPointer(m_window, this);
     glfwSetFramebufferSizeCallback(m_window, framebufferSizeCallback);
+    glfwSetCursorPosCallback(m_window, cursorPosCallback);
+    glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
+    glfwSetScrollCallback(m_window, scrollCallback);
 
     if (!m_renderer.init("../assets/shaders/grid.vert",
         "../assets/shaders/grid.frag",
@@ -137,4 +164,63 @@ void App::processInput(float deltaTime) {
         zoom *= 1.0f - deltaTime;
         m_renderer.camera().setZoom(zoom);
     }
+
+    const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
+    if (m_input.leftDown) {
+        m_dragController.update(mouseWorld);
+    }
+
+    m_cameraController.update(m_renderer.camera(), m_input);
+    m_input.scrollDelta = 0.0f;
+}
+
+glm::vec2 App::screenToWorld(double mouseX, double mouseY) const {
+    const float width = static_cast<float>(m_renderer.viewportWidth());
+    const float height = static_cast<float>(m_renderer.viewportHeight());
+
+    const float ndcX = (static_cast<float>(mouseX) / width) * 2.0f - 1.0f;
+    const float ndcY = 1.0f - (static_cast<float>(mouseY) / height) * 2.0f;
+
+    const glm::mat4 invViewProjection = glm::inverse(m_renderer.camera().viewProjection());
+    const glm::vec4 world = invViewProjection * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
+    return glm::vec2(world) / world.w;
+}
+
+void App::onFramebufferSizeChanged(int width, int height) {
+    m_renderer.resize(width, height);
+}
+
+void App::onCursorPos(double xPos, double yPos) {
+    m_input.mouseX = xPos;
+    m_input.mouseY = yPos;
+}
+
+void App::onMouseButton(int button, int action, int mods) {
+    (void)mods;
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            m_input.leftDown = true;
+
+            const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
+            m_selectionController.onMouseDown(m_model, mouseWorld);
+            m_dragController.onMouseDown(m_model, mouseWorld);
+        } else if (action == GLFW_RELEASE) {
+            m_input.leftDown = false;
+            m_dragController.onMouseUp();
+        }
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+        if (action == GLFW_PRESS) {
+            m_input.middleDown = true;
+        } else if (action == GLFW_RELEASE) {
+            m_input.middleDown = false;
+        }
+    }
+}
+
+void App::onScroll(double xOffset, double yOffset) {
+    (void)xOffset;
+    m_input.scrollDelta += static_cast<float>(yOffset);
 }

@@ -42,6 +42,7 @@ add_executable(NodeCanvasGL
     src/Render/Shader.cpp
 
     src/Interaction/InputState.cpp
+    src/Interaction/CameraController.cpp
     src/Interaction/SelectionController.cpp
     src/Interaction/DragController.cpp
     src/Interaction/ConnectController.cpp

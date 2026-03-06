@@ -29,6 +29,10 @@ void Camera2D::setZoom(float zoom) {
     updateProjection();
 }
 
+float Camera2D::zoom() const {
+    return m_zoom;
+}
+
 const glm::mat4& Camera2D::projection() const {
     return m_projection;
 }

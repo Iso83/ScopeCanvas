@@ -19,6 +19,8 @@ public:
     void render(const DiagramModel& model);
 
     Camera2D& camera() { return m_camera; }
+    int viewportWidth() const { return m_viewportWidth; }
+    int viewportHeight() const { return m_viewportHeight; }
 
 private:
     Camera2D m_camera;

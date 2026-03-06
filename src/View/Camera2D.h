@@ -10,6 +10,7 @@ public:
     void setViewportSize(int width, int height);
     void move(const glm::vec2& delta);
     void setZoom(float zoom);
+    float zoom() const;
 
     const glm::mat4& projection() const;
     glm::mat4 view() const;
