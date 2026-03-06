@@ -4,7 +4,12 @@
 
 Renderer::Renderer() : m_viewportWidth(1280), m_viewportHeight(720) {}
 
-bool Renderer::init(const char* gridVertexShaderPath, const char* gridFragmentShaderPath, int viewportWidth, int viewportHeight) {
+bool Renderer::init(const char* gridVertexShaderPath,
+                    const char* gridFragmentShaderPath,
+                    const char* nodeVertexShaderPath,
+                    const char* nodeFragmentShaderPath,
+                    int viewportWidth,
+                    int viewportHeight) {
     m_viewportWidth = viewportWidth;
     m_viewportHeight = viewportHeight;
 
@@ -12,7 +17,11 @@ bool Renderer::init(const char* gridVertexShaderPath, const char* gridFragmentSh
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_camera.setViewportSize(viewportWidth, viewportHeight);
-    return m_gridRenderer.init(gridVertexShaderPath, gridFragmentShaderPath);
+    if (!m_gridRenderer.init(gridVertexShaderPath, gridFragmentShaderPath)) {
+        return false;
+    }
+
+    return m_nodeRenderer.init(nodeVertexShaderPath, nodeFragmentShaderPath);
 }
 
 void Renderer::resize(int width, int height) {
@@ -22,9 +31,12 @@ void Renderer::resize(int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void Renderer::render() {
+void Renderer::render(const DiagramModel& model) {
     glClearColor(0.10f, 0.11f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    m_gridRenderer.render(m_camera.viewProjection(), m_viewportWidth, m_viewportHeight);
+    const glm::mat4 viewProjection = m_camera.viewProjection();
+
+    m_gridRenderer.render(viewProjection, m_viewportWidth, m_viewportHeight);
+    m_nodeRenderer.render(model.nodes(), viewProjection);
 }

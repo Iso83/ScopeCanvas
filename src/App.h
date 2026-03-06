@@ -2,6 +2,7 @@
 
 struct GLFWwindow;
 
+#include "Engine/DiagramModel.h"
 #include "Render/Renderer.h"
 
 class App {
@@ -18,5 +19,6 @@ private:
 
     GLFWwindow* m_window;
     Renderer m_renderer;
+    DiagramModel m_model;
     bool m_initialized;
 };

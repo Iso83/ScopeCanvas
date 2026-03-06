@@ -16,7 +16,7 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 }
 }
 
-App::App() : m_window(nullptr), m_renderer(), m_initialized(false) {}
+App::App() : m_window(nullptr), m_renderer(), m_model(), m_initialized(false) {}
 
 App::~App() {
     shutdown();
@@ -55,11 +55,22 @@ bool App::init() {
     glfwSetWindowUserPointer(m_window, &m_renderer);
     glfwSetFramebufferSizeCallback(m_window, framebufferSizeCallback);
 
-    if (!m_renderer.init("../assets/shaders/grid.vert", "../assets/shaders/grid.frag", width, height)) {
+    if (!m_renderer.init("../assets/shaders/grid.frag",
+                         "../assets/shaders/grid.vert",
+                         "../assets/shaders/node.vert",
+                         "../assets/shaders/node.frag",
+                         width,
+                         height)) {
         std::cerr << "Failed to initialize renderer\n";
         shutdown();
         return false;
     }
+
+    m_model.nodes() = {
+        Node{1, {-280.0f, -40.0f}, {180.0f, 100.0f}, false},
+        Node{2, {0.0f, 90.0f}, {220.0f, 120.0f}, true},
+        Node{3, {260.0f, -150.0f}, {200.0f, 110.0f}, false},
+    };
 
     m_initialized = true;
     return true;
@@ -77,7 +88,7 @@ void App::run() {
         lastTime = currentTime;
 
         processInput(deltaTime);
-        m_renderer.render();
+        m_renderer.render(m_model);
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();
