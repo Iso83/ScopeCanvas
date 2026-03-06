@@ -4,59 +4,29 @@ project(NodeCanvasGL)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(NODECANVAS_FETCH_DEPS "Fetch GLFW/GLAD/GLM with FetchContent when not found" OFF)
+include(FetchContent)
 
-find_package(glfw3 QUIET)
-find_package(glm QUIET)
+# ---------- Download dependencies ----------
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.3.9
+)
 
-if (NOT TARGET glad::glad)
-    find_package(glad CONFIG QUIET)
-endif()
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG 1.0.1
+)
 
-if (NODECANVAS_FETCH_DEPS AND (NOT glfw3_FOUND OR NOT TARGET glm::glm OR NOT TARGET glad::glad))
-    include(FetchContent)
+FetchContent_MakeAvailable(glfw glm)
 
-    if (NOT glfw3_FOUND)
-        FetchContent_Declare(
-            glfw
-            GIT_REPOSITORY https://github.com/glfw/glfw.git
-            GIT_TAG 3.3.9
-        )
-        FetchContent_MakeAvailable(glfw)
-    endif()
-
-    if (NOT TARGET glad::glad)
-        FetchContent_Declare(
-            glad
-            GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-            GIT_TAG v2.0.8
-        )
-        FetchContent_MakeAvailable(glad)
-    endif()
-
-    if (NOT TARGET glm::glm)
-        FetchContent_Declare(
-            glm
-            GIT_REPOSITORY https://github.com/g-truc/glm.git
-            GIT_TAG 1.0.1
-        )
-        FetchContent_MakeAvailable(glm)
-    endif()
-endif()
-
-if (NOT glfw3_FOUND)
-    message(FATAL_ERROR "GLFW not found. Install glfw3 or configure with -DNODECANVAS_FETCH_DEPS=ON.")
-endif()
-if (NOT TARGET glad::glad)
-    message(FATAL_ERROR "GLAD not found. Install glad or configure with -DNODECANVAS_FETCH_DEPS=ON.")
-endif()
-if (NOT TARGET glm::glm)
-    message(FATAL_ERROR "GLM not found. Install glm or configure with -DNODECANVAS_FETCH_DEPS=ON.")
-endif()
-
+# ---------- Executable ----------
 add_executable(NodeCanvasGL
     src/main.cpp
     src/App.cpp
+
+    glad/src/glad.c
 
     src/Engine/DiagramModel.cpp
     src/Engine/Commands.cpp
@@ -81,5 +51,12 @@ add_executable(NodeCanvasGL
     src/Util/Log.cpp
 )
 
-target_include_directories(NodeCanvasGL PRIVATE src)
-target_link_libraries(NodeCanvasGL PRIVATE glfw glad::glad glm::glm)
+target_include_directories(NodeCanvasGL PRIVATE
+    src
+    glad/include
+)
+
+target_link_libraries(NodeCanvasGL
+    glfw
+    glm
+)
