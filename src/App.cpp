@@ -55,12 +55,12 @@ bool App::init() {
     glfwSetWindowUserPointer(m_window, &m_renderer);
     glfwSetFramebufferSizeCallback(m_window, framebufferSizeCallback);
 
-    if (!m_renderer.init("../assets/shaders/grid.frag",
-                         "../assets/shaders/grid.vert",
-                         "../assets/shaders/node.vert",
-                         "../assets/shaders/node.frag",
-                         width,
-                         height)) {
+    if (!m_renderer.init("../assets/shaders/grid.vert",
+        "../assets/shaders/grid.frag",
+        "../assets/shaders/node.vert",
+        "../assets/shaders/node.frag",
+        width,
+        height)) {
         std::cerr << "Failed to initialize renderer\n";
         shutdown();
         return false;

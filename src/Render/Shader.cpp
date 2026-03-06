@@ -12,7 +12,7 @@ std::string loadFile(const std::string& path) {
         std::cerr << "Failed to open shader file: " << path << '\n';
         return {};
     }
-
+    std::cout << "Loading shader: " << path << std::endl;
     std::stringstream buffer;
     buffer << in.rdbuf();
     return buffer.str();
@@ -42,6 +42,9 @@ bool Shader::loadFromFiles(const std::string& vertexPath, const std::string& fra
     const std::string vertexSource = loadFile(vertexPath);
     const std::string fragmentSource = loadFile(fragmentPath);
     if (vertexSource.empty() || fragmentSource.empty()) {
+        std::cout << "Loading vertex shader: " << vertexPath << std::endl;
+        std::cout << "Loading fragment shader: " << fragmentPath << std::endl;
+
         return false;
     }
 
