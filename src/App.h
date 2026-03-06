@@ -4,6 +4,7 @@ struct GLFWwindow;
 
 #include "Engine/DiagramModel.h"
 #include "Interaction/CameraController.h"
+#include "Interaction/ConnectController.h"
 #include "Interaction/DragController.h"
 #include "Interaction/InputState.h"
 #include "Interaction/SelectionController.h"
@@ -35,6 +36,7 @@ private:
     InputState m_input;
     SelectionController m_selectionController;
     DragController m_dragController;
+    ConnectController m_connectController;
     CameraController m_cameraController;
     bool m_initialized;
 };

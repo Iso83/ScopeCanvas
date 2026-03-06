@@ -84,8 +84,10 @@ bool App::init() {
 
     if (!m_renderer.init("../assets/shaders/grid.vert",
         "../assets/shaders/grid.frag",
+        "../assets/shaders/basic.vert",
         "../assets/shaders/node.vert",
-        "../assets/shaders/node.frag",
+        "../assets/shaders/edge.vert",
+        "../assets/shaders/edge.frag",
         width,
         height)) {
         std::cerr << "Failed to initialize renderer\n";
@@ -94,10 +96,15 @@ bool App::init() {
     }
 
     m_model.nodes() = {
-        Node{1, {-280.0f, -40.0f}, {180.0f, 100.0f}, false},
-        Node{2, {0.0f, 90.0f}, {220.0f, 120.0f}, true},
-        Node{3, {260.0f, -150.0f}, {200.0f, 110.0f}, false},
+        Node{1, {-280.0f, -40.0f}, {180.0f, 100.0f}, false, {}},
+        Node{2, {0.0f, 90.0f}, {220.0f, 120.0f}, true, {}},
+        Node{3, {260.0f, -150.0f}, {200.0f, 110.0f}, false, {}},
     };
+
+    uint32_t nextConnectorId = 1;
+    for (Node& node : m_model.nodes()) {
+        node.connectors = createDefaultConnectors(node.id, nextConnectorId);
+    }
 
     m_initialized = true;
     return true;
@@ -115,7 +122,11 @@ void App::run() {
         lastTime = currentTime;
 
         processInput(deltaTime);
-        m_renderer.render(m_model);
+        m_renderer.render(m_model,
+                          m_connectController.isConnecting(),
+                          m_connectController.startNodeId(),
+                          m_connectController.startConnectorId(),
+                          m_connectController.previewPosition());
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();
@@ -166,9 +177,11 @@ void App::processInput(float deltaTime) {
     }
 
     const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
-    if (m_input.leftDown) {
+    if (m_input.leftDown && !m_connectController.isConnecting()) {
         m_dragController.update(mouseWorld);
     }
+
+    m_connectController.onMouseMove(mouseWorld);
 
     m_cameraController.update(m_renderer.camera(), m_input);
     m_input.scrollDelta = 0.0f;
@@ -204,11 +217,19 @@ void App::onMouseButton(int button, int action, int mods) {
             m_input.leftDown = true;
 
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
-            m_selectionController.onMouseDown(m_model, mouseWorld);
-            m_dragController.onMouseDown(m_model, mouseWorld);
+            const bool startConnect = m_connectController.onMouseDown(m_model, mouseWorld);
+            if (!startConnect) {
+                m_selectionController.onMouseDown(m_model, mouseWorld);
+                m_dragController.onMouseDown(m_model, mouseWorld);
+            }
         } else if (action == GLFW_RELEASE) {
             m_input.leftDown = false;
-            m_dragController.onMouseUp();
+
+            const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
+            const bool wasConnecting = m_connectController.onMouseUp(m_model, mouseWorld);
+            if (!wasConnecting) {
+                m_dragController.onMouseUp();
+            }
         }
     }
 
