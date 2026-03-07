@@ -12,6 +12,7 @@ public:
     bool canRedo() const;
     bool undo();
     bool redo();
+    void clear();
 
 private:
     std::vector<std::unique_ptr<Command>> m_undoStack;

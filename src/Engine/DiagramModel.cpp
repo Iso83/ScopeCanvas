@@ -114,6 +114,15 @@ size_t DiagramModel::removeSelectedNodes() {
     return selectedNodeIds.size();
 }
 
+
+void DiagramModel::clear() {
+    m_nodes.clear();
+    m_edges.clear();
+    m_nextNodeId = 1;
+    m_nextConnectorId = 1;
+    m_nextEdgeId = 1;
+}
+
 void DiagramModel::clearNodeSelection() {
     for (Node& node : m_nodes) {
         node.selected = false;

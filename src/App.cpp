@@ -56,6 +56,8 @@ App::App()
       m_pasteHandled(false),
       m_undoHandled(false),
       m_redoHandled(false),
+      m_saveHandled(false),
+      m_loadHandled(false),
       m_initialized(false) {}
 
 App::~App() {
@@ -351,6 +353,24 @@ void App::processInput(float deltaTime) {
         m_redoHandled = false;
     }
 
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) {
+        if (!m_saveHandled) {
+            saveGraph();
+        }
+        m_saveHandled = true;
+    } else {
+        m_saveHandled = false;
+    }
+
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_O) == GLFW_PRESS) {
+        if (!m_loadHandled) {
+            loadGraph();
+        }
+        m_loadHandled = true;
+    } else {
+        m_loadHandled = false;
+    }
+
     m_connectController.onMouseMove(mouseWorld);
 
     m_cameraController.update(m_renderer.camera(), m_input);
@@ -477,6 +497,37 @@ void App::onMouseButton(int button, int action, int mods) {
 void App::onScroll(double xOffset, double yOffset) {
     (void)xOffset;
     m_input.scrollDelta += static_cast<float>(yOffset);
+}
+
+bool App::saveGraph() {
+    const bool saved = GraphSerializer::save(m_model, "graph.json");
+    if (!saved) {
+        std::cerr << "Failed to save graph to graph.json\n";
+        return false;
+    }
+
+    std::cout << "Graph saved to graph.json\n";
+    return true;
+}
+
+bool App::loadGraph() {
+    const bool loaded = GraphSerializer::load(m_model, "graph.json");
+    if (!loaded) {
+        std::cerr << "Failed to load graph from graph.json\n";
+        return false;
+    }
+
+    m_commandManager.clear();
+    m_selectionController = SelectionController();
+    m_dragController = DragController();
+    m_connectController = ConnectController();
+    clearEdgeSelection();
+    m_hoveredEdgeId = 0;
+    m_hoveredConnectorId = 0;
+    m_draggingEdgeEndpoint = {};
+
+    std::cout << "Graph loaded from graph.json\n";
+    return true;
 }
 
 void App::clearEdgeSelection() {

@@ -64,6 +64,7 @@ public:
     bool removeNode(uint32_t nodeId);
     size_t removeSelectedNodes();
 
+    void clear();
     void clearNodeSelection();
     bool addEdge(const Edge& edge);
     bool createEdge(uint32_t fromNode, uint32_t fromConnector, uint32_t toNode, uint32_t toConnector);

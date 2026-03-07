@@ -41,3 +41,8 @@ bool CommandManager::redo() {
     m_undoStack.push_back(std::move(command));
     return true;
 }
+
+void CommandManager::clear() {
+    m_undoStack.clear();
+    m_redoStack.clear();
+}

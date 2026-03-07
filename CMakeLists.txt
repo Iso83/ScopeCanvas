@@ -19,7 +19,13 @@ FetchContent_Declare(
     GIT_TAG 1.0.1
 )
 
-FetchContent_MakeAvailable(glfw glm)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+
+FetchContent_MakeAvailable(glfw glm nlohmann_json)
 
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
     src/*.cpp
@@ -43,4 +49,5 @@ target_include_directories(NodeCanvasGL PRIVATE
 target_link_libraries(NodeCanvasGL
     glfw
     glm
+    nlohmann_json::nlohmann_json
 )

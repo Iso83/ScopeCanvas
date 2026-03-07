@@ -3,6 +3,7 @@
 struct GLFWwindow;
 
 #include "Engine/DiagramModel.h"
+#include "Engine/Persistence/GraphSerializer.h"
 #include "Interaction/CameraController.h"
 #include "Interaction/Commands/CommandManager.h"
 #include "Interaction/Commands/GraphCommands.h"
@@ -65,6 +66,9 @@ private:
     void copySelectionToClipboard();
     void pasteClipboard();
 
+    bool saveGraph();
+    bool loadGraph();
+
     void shutdown();
     void processInput(float deltaTime);
     glm::vec2 screenToWorld(double mouseX, double mouseY);
@@ -89,6 +93,8 @@ private:
     bool m_pasteHandled;
     bool m_undoHandled;
     bool m_redoHandled;
+    bool m_saveHandled;
+    bool m_loadHandled;
     bool m_initialized;
 
     CommandManager m_commandManager;
