@@ -63,6 +63,16 @@ Node* DiagramModel::createNodeWithConnectors(const glm::vec2& position,
     return &m_nodes.back();
 }
 
+Node* DiagramModel::addNode(const Node& node) {
+    if (findNode(node.id) != nullptr) {
+        return nullptr;
+    }
+
+    m_nodes.push_back(node);
+    syncIdCounters();
+    return &m_nodes.back();
+}
+
 Node* DiagramModel::duplicateNode(uint32_t nodeId, const glm::vec2& offset) {
     const Node* sourceNode = findNode(nodeId);
     if (sourceNode == nullptr) {
@@ -218,6 +228,26 @@ const Connector* DiagramModel::findConnector(uint32_t nodeId, uint32_t connector
     for (const Connector& connector : node->connectors) {
         if (connector.id == connectorId) {
             return &connector;
+        }
+    }
+
+    return nullptr;
+}
+
+Edge* DiagramModel::findEdge(uint32_t edgeId) {
+    for (Edge& edge : m_edges) {
+        if (edge.id == edgeId) {
+            return &edge;
+        }
+    }
+
+    return nullptr;
+}
+
+const Edge* DiagramModel::findEdge(uint32_t edgeId) const {
+    for (const Edge& edge : m_edges) {
+        if (edge.id == edgeId) {
+            return &edge;
         }
     }
 

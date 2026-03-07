@@ -6,9 +6,15 @@
 
 class ConnectController {
 public:
-    bool onMouseDown(DiagramModel& model, const glm::vec2& mouseWorld, float zoom);
+    struct ConnectionResult {
+        bool handled = false;
+        bool createEdge = false;
+        Edge edge{};
+    };
+
+    bool onMouseDown(const DiagramModel& model, const glm::vec2& mouseWorld, float zoom, bool overrideMode);
     void onMouseMove(const glm::vec2& mouseWorld);
-    bool onMouseUp(DiagramModel& model, const glm::vec2& mouseWorld, float zoom);
+    ConnectionResult onMouseUp(const DiagramModel& model, const glm::vec2& mouseWorld, float zoom);
 
     void beginReconnect(uint32_t edgeId,
                         bool startEndpoint,
@@ -26,6 +32,9 @@ private:
                                       const glm::vec2& mouseWorld,
                                       float zoom,
                                       uint32_t& nodeId) const;
+
+    static bool connectorHasEdge(const DiagramModel& model, uint32_t nodeId, uint32_t connectorId);
+    static uint32_t allocateEdgeId(const DiagramModel& model);
 
     void reset();
 

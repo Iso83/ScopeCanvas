@@ -1,66 +1,73 @@
 #include "Interaction/DragController.h"
 
 void DragController::onMouseDown(DiagramModel& model, const glm::vec2& mouseWorld) {
-    Node* anchorNode = hitTestSelectedNode(model, mouseWorld);
-    if (anchorNode == nullptr) {
-        m_dragging = false;
-        m_anchorNodeId = 0;
-        m_draggedNodes.clear();
+    Node* hitNode = hitTestNode(model, mouseWorld);
+    if (hitNode == nullptr || !hitNode->selected) {
+        reset();
         return;
     }
 
-    m_dragging = true;
-    m_anchorNodeId = anchorNode->id;
-    m_anchorNodeStart = anchorNode->position;
-    m_dragOffset = mouseWorld - anchorNode->position;
-
-    m_draggedNodes.clear();
+    m_dragItems.clear();
     for (const Node& node : model.nodes()) {
-        if (node.selected) {
-            m_draggedNodes.push_back({node.id, node.position});
-        }
-    }
-}
-
-void DragController::onMouseUp() {
-    m_dragging = false;
-    m_anchorNodeId = 0;
-    m_draggedNodes.clear();
-}
-
-void DragController::update(DiagramModel& model, const glm::vec2& mouseWorld) {
-    if (!m_dragging || m_anchorNodeId == 0) {
-        return;
-    }
-
-    Node* anchorNode = model.findNode(m_anchorNodeId);
-    if (anchorNode == nullptr) {
-        m_dragging = false;
-        m_anchorNodeId = 0;
-        m_draggedNodes.clear();
-        return;
-    }
-
-    const glm::vec2 anchorTargetPosition = mouseWorld - m_dragOffset;
-    const glm::vec2 delta = anchorTargetPosition - m_anchorNodeStart;
-
-    for (const DraggedNodeState& draggedNode : m_draggedNodes) {
-        Node* node = model.findNode(draggedNode.nodeId);
-        if (node == nullptr) {
-            continue;
-        }
-
-        node->position = draggedNode.startPosition + delta;
-    }
-}
-
-Node* DragController::hitTestSelectedNode(DiagramModel& model, const glm::vec2& mouseWorld) {
-    for (auto it = model.nodes().rbegin(); it != model.nodes().rend(); ++it) {
-        Node& node = *it;
         if (!node.selected) {
             continue;
         }
 
+        m_dragItems.push_back({node.id, node.position});
+    }
+
+    if (m_dragItems.empty()) {
+        reset();
+        return;
+    }
+
+    m_dragging = true;
+    m_dragStartWorld = mouseWorld;
+}
+
+std::vector<MoveNodesCommand::MoveItem> DragController::onMouseUp(DiagramModel& model) {
+    std::vector<MoveNodesCommand::MoveItem> moveItems;
+    if (!m_dragging) {
+        return moveItems;
+    }
+
+    moveItems.reserve(m_dragItems.size());
+    for (const DragItem& dragItem : m_dragItems) {
+        const Node* node = model.findNode(dragItem.nodeId);
+        if (node == nullptr) {
+            continue;
+        }
+
+        if (node->position == dragItem.startPosition) {
+            continue;
+        }
+
+        moveItems.push_back({dragItem.nodeId, dragItem.startPosition, node->position});
+    }
+
+    reset();
+    return moveItems;
+}
+
+void DragController::update(DiagramModel& model, const glm::vec2& mouseWorld) {
+    if (!m_dragging) {
+        return;
+    }
+
+    const glm::vec2 delta = mouseWorld - m_dragStartWorld;
+    for (const DragItem& dragItem : m_dragItems) {
+        Node* node = model.findNode(dragItem.nodeId);
+        if (node == nullptr) {
+            continue;
+        }
+
+        node->position = dragItem.startPosition + delta;
+    }
+}
+
+Node* DragController::hitTestNode(DiagramModel& model, const glm::vec2& mouseWorld) {
+    for (auto it = model.nodes().rbegin(); it != model.nodes().rend(); ++it) {
+        Node& node = *it;
         const float minX = node.position.x;
         const float maxX = node.position.x + node.size.x;
         const float minY = node.position.y;
@@ -73,4 +80,10 @@ Node* DragController::hitTestSelectedNode(DiagramModel& model, const glm::vec2& 
     }
 
     return nullptr;
+}
+
+void DragController::reset() {
+    m_dragging = false;
+    m_dragStartWorld = glm::vec2(0.0f);
+    m_dragItems.clear();
 }
