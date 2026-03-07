@@ -40,7 +40,9 @@ bool EdgeRenderer::init(const char* vertexShaderPath, const char* fragmentShader
     return true;
 }
 
-void EdgeRenderer::renderEdges(const DiagramModel& model, const glm::mat4& viewProjection) {
+void EdgeRenderer::renderEdges(const DiagramModel& model,
+                               const glm::mat4& viewProjection,
+                               uint32_t hoveredEdgeId) {
     constexpr int kSegments = 20;
 
     for (const Edge& edge : model.edges()) {
@@ -62,45 +64,53 @@ void EdgeRenderer::renderEdges(const DiagramModel& model, const glm::mat4& viewP
 
         m_scratchPoints.clear();
         appendBezierSamples(m_scratchPoints, p0, p1, p2, p3, kSegments);
-        renderPolyline(m_scratchPoints, viewProjection, glm::vec3(0.8f, 0.8f, 0.85f), 2.0f);
+        glm::vec3 color(0.8f, 0.8f, 0.85f);
+        if (edge.selected) {
+            color = glm::vec3(1.0f, 0.8f, 0.3f);
+        }
+        if (edge.id == hoveredEdgeId) {
+            color = glm::vec3(1.0f, 1.0f, 1.0f);
+        }
+
+        renderPolyline(m_scratchPoints, viewProjection, color, 2.0f);
     }
 }
 
-void EdgeRenderer::renderConnectors(const std::vector<Node>& nodes, const glm::mat4& viewProjection) {
-    m_scratchPoints.clear();
-    m_scratchPoints.reserve(nodes.size() * 4);
-
+void EdgeRenderer::renderConnectors(const std::vector<Node>& nodes,
+                                    const glm::mat4& viewProjection,
+                                    uint32_t hoveredConnectorId) {
     for (const Node& node : nodes) {
         for (const Connector& connector : node.connectors) {
+            m_scratchPoints.clear();
             m_scratchPoints.push_back(connectorWorldPosition(node, connector));
+
+            const glm::vec3 color = connector.id == hoveredConnectorId
+                ? glm::vec3(1.0f, 1.0f, 1.0f)
+                : glm::vec3(0.9f, 0.9f, 0.95f);
+
+            m_shader.use();
+            const GLuint programId = m_shader.id();
+
+            const GLint vpLoc = glGetUniformLocation(programId, "uViewProjection");
+            const GLint colorLoc = glGetUniformLocation(programId, "uColor");
+
+            glUniformMatrix4fv(vpLoc, 1, GL_FALSE, glm::value_ptr(viewProjection));
+            glUniform3f(colorLoc, color.x, color.y, color.z);
+
+            glBindVertexArray(m_vao);
+            glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+            ensureBufferCapacity(m_scratchPoints.size());
+            glBufferSubData(GL_ARRAY_BUFFER,
+                            0,
+                            static_cast<GLsizeiptr>(m_scratchPoints.size() * sizeof(glm::vec2)),
+                            m_scratchPoints.data());
+
+            glPointSize(6.0f);
+            glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(m_scratchPoints.size()));
+
+            glBindVertexArray(0);
         }
     }
-
-    if (m_scratchPoints.empty()) {
-        return;
-    }
-
-    m_shader.use();
-    const GLuint programId = m_shader.id();
-
-    const GLint vpLoc = glGetUniformLocation(programId, "uViewProjection");
-    const GLint colorLoc = glGetUniformLocation(programId, "uColor");
-
-    glUniformMatrix4fv(vpLoc, 1, GL_FALSE, glm::value_ptr(viewProjection));
-    glUniform3f(colorLoc, 0.9f, 0.9f, 0.95f);
-
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    ensureBufferCapacity(m_scratchPoints.size());
-    glBufferSubData(GL_ARRAY_BUFFER,
-                    0,
-                    static_cast<GLsizeiptr>(m_scratchPoints.size() * sizeof(glm::vec2)),
-                    m_scratchPoints.data());
-
-    glPointSize(6.0f);
-    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(m_scratchPoints.size()));
-
-    glBindVertexArray(0);
 }
 
 void EdgeRenderer::renderPreviewEdge(const DiagramModel& model,

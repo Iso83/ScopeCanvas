@@ -38,6 +38,8 @@ void Renderer::resize(int width, int height) {
 }
 
 void Renderer::render(const DiagramModel& model,
+                      uint32_t hoveredEdgeId,
+                      uint32_t hoveredConnectorId,
                       bool previewActive,
                       uint32_t previewStartNode,
                       uint32_t previewStartConnector,
@@ -48,9 +50,9 @@ void Renderer::render(const DiagramModel& model,
     const glm::mat4 viewProjection = m_camera.viewProjection();
 
     m_gridRenderer.render(viewProjection, m_viewportWidth, m_viewportHeight);
-    m_edgeRenderer.renderEdges(model, viewProjection);
+    m_edgeRenderer.renderEdges(model, viewProjection, hoveredEdgeId);
     m_nodeRenderer.render(model.nodes(), viewProjection);
-    m_edgeRenderer.renderConnectors(model.nodes(), viewProjection);
+    m_edgeRenderer.renderConnectors(model.nodes(), viewProjection, hoveredConnectorId);
 
     if (previewActive) {
         m_edgeRenderer.renderPreviewEdge(model,

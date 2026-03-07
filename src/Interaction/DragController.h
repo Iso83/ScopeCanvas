@@ -9,6 +9,7 @@ public:
     void onMouseDown(DiagramModel& model, const glm::vec2& mouseWorld);
     void onMouseUp();
     void update(const glm::vec2& mouseWorld);
+    bool isDragging() const { return m_dragging; }
 
 private:
     static Node* hitTestSelectedNode(DiagramModel& model, const glm::vec2& mouseWorld);

@@ -25,6 +25,7 @@ struct Edge {
     uint32_t fromConnector;
     uint32_t toNode;
     uint32_t toConnector;
+    bool selected = false;
 };
 
 struct Node {

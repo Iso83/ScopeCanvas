@@ -22,8 +22,10 @@ public:
 
     bool init(const char* vertexShaderPath, const char* fragmentShaderPath);
 
-    void renderEdges(const DiagramModel& model, const glm::mat4& viewProjection);
-    void renderConnectors(const std::vector<Node>& nodes, const glm::mat4& viewProjection);
+    void renderEdges(const DiagramModel& model, const glm::mat4& viewProjection, uint32_t hoveredEdgeId);
+    void renderConnectors(const std::vector<Node>& nodes,
+                          const glm::mat4& viewProjection,
+                          uint32_t hoveredConnectorId);
     void renderPreviewEdge(const DiagramModel& model,
                            uint32_t startNodeId,
                            uint32_t startConnectorId,

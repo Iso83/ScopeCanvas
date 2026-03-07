@@ -40,7 +40,16 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
 }
 }
 
-App::App() : m_window(nullptr), m_renderer(), m_model(), m_initialized(false) {}
+App::App()
+    : m_window(nullptr),
+      m_renderer(),
+      m_model(),
+      m_hoveredEdgeId(0),
+      m_selectedEdgeId(0),
+      m_hoveredConnectorId(0),
+      m_draggingEdgeEndpoint(),
+      m_deleteHandled(false),
+      m_initialized(false) {}
 
 App::~App() {
     shutdown();
@@ -124,6 +133,8 @@ void App::run() {
 
         processInput(deltaTime);
         m_renderer.render(m_model,
+                          m_hoveredEdgeId,
+                          m_hoveredConnectorId,
                           m_connectController.isConnecting(),
                           m_connectController.startNodeId(),
                           m_connectController.startConnectorId(),
@@ -167,19 +178,44 @@ void App::processInput(float deltaTime) {
 
     m_renderer.camera().move(panDelta);
 
-    static float zoom = 1.0f;
+    static float cameraZoom = 1.0f;
     if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS) {
-        zoom *= 1.0f + deltaTime;
-        m_renderer.camera().setZoom(zoom);
+        cameraZoom *= 1.0f + deltaTime;
+        m_renderer.camera().setZoom(cameraZoom);
     }
     if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS) {
-        zoom *= 1.0f - deltaTime;
-        m_renderer.camera().setZoom(zoom);
+        cameraZoom *= 1.0f - deltaTime;
+        m_renderer.camera().setZoom(cameraZoom);
     }
 
     const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
+    const float zoom = m_renderer.camera().zoom();
+
+    const Edge* hoveredEdge = EdgeInteractionController::hitTestEdge(m_model, mouseWorld, zoom);
+    m_hoveredEdgeId = hoveredEdge != nullptr ? hoveredEdge->id : 0;
+
+    const Connector* hoveredConnector =
+        EdgeInteractionController::hitTestConnector(m_model, mouseWorld, zoom, nullptr);
+    m_hoveredConnectorId = hoveredConnector != nullptr ? hoveredConnector->id : 0;
+
     if (m_input.leftDown && !m_connectController.isConnecting()) {
         m_dragController.update(mouseWorld);
+    }
+
+    if (m_dragController.isDragging()) {
+        m_hoveredEdgeId = 0;
+    }
+
+    if (glfwGetKey(m_window, GLFW_KEY_DELETE) == GLFW_PRESS) {
+        if (!m_deleteHandled && m_selectedEdgeId != 0) {
+            if (m_model.removeEdge(m_selectedEdgeId)) {
+                m_selectedEdgeId = 0;
+                m_hoveredEdgeId = 0;
+            }
+        }
+        m_deleteHandled = true;
+    } else {
+        m_deleteHandled = false;
     }
 
     m_connectController.onMouseMove(mouseWorld);
@@ -218,18 +254,70 @@ void App::onMouseButton(int button, int action, int mods) {
             m_input.leftDown = true;
 
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
-            const bool startConnect = m_connectController.onMouseDown(m_model, mouseWorld);
+            const float zoom = m_renderer.camera().zoom();
+
+            const EdgeEndpointHit endpointHit =
+                EdgeInteractionController::hitTestEdgeEndpoint(m_model, mouseWorld, zoom);
+            if (endpointHit.hit) {
+                Edge* edge = nullptr;
+                for (Edge& candidate : m_model.edges()) {
+                    if (candidate.id == endpointHit.edgeId) {
+                        edge = &candidate;
+                        break;
+                    }
+                }
+
+                if (edge != nullptr) {
+                    const uint32_t fixedNodeId = endpointHit.startEndpoint ? edge->toNode : edge->fromNode;
+                    const uint32_t fixedConnectorId =
+                        endpointHit.startEndpoint ? edge->toConnector : edge->fromConnector;
+
+                    m_model.removeEdge(edge->id);
+                    m_connectController.beginReconnect(
+                        endpointHit.edgeId,
+                        endpointHit.startEndpoint,
+                        fixedNodeId,
+                        fixedConnectorId,
+                        mouseWorld);
+                    clearEdgeSelection();
+                    m_draggingEdgeEndpoint = {true, endpointHit.edgeId, endpointHit.startEndpoint};
+                    return;
+                }
+            }
+
+            const bool startConnect = m_connectController.onMouseDown(m_model, mouseWorld, zoom);
             if (!startConnect) {
-                m_selectionController.onMouseDown(m_model, mouseWorld);
+                Edge* hitEdge = EdgeInteractionController::hitTestEdge(m_model, mouseWorld, zoom);
+                if (hitEdge != nullptr) {
+                    for (Node& node : m_model.nodes()) {
+                        node.selected = false;
+                    }
+                    selectEdge(hitEdge->id);
+                } else {
+                    clearEdgeSelection();
+                    m_selectionController.onMouseDown(m_model, mouseWorld);
+                }
+
+                const bool wasDragging = m_dragController.isDragging();
                 m_dragController.onMouseDown(m_model, mouseWorld);
+                if (!wasDragging && m_dragController.isDragging()) {
+                    m_hoveredEdgeId = 0;
+                }
+            } else {
+                clearEdgeSelection();
             }
         } else if (action == GLFW_RELEASE) {
             m_input.leftDown = false;
 
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
-            const bool wasConnecting = m_connectController.onMouseUp(m_model, mouseWorld);
+            const bool wasConnecting =
+                m_connectController.onMouseUp(m_model, mouseWorld, m_renderer.camera().zoom());
             if (!wasConnecting) {
                 m_dragController.onMouseUp();
+            }
+
+            if (m_draggingEdgeEndpoint.active) {
+                m_draggingEdgeEndpoint = {};
             }
         }
     }
@@ -246,4 +334,18 @@ void App::onMouseButton(int button, int action, int mods) {
 void App::onScroll(double xOffset, double yOffset) {
     (void)xOffset;
     m_input.scrollDelta += static_cast<float>(yOffset);
+}
+
+void App::clearEdgeSelection() {
+    m_selectedEdgeId = 0;
+    for (Edge& edge : m_model.edges()) {
+        edge.selected = false;
+    }
+}
+
+void App::selectEdge(uint32_t edgeId) {
+    m_selectedEdgeId = edgeId;
+    for (Edge& edge : m_model.edges()) {
+        edge.selected = (edge.id == edgeId);
+    }
 }

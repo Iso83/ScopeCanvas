@@ -20,6 +20,8 @@ public:
               int viewportHeight);
     void resize(int width, int height);
     void render(const DiagramModel& model,
+                uint32_t hoveredEdgeId,
+                uint32_t hoveredConnectorId,
                 bool previewActive = false,
                 uint32_t previewStartNode = 0,
                 uint32_t previewStartConnector = 0,
