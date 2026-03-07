@@ -3,13 +3,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
-#include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
+#include <algorithm>
 #include <cstddef>
 #include <iostream>
+#include <unordered_set>
 
 namespace {
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
@@ -52,6 +51,8 @@ App::App()
       m_deleteHandled(false),
       m_createHandled(false),
       m_duplicateHandled(false),
+      m_copyHandled(false),
+      m_pasteHandled(false),
       m_initialized(false) {}
 
 App::~App() {
@@ -101,6 +102,8 @@ bool App::init() {
         "../assets/shaders/node.frag",
         "../assets/shaders/edge.vert",
         "../assets/shaders/edge.frag",
+        "../assets/shaders/selection_rect.vert",
+        "../assets/shaders/selection_rect.frag",
         width,
         height)) {
         std::cerr << "Failed to initialize renderer\n";
@@ -138,6 +141,9 @@ void App::run() {
         m_renderer.render(m_model,
                           m_hoveredEdgeId,
                           m_hoveredConnectorId,
+                          m_selectionController.isBoxSelecting(),
+                          m_selectionController.boxStart(),
+                          m_selectionController.boxEnd(),
                           m_connectController.isConnecting(),
                           m_connectController.startNodeId(),
                           m_connectController.startConnectorId(),
@@ -203,6 +209,9 @@ void App::processInput(float deltaTime) {
 
     if (m_input.leftDown && !m_connectController.isConnecting()) {
         m_dragController.update(m_model, mouseWorld);
+        if (!m_dragController.isDragging()) {
+            m_selectionController.onMouseDrag(m_model, mouseWorld);
+        }
     }
 
     if (m_dragController.isDragging()) {
@@ -263,6 +272,24 @@ void App::processInput(float deltaTime) {
         m_duplicateHandled = false;
     }
 
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_C) == GLFW_PRESS) {
+        if (!m_copyHandled) {
+            copySelectionToClipboard();
+        }
+        m_copyHandled = true;
+    } else {
+        m_copyHandled = false;
+    }
+
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_V) == GLFW_PRESS) {
+        if (!m_pasteHandled) {
+            pasteClipboard();
+        }
+        m_pasteHandled = true;
+    } else {
+        m_pasteHandled = false;
+    }
+
     if (glfwGetKey(m_window, GLFW_KEY_DELETE) == GLFW_PRESS) {
         if (!m_deleteHandled) {
             const size_t removedNodes = m_model.removeSelectedNodes();
@@ -295,7 +322,6 @@ glm::vec2 App::screenToWorld(double mouseX, double mouseY) {
     const float ndcY = 1.0f - (static_cast<float>(mouseY) / height) * 2.0f;
 
     const glm::mat4 invViewProjection = m_renderer.camera().invViewProjection();
-    //const glm::mat4 invViewProjection = glm::inverse(m_renderer.camera().viewProjection());
     const glm::vec4 world = invViewProjection * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
     return glm::vec2(world) / world.w;
 }
@@ -310,14 +336,13 @@ void App::onCursorPos(double xPos, double yPos) {
 }
 
 void App::onMouseButton(int button, int action, int mods) {
-    (void)mods;
-
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
             m_input.leftDown = true;
 
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
             const float zoom = m_renderer.camera().zoom();
+            const bool shiftDown = (mods & GLFW_MOD_SHIFT) != 0;
 
             const EdgeEndpointHit endpointHit =
                 EdgeInteractionController::hitTestEdgeEndpoint(m_model, mouseWorld, zoom);
@@ -358,7 +383,7 @@ void App::onMouseButton(int button, int action, int mods) {
                     selectEdge(hitEdge->id);
                 } else {
                     clearEdgeSelection();
-                    m_selectionController.onMouseDown(m_model, mouseWorld);
+                    m_selectionController.onMouseDown(m_model, mouseWorld, shiftDown);
                 }
 
                 const bool wasDragging = m_dragController.isDragging();
@@ -377,6 +402,7 @@ void App::onMouseButton(int button, int action, int mods) {
                 m_connectController.onMouseUp(m_model, mouseWorld, m_renderer.camera().zoom());
             if (!wasConnecting) {
                 m_dragController.onMouseUp();
+                m_selectionController.onMouseUp(m_model, mouseWorld);
             }
 
             if (m_draggingEdgeEndpoint.active) {
@@ -411,4 +437,115 @@ void App::selectEdge(uint32_t edgeId) {
     for (Edge& edge : m_model.edges()) {
         edge.selected = (edge.id == edgeId);
     }
+}
+
+void App::copySelectionToClipboard() {
+    m_clipboard = {};
+
+    std::unordered_map<uint32_t, const Node*> selectedNodes;
+    glm::vec2 minPosition(0.0f);
+    bool hasMin = false;
+    for (const Node& node : m_model.nodes()) {
+        if (!node.selected) {
+            continue;
+        }
+
+        selectedNodes[node.id] = &node;
+        if (!hasMin) {
+            minPosition = node.position;
+            hasMin = true;
+        } else {
+            minPosition.x = std::min(minPosition.x, node.position.x);
+            minPosition.y = std::min(minPosition.y, node.position.y);
+        }
+    }
+
+    if (selectedNodes.empty()) {
+        return;
+    }
+
+    m_clipboard.origin = minPosition;
+
+    for (const auto& [nodeId, node] : selectedNodes) {
+        ClipboardNode clipNode;
+        clipNode.originalNodeId = nodeId;
+        clipNode.relativePosition = node->position - minPosition;
+        clipNode.size = node->size;
+        clipNode.connectors.reserve(node->connectors.size());
+        for (const Connector& connector : node->connectors) {
+            clipNode.connectors.push_back({connector.side, connector.offset});
+        }
+        m_clipboard.nodes.push_back(clipNode);
+    }
+
+    const std::unordered_set<uint32_t> selectedNodeIds = [&selectedNodes]() {
+        std::unordered_set<uint32_t> ids;
+        for (const auto& [nodeId, node] : selectedNodes) {
+            (void)node;
+            ids.insert(nodeId);
+        }
+        return ids;
+    }();
+
+    for (const Edge& edge : m_model.edges()) {
+        if (selectedNodeIds.contains(edge.fromNode) && selectedNodeIds.contains(edge.toNode)) {
+            m_clipboard.edges.push_back({edge.fromNode, edge.fromConnector, edge.toNode, edge.toConnector});
+        }
+    }
+}
+
+void App::pasteClipboard() {
+    if (m_clipboard.empty()) {
+        return;
+    }
+
+    std::unordered_map<uint32_t, uint32_t> nodeIdMap;
+    std::unordered_map<uint32_t, uint32_t> connectorIdMap;
+
+    m_model.clearNodeSelection();
+
+    constexpr glm::vec2 pasteOffset(40.0f, 40.0f);
+    for (const ClipboardNode& clipboardNode : m_clipboard.nodes) {
+        Node* newNode = m_model.createNodeWithConnectors(
+            m_clipboard.origin + clipboardNode.relativePosition + pasteOffset,
+            clipboardNode.size,
+            clipboardNode.connectors);
+
+        if (newNode == nullptr) {
+            continue;
+        }
+
+        newNode->selected = true;
+        nodeIdMap[clipboardNode.originalNodeId] = newNode->id;
+
+        const Node* sourceNode = m_model.findNode(clipboardNode.originalNodeId);
+        if (sourceNode == nullptr) {
+            continue;
+        }
+
+        const size_t connectorCount = std::min(sourceNode->connectors.size(), newNode->connectors.size());
+        for (size_t i = 0; i < connectorCount; ++i) {
+            connectorIdMap[sourceNode->connectors[i].id] = newNode->connectors[i].id;
+        }
+    }
+
+    for (const ClipboardEdge& clipboardEdge : m_clipboard.edges) {
+        const auto fromNodeIt = nodeIdMap.find(clipboardEdge.fromNode);
+        const auto toNodeIt = nodeIdMap.find(clipboardEdge.toNode);
+        const auto fromConnectorIt = connectorIdMap.find(clipboardEdge.fromConnector);
+        const auto toConnectorIt = connectorIdMap.find(clipboardEdge.toConnector);
+        if (fromNodeIt == nodeIdMap.end() ||
+            toNodeIt == nodeIdMap.end() ||
+            fromConnectorIt == connectorIdMap.end() ||
+            toConnectorIt == connectorIdMap.end()) {
+            continue;
+        }
+
+        m_model.createEdge(fromNodeIt->second,
+                           fromConnectorIt->second,
+                           toNodeIt->second,
+                           toConnectorIt->second);
+    }
+
+    clearEdgeSelection();
 }

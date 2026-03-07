@@ -13,6 +13,9 @@ struct GLFWwindow;
 
 #include <glm/vec2.hpp>
 
+#include <unordered_map>
+#include <vector>
+
 class App {
 public:
     App();
@@ -33,8 +36,32 @@ private:
         bool startEndpoint = false;
     };
 
+    struct ClipboardNode {
+        uint32_t originalNodeId = 0;
+        glm::vec2 relativePosition = glm::vec2(0.0f);
+        glm::vec2 size = glm::vec2(0.0f);
+        std::vector<ConnectorTemplate> connectors;
+    };
+
+    struct ClipboardEdge {
+        uint32_t fromNode = 0;
+        uint32_t fromConnector = 0;
+        uint32_t toNode = 0;
+        uint32_t toConnector = 0;
+    };
+
+    struct ClipboardData {
+        glm::vec2 origin = glm::vec2(0.0f);
+        std::vector<ClipboardNode> nodes;
+        std::vector<ClipboardEdge> edges;
+        bool empty() const { return nodes.empty(); }
+    };
+
     void clearEdgeSelection();
     void selectEdge(uint32_t edgeId);
+
+    void copySelectionToClipboard();
+    void pasteClipboard();
 
     void shutdown();
     void processInput(float deltaTime);
@@ -48,6 +75,7 @@ private:
     DragController m_dragController;
     ConnectController m_connectController;
     CameraController m_cameraController;
+    ClipboardData m_clipboard;
     uint32_t m_hoveredEdgeId;
     uint32_t m_selectedEdgeId;
     uint32_t m_hoveredConnectorId;
@@ -55,5 +83,7 @@ private:
     bool m_deleteHandled;
     bool m_createHandled;
     bool m_duplicateHandled;
+    bool m_copyHandled;
+    bool m_pasteHandled;
     bool m_initialized;
 };

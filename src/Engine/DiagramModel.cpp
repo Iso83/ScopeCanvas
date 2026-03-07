@@ -35,12 +35,29 @@ std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextCo
 }
 
 Node* DiagramModel::createNode(const glm::vec2& position, const glm::vec2& size) {
+    const std::vector<ConnectorTemplate> defaultTemplates = {
+        {ConnectorSide::Top, 0.5f},
+        {ConnectorSide::Right, 0.5f},
+        {ConnectorSide::Bottom, 0.5f},
+        {ConnectorSide::Left, 0.5f},
+    };
+    return createNodeWithConnectors(position, size, defaultTemplates);
+}
+
+Node* DiagramModel::createNodeWithConnectors(const glm::vec2& position,
+                                             const glm::vec2& size,
+                                             const std::vector<ConnectorTemplate>& connectors) {
     Node node{};
     node.id = m_nextNodeId++;
     node.position = position;
     node.size = size;
     node.selected = false;
-    node.connectors = createDefaultConnectors(node.id, m_nextConnectorId);
+    node.connectors.reserve(connectors.size());
+
+    for (const ConnectorTemplate& connectorTemplate : connectors) {
+        node.connectors.push_back(
+            Connector{m_nextConnectorId++, node.id, connectorTemplate.side, connectorTemplate.offset});
+    }
 
     m_nodes.push_back(node);
     return &m_nodes.back();

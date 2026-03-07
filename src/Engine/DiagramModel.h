@@ -20,6 +20,11 @@ struct Connector {
     float offset;
 };
 
+struct ConnectorTemplate {
+    ConnectorSide side;
+    float offset;
+};
+
 struct Edge {
     uint32_t id;
     uint32_t fromNode;
@@ -51,6 +56,9 @@ public:
     const std::vector<Edge>& edges() const { return m_edges; }
 
     Node* createNode(const glm::vec2& position, const glm::vec2& size = {200.0f, 120.0f});
+    Node* createNodeWithConnectors(const glm::vec2& position,
+                                   const glm::vec2& size,
+                                   const std::vector<ConnectorTemplate>& connectors);
     Node* duplicateNode(uint32_t nodeId, const glm::vec2& offset = {40.0f, 40.0f});
     bool removeNode(uint32_t nodeId);
     size_t removeSelectedNodes();

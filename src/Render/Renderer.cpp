@@ -10,6 +10,8 @@ bool Renderer::init(const char* gridVertexShaderPath,
                     const char* nodeFragmentShaderPath,
                     const char* edgeVertexShaderPath,
                     const char* edgeFragmentShaderPath,
+                    const char* selectionRectVertexShaderPath,
+                    const char* selectionRectFragmentShaderPath,
                     int viewportWidth,
                     int viewportHeight) {
     m_viewportWidth = viewportWidth;
@@ -27,7 +29,11 @@ bool Renderer::init(const char* gridVertexShaderPath,
         return false;
     }
 
-    return m_nodeRenderer.init(nodeVertexShaderPath, nodeFragmentShaderPath);
+    if (!m_nodeRenderer.init(nodeVertexShaderPath, nodeFragmentShaderPath)) {
+        return false;
+    }
+
+    return m_selectionRectRenderer.init(selectionRectVertexShaderPath, selectionRectFragmentShaderPath);
 }
 
 void Renderer::resize(int width, int height) {
@@ -40,6 +46,9 @@ void Renderer::resize(int width, int height) {
 void Renderer::render(const DiagramModel& model,
                       uint32_t hoveredEdgeId,
                       uint32_t hoveredConnectorId,
+                      bool selectionRectActive,
+                      const glm::vec2& selectionRectStart,
+                      const glm::vec2& selectionRectEnd,
                       bool previewActive,
                       uint32_t previewStartNode,
                       uint32_t previewStartConnector,
@@ -53,6 +62,10 @@ void Renderer::render(const DiagramModel& model,
     m_edgeRenderer.renderEdges(model, viewProjection, hoveredEdgeId);
     m_nodeRenderer.render(model.nodes(), viewProjection);
     m_edgeRenderer.renderConnectors(model.nodes(), viewProjection, hoveredConnectorId);
+
+    if (selectionRectActive) {
+        m_selectionRectRenderer.render(viewProjection, selectionRectStart, selectionRectEnd);
+    }
 
     if (previewActive) {
         m_edgeRenderer.renderPreviewEdge(model,
