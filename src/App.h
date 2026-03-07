@@ -53,5 +53,7 @@ private:
     uint32_t m_hoveredConnectorId;
     DraggingEdgeEndpointState m_draggingEdgeEndpoint;
     bool m_deleteHandled;
+    bool m_createHandled;
+    bool m_duplicateHandled;
     bool m_initialized;
 };

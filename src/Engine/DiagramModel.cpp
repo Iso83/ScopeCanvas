@@ -34,10 +34,95 @@ std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextCo
     };
 }
 
+Node* DiagramModel::createNode(const glm::vec2& position, const glm::vec2& size) {
+    Node node{};
+    node.id = m_nextNodeId++;
+    node.position = position;
+    node.size = size;
+    node.selected = false;
+    node.connectors = createDefaultConnectors(node.id, m_nextConnectorId);
 
-void DiagramModel::addEdge(const Edge& edge) {
+    m_nodes.push_back(node);
+    return &m_nodes.back();
+}
+
+Node* DiagramModel::duplicateNode(uint32_t nodeId, const glm::vec2& offset) {
+    const Node* sourceNode = findNode(nodeId);
+    if (sourceNode == nullptr) {
+        return nullptr;
+    }
+
+    return createNode(sourceNode->position + offset, sourceNode->size);
+}
+
+bool DiagramModel::removeNode(uint32_t nodeId) {
+    const auto oldSize = m_nodes.size();
+    m_nodes.erase(std::remove_if(m_nodes.begin(), m_nodes.end(),
+                                 [nodeId](const Node& node) { return node.id == nodeId; }),
+                  m_nodes.end());
+
+    const bool removedNode = m_nodes.size() != oldSize;
+    if (!removedNode) {
+        return false;
+    }
+
+    removeEdgesForNode(nodeId);
+    return true;
+}
+
+size_t DiagramModel::removeSelectedNodes() {
+    std::vector<uint32_t> selectedNodeIds;
+    selectedNodeIds.reserve(m_nodes.size());
+
+    for (const Node& node : m_nodes) {
+        if (node.selected) {
+            selectedNodeIds.push_back(node.id);
+        }
+    }
+
+    for (uint32_t nodeId : selectedNodeIds) {
+        removeNode(nodeId);
+    }
+
+    return selectedNodeIds.size();
+}
+
+void DiagramModel::clearNodeSelection() {
+    for (Node& node : m_nodes) {
+        node.selected = false;
+    }
+}
+
+bool DiagramModel::addEdge(const Edge& edge) {
+    if (findNode(edge.fromNode) == nullptr || findNode(edge.toNode) == nullptr) {
+        return false;
+    }
+
+    if (findConnector(edge.fromNode, edge.fromConnector) == nullptr ||
+        findConnector(edge.toNode, edge.toConnector) == nullptr) {
+        return false;
+    }
+
+    for (const Edge& existingEdge : m_edges) {
+        if (existingEdge.id == edge.id) {
+            return false;
+        }
+    }
+
     m_edges.push_back(edge);
+    if (edge.id >= m_nextEdgeId) {
+        m_nextEdgeId = edge.id + 1;
+    }
+
     std::cout << "Edge created: " << edge.id << "\n";
+    return true;
+}
+
+bool DiagramModel::createEdge(uint32_t fromNode,
+                              uint32_t fromConnector,
+                              uint32_t toNode,
+                              uint32_t toConnector) {
+    return addEdge(Edge{m_nextEdgeId++, fromNode, fromConnector, toNode, toConnector, false});
 }
 
 bool DiagramModel::removeEdge(uint32_t edgeId) {
@@ -50,6 +135,26 @@ bool DiagramModel::removeEdge(uint32_t edgeId) {
         std::cout << "Edge removed: " << edgeId << "\n";
     }
     return removed;
+}
+
+void DiagramModel::syncIdCounters() {
+    for (const Node& node : m_nodes) {
+        if (node.id >= m_nextNodeId) {
+            m_nextNodeId = node.id + 1;
+        }
+
+        for (const Connector& connector : node.connectors) {
+            if (connector.id >= m_nextConnectorId) {
+                m_nextConnectorId = connector.id + 1;
+            }
+        }
+    }
+
+    for (const Edge& edge : m_edges) {
+        if (edge.id >= m_nextEdgeId) {
+            m_nextEdgeId = edge.id + 1;
+        }
+    }
 }
 
 Node* DiagramModel::findNode(uint32_t nodeId) {
@@ -100,4 +205,14 @@ const Connector* DiagramModel::findConnector(uint32_t nodeId, uint32_t connector
     }
 
     return nullptr;
+}
+
+bool DiagramModel::removeEdgesForNode(uint32_t nodeId) {
+    const auto oldSize = m_edges.size();
+    m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(),
+                                 [nodeId](const Edge& edge) {
+                                     return edge.fromNode == nodeId || edge.toNode == nodeId;
+                                 }),
+                  m_edges.end());
+    return m_edges.size() != oldSize;
 }

@@ -2,6 +2,7 @@
 
 #include <glm/vec2.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -49,8 +50,17 @@ public:
     std::vector<Edge>& edges() { return m_edges; }
     const std::vector<Edge>& edges() const { return m_edges; }
 
-    void addEdge(const Edge& edge);
+    Node* createNode(const glm::vec2& position, const glm::vec2& size = {200.0f, 120.0f});
+    Node* duplicateNode(uint32_t nodeId, const glm::vec2& offset = {40.0f, 40.0f});
+    bool removeNode(uint32_t nodeId);
+    size_t removeSelectedNodes();
+
+    void clearNodeSelection();
+    bool addEdge(const Edge& edge);
+    bool createEdge(uint32_t fromNode, uint32_t fromConnector, uint32_t toNode, uint32_t toConnector);
     bool removeEdge(uint32_t edgeId);
+
+    void syncIdCounters();
 
     Node* findNode(uint32_t nodeId);
     const Node* findNode(uint32_t nodeId) const;
@@ -59,6 +69,11 @@ public:
     const Connector* findConnector(uint32_t nodeId, uint32_t connectorId) const;
 
 private:
+    bool removeEdgesForNode(uint32_t nodeId);
+
+    uint32_t m_nextNodeId = 1;
+    uint32_t m_nextConnectorId = 1;
+    uint32_t m_nextEdgeId = 1;
     std::vector<Node> m_nodes;
     std::vector<Edge> m_edges;
 };

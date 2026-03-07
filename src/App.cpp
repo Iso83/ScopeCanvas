@@ -8,6 +8,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
+#include <cstddef>
 #include <iostream>
 
 namespace {
@@ -49,6 +50,8 @@ App::App()
       m_hoveredConnectorId(0),
       m_draggingEdgeEndpoint(),
       m_deleteHandled(false),
+      m_createHandled(false),
+      m_duplicateHandled(false),
       m_initialized(false) {}
 
 App::~App() {
@@ -105,16 +108,16 @@ bool App::init() {
         return false;
     }
 
-    m_model.nodes() = {
-        Node{1, {-280.0f, -40.0f}, {180.0f, 100.0f}, false, {}},
-        Node{2, {0.0f, 90.0f}, {220.0f, 120.0f}, true, {}},
-        Node{3, {260.0f, -150.0f}, {200.0f, 110.0f}, false, {}},
-    };
-
-    uint32_t nextConnectorId = 1;
-    for (Node& node : m_model.nodes()) {
-        node.connectors = createDefaultConnectors(node.id, nextConnectorId);
+    Node* node1 = m_model.createNode({-280.0f, -40.0f}, {180.0f, 100.0f});
+    Node* node2 = m_model.createNode({0.0f, 90.0f}, {220.0f, 120.0f});
+    Node* node3 = m_model.createNode({260.0f, -150.0f}, {200.0f, 110.0f});
+    (void)node1;
+    (void)node3;
+    if (node2 != nullptr) {
+        node2->selected = true;
     }
+
+    m_model.syncIdCounters();
 
     m_initialized = true;
     return true;
@@ -199,18 +202,78 @@ void App::processInput(float deltaTime) {
     m_hoveredConnectorId = hoveredConnector != nullptr ? hoveredConnector->id : 0;
 
     if (m_input.leftDown && !m_connectController.isConnecting()) {
-        m_dragController.update(mouseWorld);
+        m_dragController.update(m_model, mouseWorld);
     }
 
     if (m_dragController.isDragging()) {
         m_hoveredEdgeId = 0;
     }
 
+    if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS) {
+        if (!m_createHandled) {
+            const glm::vec2 topLeftWorld = screenToWorld(0.0, 0.0);
+            const glm::vec2 bottomRightWorld =
+                screenToWorld(static_cast<double>(m_renderer.viewportWidth()),
+                              static_cast<double>(m_renderer.viewportHeight()));
+            const bool insideView =
+                mouseWorld.x >= topLeftWorld.x &&
+                mouseWorld.x <= bottomRightWorld.x &&
+                mouseWorld.y <= topLeftWorld.y &&
+                mouseWorld.y >= bottomRightWorld.y;
+
+            if (insideView) {
+                m_model.clearNodeSelection();
+                Node* createdNode = m_model.createNode(mouseWorld);
+                if (createdNode != nullptr) {
+                    createdNode->selected = true;
+                }
+                clearEdgeSelection();
+            }
+        }
+        m_createHandled = true;
+    } else {
+        m_createHandled = false;
+    }
+
+    const bool ctrlDown =
+        glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+        glfwGetKey(m_window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
+        if (!m_duplicateHandled) {
+            const Node* selectedNode = nullptr;
+            for (const Node& node : m_model.nodes()) {
+                if (node.selected) {
+                    selectedNode = &node;
+                    break;
+                }
+            }
+
+            if (selectedNode != nullptr) {
+                const uint32_t selectedNodeId = selectedNode->id;
+                m_model.clearNodeSelection();
+                Node* duplicate = m_model.duplicateNode(selectedNodeId);
+                if (duplicate != nullptr) {
+                    duplicate->selected = true;
+                }
+                clearEdgeSelection();
+            }
+        }
+        m_duplicateHandled = true;
+    } else {
+        m_duplicateHandled = false;
+    }
+
     if (glfwGetKey(m_window, GLFW_KEY_DELETE) == GLFW_PRESS) {
-        if (!m_deleteHandled && m_selectedEdgeId != 0) {
-            if (m_model.removeEdge(m_selectedEdgeId)) {
-                m_selectedEdgeId = 0;
+        if (!m_deleteHandled) {
+            const size_t removedNodes = m_model.removeSelectedNodes();
+            if (removedNodes > 0) {
+                clearEdgeSelection();
                 m_hoveredEdgeId = 0;
+            } else if (m_selectedEdgeId != 0) {
+                if (m_model.removeEdge(m_selectedEdgeId)) {
+                    m_selectedEdgeId = 0;
+                    m_hoveredEdgeId = 0;
+                }
             }
         }
         m_deleteHandled = true;

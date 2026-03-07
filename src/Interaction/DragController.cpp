@@ -1,27 +1,36 @@
 #include "Interaction/DragController.h"
 
 void DragController::onMouseDown(DiagramModel& model, const glm::vec2& mouseWorld) {
-    m_draggedNode = hitTestSelectedNode(model, mouseWorld);
-    if (m_draggedNode == nullptr) {
+    Node* draggedNode = hitTestSelectedNode(model, mouseWorld);
+    if (draggedNode == nullptr) {
         m_dragging = false;
+        m_draggedNodeId = 0;
         return;
     }
 
     m_dragging = true;
-    m_dragOffset = mouseWorld - m_draggedNode->position;
+    m_draggedNodeId = draggedNode->id;
+    m_dragOffset = mouseWorld - draggedNode->position;
 }
 
 void DragController::onMouseUp() {
     m_dragging = false;
-    m_draggedNode = nullptr;
+    m_draggedNodeId = 0;
 }
 
-void DragController::update(const glm::vec2& mouseWorld) {
-    if (!m_dragging || m_draggedNode == nullptr) {
+void DragController::update(DiagramModel& model, const glm::vec2& mouseWorld) {
+    if (!m_dragging || m_draggedNodeId == 0) {
         return;
     }
 
-    m_draggedNode->position = mouseWorld - m_dragOffset;
+    Node* draggedNode = model.findNode(m_draggedNodeId);
+    if (draggedNode == nullptr) {
+        m_dragging = false;
+        m_draggedNodeId = 0;
+        return;
+    }
+
+    draggedNode->position = mouseWorld - m_dragOffset;
 }
 
 Node* DragController::hitTestSelectedNode(DiagramModel& model, const glm::vec2& mouseWorld) {

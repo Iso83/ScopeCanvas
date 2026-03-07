@@ -83,26 +83,19 @@ bool ConnectController::onMouseUp(DiagramModel& model, const glm::vec2& mouseWor
         return true;
     }
 
-    uint32_t edgeId = 1;
-    if (m_reconnectActive) {
-        edgeId = m_reconnectEdgeId;
-    } else {
-        for (const Edge& edge : model.edges()) {
-            if (edge.id >= edgeId) {
-                edgeId = edge.id + 1;
-            }
-        }
-    }
+    uint32_t fromNode = m_startNodeId;
+    uint32_t fromConnector = m_startConnectorId;
+    uint32_t toNode = endNodeId;
+    uint32_t toConnector = endConnector->id;
 
-    Edge newEdge{edgeId, m_startNodeId, m_startConnectorId, endNodeId, endConnector->id, false};
     if (m_reconnectActive && m_reconnectStartEndpoint) {
-        newEdge.fromNode = endNodeId;
-        newEdge.fromConnector = endConnector->id;
-        newEdge.toNode = m_startNodeId;
-        newEdge.toConnector = m_startConnectorId;
+        fromNode = endNodeId;
+        fromConnector = endConnector->id;
+        toNode = m_startNodeId;
+        toConnector = m_startConnectorId;
     }
 
-    model.addEdge(newEdge);
+    model.createEdge(fromNode, fromConnector, toNode, toConnector);
 
     reset();
     return true;
