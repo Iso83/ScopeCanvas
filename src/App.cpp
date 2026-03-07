@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <iostream>
+#include <memory>
 #include <unordered_set>
 
 namespace {
@@ -53,6 +54,8 @@ App::App()
       m_duplicateHandled(false),
       m_copyHandled(false),
       m_pasteHandled(false),
+      m_undoHandled(false),
+      m_redoHandled(false),
       m_initialized(false) {}
 
 App::~App() {
@@ -232,8 +235,11 @@ void App::processInput(float deltaTime) {
 
             if (insideView) {
                 m_model.clearNodeSelection();
-                Node* createdNode = m_model.createNode(mouseWorld);
-                if (createdNode != nullptr) {
+                const size_t nodeCountBefore = m_model.nodes().size();
+                auto command = std::make_unique<CreateNodeCommand>(m_model, mouseWorld, glm::vec2(200.0f, 120.0f));
+                m_commandManager.execute(std::move(command));
+                if (m_model.nodes().size() > nodeCountBefore) {
+                    Node* createdNode = &m_model.nodes().back();
                     createdNode->selected = true;
                 }
                 clearEdgeSelection();
@@ -247,6 +253,9 @@ void App::processInput(float deltaTime) {
     const bool ctrlDown =
         glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
         glfwGetKey(m_window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+    const bool shiftDown =
+        glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+        glfwGetKey(m_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
     if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
         if (!m_duplicateHandled) {
             const Node* selectedNode = nullptr;
@@ -292,20 +301,59 @@ void App::processInput(float deltaTime) {
 
     if (glfwGetKey(m_window, GLFW_KEY_DELETE) == GLFW_PRESS) {
         if (!m_deleteHandled) {
-            const size_t removedNodes = m_model.removeSelectedNodes();
-            if (removedNodes > 0) {
+            bool deletedAnyNode = false;
+            std::vector<uint32_t> selectedNodeIds;
+            for (const Node& node : m_model.nodes()) {
+                if (node.selected) {
+                    selectedNodeIds.push_back(node.id);
+                }
+            }
+
+            for (uint32_t nodeId : selectedNodeIds) {
+                auto command = std::make_unique<DeleteNodeCommand>(m_model, nodeId);
+                m_commandManager.execute(std::move(command));
+                deletedAnyNode = true;
+            }
+
+            if (deletedAnyNode) {
                 clearEdgeSelection();
                 m_hoveredEdgeId = 0;
-            } else if (m_selectedEdgeId != 0) {
-                if (m_model.removeEdge(m_selectedEdgeId)) {
-                    m_selectedEdgeId = 0;
-                    m_hoveredEdgeId = 0;
-                }
+            } else if (m_selectedEdgeId != 0 && m_model.findEdge(m_selectedEdgeId) != nullptr) {
+                auto command = std::make_unique<DeleteEdgeCommand>(m_model, m_selectedEdgeId);
+                m_commandManager.execute(std::move(command));
+                clearEdgeSelection();
+                m_hoveredEdgeId = 0;
             }
         }
         m_deleteHandled = true;
     } else {
         m_deleteHandled = false;
+    }
+
+    if (ctrlDown && !shiftDown && glfwGetKey(m_window, GLFW_KEY_Z) == GLFW_PRESS) {
+        if (!m_undoHandled) {
+            if (m_commandManager.undo()) {
+                clearEdgeSelection();
+                m_hoveredEdgeId = 0;
+            }
+        }
+        m_undoHandled = true;
+    } else {
+        m_undoHandled = false;
+    }
+
+    const bool redoPrimary = ctrlDown && glfwGetKey(m_window, GLFW_KEY_Y) == GLFW_PRESS;
+    const bool redoAlternative = ctrlDown && shiftDown && glfwGetKey(m_window, GLFW_KEY_Z) == GLFW_PRESS;
+    if (redoPrimary || redoAlternative) {
+        if (!m_redoHandled) {
+            if (m_commandManager.redo()) {
+                clearEdgeSelection();
+                m_hoveredEdgeId = 0;
+            }
+        }
+        m_redoHandled = true;
+    } else {
+        m_redoHandled = false;
     }
 
     m_connectController.onMouseMove(mouseWorld);
@@ -342,7 +390,7 @@ void App::onMouseButton(int button, int action, int mods) {
 
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
             const float zoom = m_renderer.camera().zoom();
-            const bool shiftDown = (mods & GLFW_MOD_SHIFT) != 0;
+            const bool shiftSelectDown = (mods & GLFW_MOD_SHIFT) != 0;
 
             const EdgeEndpointHit endpointHit =
                 EdgeInteractionController::hitTestEdgeEndpoint(m_model, mouseWorld, zoom);
@@ -360,7 +408,8 @@ void App::onMouseButton(int button, int action, int mods) {
                     const uint32_t fixedConnectorId =
                         endpointHit.startEndpoint ? edge->toConnector : edge->fromConnector;
 
-                    m_model.removeEdge(edge->id);
+                    auto deleteCommand = std::make_unique<DeleteEdgeCommand>(m_model, edge->id);
+                    m_commandManager.execute(std::move(deleteCommand));
                     m_connectController.beginReconnect(
                         endpointHit.edgeId,
                         endpointHit.startEndpoint,
@@ -373,7 +422,26 @@ void App::onMouseButton(int button, int action, int mods) {
                 }
             }
 
-            const bool startConnect = m_connectController.onMouseDown(m_model, mouseWorld, zoom);
+            const bool ctrlDown =
+                (mods & GLFW_MOD_CONTROL) != 0 ||
+                glfwGetKey(m_window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+                glfwGetKey(m_window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+            const bool shiftDown =
+                (mods & GLFW_MOD_SHIFT) != 0 ||
+                glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                glfwGetKey(m_window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+            const bool leftAltDown = glfwGetKey(m_window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS;
+            const bool rightAltDown = glfwGetKey(m_window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+            const bool altModifierDown = (mods & GLFW_MOD_ALT) != 0;
+            const bool altGrDown = rightAltDown && ctrlDown;
+            const bool altOverride = altModifierDown || leftAltDown || rightAltDown || altGrDown;
+
+            std::cout << "Connect modifiers CTRL=" << (ctrlDown ? 1 : 0)
+                      << " SHIFT=" << (shiftDown ? 1 : 0)
+                      << " ALT=" << (altOverride ? 1 : 0)
+                      << " ALTGR=" << (altGrDown ? 1 : 0) << "\n";
+
+            const bool startConnect = m_connectController.onMouseDown(m_model, mouseWorld, zoom, altOverride);
             if (!startConnect) {
                 Edge* hitEdge = EdgeInteractionController::hitTestEdge(m_model, mouseWorld, zoom);
                 if (hitEdge != nullptr) {
@@ -383,7 +451,7 @@ void App::onMouseButton(int button, int action, int mods) {
                     selectEdge(hitEdge->id);
                 } else {
                     clearEdgeSelection();
-                    m_selectionController.onMouseDown(m_model, mouseWorld, shiftDown);
+                    m_selectionController.onMouseDown(m_model, mouseWorld, shiftSelectDown);
                 }
 
                 const bool wasDragging = m_dragController.isDragging();
@@ -398,10 +466,19 @@ void App::onMouseButton(int button, int action, int mods) {
             m_input.leftDown = false;
 
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
-            const bool wasConnecting =
+            const ConnectController::ConnectionResult connectResult =
                 m_connectController.onMouseUp(m_model, mouseWorld, m_renderer.camera().zoom());
-            if (!wasConnecting) {
-                m_dragController.onMouseUp();
+            if (connectResult.createEdge) {
+                auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(m_model, connectResult.edge);
+                m_commandManager.execute(std::move(createEdgeCommand));
+            }
+
+            if (!connectResult.handled) {
+                const std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(m_model);
+                if (!moveItems.empty()) {
+                    auto moveCommand = std::make_unique<MoveNodesCommand>(m_model, moveItems);
+                    m_commandManager.execute(std::move(moveCommand));
+                }
                 m_selectionController.onMouseUp(m_model, mouseWorld);
             }
 
