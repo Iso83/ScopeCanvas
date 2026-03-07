@@ -4,6 +4,8 @@ struct GLFWwindow;
 
 #include "Engine/DiagramModel.h"
 #include "Interaction/CameraController.h"
+#include "Interaction/Commands/CommandManager.h"
+#include "Interaction/Commands/GraphCommands.h"
 #include "Interaction/ConnectController.h"
 #include "Interaction/DragController.h"
 #include "Interaction/EdgeInteractionController.h"
@@ -85,5 +87,9 @@ private:
     bool m_duplicateHandled;
     bool m_copyHandled;
     bool m_pasteHandled;
+    bool m_undoHandled;
+    bool m_redoHandled;
     bool m_initialized;
+
+    CommandManager m_commandManager;
 };

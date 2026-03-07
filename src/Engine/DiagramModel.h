@@ -59,6 +59,7 @@ public:
     Node* createNodeWithConnectors(const glm::vec2& position,
                                    const glm::vec2& size,
                                    const std::vector<ConnectorTemplate>& connectors);
+    Node* addNode(const Node& node);
     Node* duplicateNode(uint32_t nodeId, const glm::vec2& offset = {40.0f, 40.0f});
     bool removeNode(uint32_t nodeId);
     size_t removeSelectedNodes();
@@ -75,6 +76,9 @@ public:
 
     Connector* findConnector(uint32_t nodeId, uint32_t connectorId);
     const Connector* findConnector(uint32_t nodeId, uint32_t connectorId) const;
+
+    Edge* findEdge(uint32_t edgeId);
+    const Edge* findEdge(uint32_t edgeId) const;
 
 private:
     bool removeEdgesForNode(uint32_t nodeId);

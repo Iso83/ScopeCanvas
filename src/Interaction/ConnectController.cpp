@@ -4,10 +4,17 @@
 
 #include <iostream>
 
-bool ConnectController::onMouseDown(DiagramModel& model, const glm::vec2& mouseWorld, float zoom) {
+bool ConnectController::onMouseDown(const DiagramModel& model,
+                                    const glm::vec2& mouseWorld,
+                                    float zoom,
+                                    bool overrideMode) {
     uint32_t startNodeId = 0;
     const Connector* connector = hitTestConnector(model, mouseWorld, zoom, startNodeId);
     if (connector == nullptr) {
+        return false;
+    }
+
+    if (!overrideMode && connectorHasEdge(model, startNodeId, connector->id)) {
         return false;
     }
 
@@ -40,9 +47,11 @@ void ConnectController::onMouseMove(const glm::vec2& mouseWorld) {
     m_previewPosition = mouseWorld;
 }
 
-bool ConnectController::onMouseUp(DiagramModel& model, const glm::vec2& mouseWorld, float zoom) {
+ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramModel& model,
+                                                                 const glm::vec2& mouseWorld,
+                                                                 float zoom) {
     if (!m_connecting) {
-        return false;
+        return {};
     }
 
     m_previewPosition = mouseWorld;
@@ -52,7 +61,7 @@ bool ConnectController::onMouseUp(DiagramModel& model, const glm::vec2& mouseWor
     if (endConnector == nullptr) {
         std::cout << "Connection cancelled\n";
         reset();
-        return true;
+        return {.handled = true};
     }
 
     const bool sameEndpoint = endNodeId == m_startNodeId && endConnector->id == m_startConnectorId;
@@ -80,7 +89,7 @@ bool ConnectController::onMouseUp(DiagramModel& model, const glm::vec2& mouseWor
     if (sameEndpoint || duplicateEdge) {
         std::cout << "Connection cancelled\n";
         reset();
-        return true;
+        return {.handled = true};
     }
 
     uint32_t fromNode = m_startNodeId;
@@ -95,10 +104,13 @@ bool ConnectController::onMouseUp(DiagramModel& model, const glm::vec2& mouseWor
         toConnector = m_startConnectorId;
     }
 
-    model.createEdge(fromNode, fromConnector, toNode, toConnector);
+    ConnectionResult result;
+    result.handled = true;
+    result.createEdge = true;
+    result.edge = Edge{allocateEdgeId(model), fromNode, fromConnector, toNode, toConnector, false};
 
     reset();
-    return true;
+    return result;
 }
 
 const Connector* ConnectController::hitTestConnector(const DiagramModel& model,
@@ -107,6 +119,28 @@ const Connector* ConnectController::hitTestConnector(const DiagramModel& model,
                                                      uint32_t& nodeId) const {
     nodeId = 0;
     return EdgeInteractionController::hitTestConnector(model, mouseWorld, zoom, &nodeId);
+}
+
+bool ConnectController::connectorHasEdge(const DiagramModel& model, uint32_t nodeId, uint32_t connectorId) {
+    for (const Edge& edge : model.edges()) {
+        if ((edge.fromNode == nodeId && edge.fromConnector == connectorId) ||
+            (edge.toNode == nodeId && edge.toConnector == connectorId)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+uint32_t ConnectController::allocateEdgeId(const DiagramModel& model) {
+    uint32_t maxId = 0;
+    for (const Edge& edge : model.edges()) {
+        if (edge.id > maxId) {
+            maxId = edge.id;
+        }
+    }
+
+    return maxId + 1;
 }
 
 void ConnectController::reset() {

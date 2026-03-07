@@ -11,8 +11,10 @@ void SelectionController::onMouseDown(DiagramModel& model, const glm::vec2& mous
             return;
         }
 
-        for (Node& node : model.nodes()) {
-            node.selected = (&node == hitNode);
+        if (!hitNode->selected) {
+            for (Node& node : model.nodes()) {
+                node.selected = (&node == hitNode);
+            }
         }
         return;
     }
