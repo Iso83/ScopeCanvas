@@ -16,6 +16,7 @@ struct GLFWwindow;
 
 #include <glm/vec2.hpp>
 
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -41,9 +42,10 @@ private:
 
     struct ClipboardNode {
         uint32_t originalNodeId = 0;
+        std::string nodeTypeId;
+        std::string title;
         glm::vec2 relativePosition = glm::vec2(0.0f);
         glm::vec2 size = glm::vec2(0.0f);
-        std::vector<ConnectorTemplate> connectors;
     };
 
     struct ClipboardEdge {

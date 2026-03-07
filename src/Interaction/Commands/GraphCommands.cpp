@@ -2,15 +2,19 @@
 
 #include <utility>
 
-CreateNodeCommand::CreateNodeCommand(DiagramModel& model, const glm::vec2& position, const glm::vec2& size)
+CreateNodeCommand::CreateNodeCommand(DiagramModel& model,
+                                     const std::string& nodeTypeId,
+                                     const glm::vec2& position,
+                                     const glm::vec2& size)
     : m_model(model) {
+    m_node.nodeTypeId = nodeTypeId;
     m_node.position = position;
     m_node.size = size;
 }
 
 void CreateNodeCommand::execute() {
     if (!m_hasNodeData) {
-        Node* node = m_model.createNode(m_node.position, m_node.size);
+        Node* node = m_model.createNodeOfType(m_node.nodeTypeId, m_node.position, m_node.size);
         if (node == nullptr) {
             return;
         }

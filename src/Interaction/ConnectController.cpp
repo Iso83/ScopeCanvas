@@ -4,6 +4,45 @@
 
 #include <iostream>
 
+
+namespace {
+bool tryBuildDirectedConnection(const DiagramModel& model,
+                                uint32_t startNodeId,
+                                uint32_t startConnectorId,
+                                uint32_t endNodeId,
+                                uint32_t endConnectorId,
+                                uint32_t& outFromNode,
+                                uint32_t& outFromConnector,
+                                uint32_t& outToNode,
+                                uint32_t& outToConnector) {
+    const Connector* startConnector = model.findConnector(startNodeId, startConnectorId);
+    const Connector* endConnector = model.findConnector(endNodeId, endConnectorId);
+    if (startConnector == nullptr || endConnector == nullptr) {
+        return false;
+    }
+
+    if (startConnector->direction == ConnectorDirection::Output &&
+        endConnector->direction == ConnectorDirection::Input) {
+        outFromNode = startNodeId;
+        outFromConnector = startConnectorId;
+        outToNode = endNodeId;
+        outToConnector = endConnectorId;
+        return true;
+    }
+
+    if (startConnector->direction == ConnectorDirection::Input &&
+        endConnector->direction == ConnectorDirection::Output) {
+        outFromNode = endNodeId;
+        outFromConnector = endConnectorId;
+        outToNode = startNodeId;
+        outToConnector = startConnectorId;
+        return true;
+    }
+
+    return false;
+}
+}
+
 bool ConnectController::onMouseDown(const DiagramModel& model,
                                     const glm::vec2& mouseWorld,
                                     float zoom,
@@ -92,16 +131,39 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
         return {.handled = true};
     }
 
-    uint32_t fromNode = m_startNodeId;
-    uint32_t fromConnector = m_startConnectorId;
-    uint32_t toNode = endNodeId;
-    uint32_t toConnector = endConnector->id;
+    uint32_t fromNode = 0;
+    uint32_t fromConnector = 0;
+    uint32_t toNode = 0;
+    uint32_t toConnector = 0;
+
+    if (!tryBuildDirectedConnection(model,
+                                    m_startNodeId,
+                                    m_startConnectorId,
+                                    endNodeId,
+                                    endConnector->id,
+                                    fromNode,
+                                    fromConnector,
+                                    toNode,
+                                    toConnector)) {
+        std::cout << "Connection cancelled\n";
+        reset();
+        return {.handled = true};
+    }
 
     if (m_reconnectActive && m_reconnectStartEndpoint) {
-        fromNode = endNodeId;
-        fromConnector = endConnector->id;
-        toNode = m_startNodeId;
-        toConnector = m_startConnectorId;
+        if (!tryBuildDirectedConnection(model,
+                                        endNodeId,
+                                        endConnector->id,
+                                        m_startNodeId,
+                                        m_startConnectorId,
+                                        fromNode,
+                                        fromConnector,
+                                        toNode,
+                                        toConnector)) {
+            std::cout << "Connection cancelled\n";
+            reset();
+            return {.handled = true};
+        }
     }
 
     ConnectionResult result;

@@ -1,4 +1,5 @@
 #include "Engine/DiagramModel.h"
+#include "Engine/NodeTypes.h"
 
 #include <algorithm>
 #include <iostream>
@@ -27,28 +28,46 @@ glm::vec2 connectorWorldPosition(const Node& node, const Connector& connector) {
 
 std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextConnectorId) {
     return {
-        Connector{nextConnectorId++, nodeId, ConnectorSide::Top, 0.5f},
-        Connector{nextConnectorId++, nodeId, ConnectorSide::Right, 0.5f},
-        Connector{nextConnectorId++, nodeId, ConnectorSide::Bottom, 0.5f},
-        Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.5f},
+        Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.333f, ConnectorDirection::Input},
+        Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.666f, ConnectorDirection::Input},
+        Connector{nextConnectorId++, nodeId, ConnectorSide::Right, 0.5f, ConnectorDirection::Output},
     };
 }
 
+DiagramModel::DiagramModel() : m_nodeTypeRegistry(std::make_unique<NodeTypeRegistry>()) {
+    m_nodeTypeRegistry->registerBuiltInTypes();
+}
+
+DiagramModel::~DiagramModel() = default;
+
 Node* DiagramModel::createNode(const glm::vec2& position, const glm::vec2& size) {
-    const std::vector<ConnectorTemplate> defaultTemplates = {
-        {ConnectorSide::Top, 0.5f},
-        {ConnectorSide::Right, 0.5f},
-        {ConnectorSide::Bottom, 0.5f},
-        {ConnectorSide::Left, 0.5f},
-    };
-    return createNodeWithConnectors(position, size, defaultTemplates);
+    return createNodeOfType("Add", position, size);
+}
+
+Node* DiagramModel::createNodeOfType(const std::string& nodeTypeId,
+                                     const glm::vec2& position,
+                                     const glm::vec2& size) {
+    const NodeType* nodeType = m_nodeTypeRegistry->getType(nodeTypeId);
+    if (nodeType == nullptr) {
+        return nullptr;
+    }
+
+    std::vector<ConnectorTemplate> templates;
+    templates.reserve(nodeType->inputs.size() + nodeType->outputs.size());
+    templates.insert(templates.end(), nodeType->inputs.begin(), nodeType->inputs.end());
+    templates.insert(templates.end(), nodeType->outputs.begin(), nodeType->outputs.end());
+    return createNodeWithConnectors(position, size, templates, nodeType->typeId, nodeType->name);
 }
 
 Node* DiagramModel::createNodeWithConnectors(const glm::vec2& position,
                                              const glm::vec2& size,
-                                             const std::vector<ConnectorTemplate>& connectors) {
+                                             const std::vector<ConnectorTemplate>& connectors,
+                                             const std::string& nodeTypeId,
+                                             const std::string& title) {
     Node node{};
     node.id = m_nextNodeId++;
+    node.nodeTypeId = nodeTypeId;
+    node.title = title;
     node.position = position;
     node.size = size;
     node.selected = false;
@@ -56,7 +75,11 @@ Node* DiagramModel::createNodeWithConnectors(const glm::vec2& position,
 
     for (const ConnectorTemplate& connectorTemplate : connectors) {
         node.connectors.push_back(
-            Connector{m_nextConnectorId++, node.id, connectorTemplate.side, connectorTemplate.offset});
+            Connector{m_nextConnectorId++,
+                      node.id,
+                      connectorTemplate.side,
+                      connectorTemplate.offset,
+                      connectorTemplate.direction});
     }
 
     m_nodes.push_back(node);
@@ -79,7 +102,7 @@ Node* DiagramModel::duplicateNode(uint32_t nodeId, const glm::vec2& offset) {
         return nullptr;
     }
 
-    return createNode(sourceNode->position + offset, sourceNode->size);
+    return createNodeOfType(sourceNode->nodeTypeId, sourceNode->position + offset, sourceNode->size);
 }
 
 bool DiagramModel::removeNode(uint32_t nodeId) {
@@ -136,6 +159,17 @@ bool DiagramModel::addEdge(const Edge& edge) {
 
     if (findConnector(edge.fromNode, edge.fromConnector) == nullptr ||
         findConnector(edge.toNode, edge.toConnector) == nullptr) {
+        return false;
+    }
+
+    const Connector* fromConnector = findConnector(edge.fromNode, edge.fromConnector);
+    const Connector* toConnector = findConnector(edge.toNode, edge.toConnector);
+    if (fromConnector == nullptr || toConnector == nullptr) {
+        return false;
+    }
+
+    if (fromConnector->direction != ConnectorDirection::Output ||
+        toConnector->direction != ConnectorDirection::Input) {
         return false;
     }
 
@@ -261,6 +295,10 @@ const Edge* DiagramModel::findEdge(uint32_t edgeId) const {
     }
 
     return nullptr;
+}
+
+const NodeTypeRegistry& DiagramModel::nodeTypeRegistry() const {
+    return *m_nodeTypeRegistry;
 }
 
 bool DiagramModel::removeEdgesForNode(uint32_t nodeId) {

@@ -116,9 +116,9 @@ bool App::init() {
         return false;
     }
 
-    Node* node1 = m_model.createNode({-280.0f, -40.0f}, {180.0f, 100.0f});
-    Node* node2 = m_model.createNode({0.0f, 90.0f}, {220.0f, 120.0f});
-    Node* node3 = m_model.createNode({260.0f, -150.0f}, {200.0f, 110.0f});
+    Node* node1 = m_model.createNodeOfType("Number", {-280.0f, -40.0f}, {180.0f, 100.0f});
+    Node* node2 = m_model.createNodeOfType("Add", {0.0f, 90.0f}, {220.0f, 120.0f});
+    Node* node3 = m_model.createNodeOfType("Output", {260.0f, -150.0f}, {200.0f, 110.0f});
     (void)node1;
     (void)node3;
     if (node2 != nullptr) {
@@ -223,7 +223,18 @@ void App::processInput(float deltaTime) {
         m_hoveredEdgeId = 0;
     }
 
-    if (glfwGetKey(m_window, GLFW_KEY_N) == GLFW_PRESS) {
+    std::string createTypeId;
+    if (glfwGetKey(m_window, GLFW_KEY_1) == GLFW_PRESS) {
+        createTypeId = "Number";
+    } else if (glfwGetKey(m_window, GLFW_KEY_2) == GLFW_PRESS) {
+        createTypeId = "Add";
+    } else if (glfwGetKey(m_window, GLFW_KEY_3) == GLFW_PRESS) {
+        createTypeId = "Multiply";
+    } else if (glfwGetKey(m_window, GLFW_KEY_4) == GLFW_PRESS) {
+        createTypeId = "Output";
+    }
+
+    if (!createTypeId.empty()) {
         if (!m_createHandled) {
             const glm::vec2 topLeftWorld = screenToWorld(0.0, 0.0);
             const glm::vec2 bottomRightWorld =
@@ -238,7 +249,11 @@ void App::processInput(float deltaTime) {
             if (insideView) {
                 m_model.clearNodeSelection();
                 const size_t nodeCountBefore = m_model.nodes().size();
-                auto command = std::make_unique<CreateNodeCommand>(m_model, mouseWorld, glm::vec2(200.0f, 120.0f));
+                auto command = std::make_unique<CreateNodeCommand>(
+                    m_model,
+                    createTypeId,
+                    mouseWorld,
+                    glm::vec2(200.0f, 120.0f));
                 m_commandManager.execute(std::move(command));
                 if (m_model.nodes().size() > nodeCountBefore) {
                     Node* createdNode = &m_model.nodes().back();
@@ -574,12 +589,10 @@ void App::copySelectionToClipboard() {
     for (const auto& [nodeId, node] : selectedNodes) {
         ClipboardNode clipNode;
         clipNode.originalNodeId = nodeId;
+        clipNode.nodeTypeId = node->nodeTypeId;
+        clipNode.title = node->title;
         clipNode.relativePosition = node->position - minPosition;
         clipNode.size = node->size;
-        clipNode.connectors.reserve(node->connectors.size());
-        for (const Connector& connector : node->connectors) {
-            clipNode.connectors.push_back({connector.side, connector.offset});
-        }
         m_clipboard.nodes.push_back(clipNode);
     }
 
@@ -611,10 +624,10 @@ void App::pasteClipboard() {
 
     constexpr glm::vec2 pasteOffset(40.0f, 40.0f);
     for (const ClipboardNode& clipboardNode : m_clipboard.nodes) {
-        Node* newNode = m_model.createNodeWithConnectors(
+        Node* newNode = m_model.createNodeOfType(
+            clipboardNode.nodeTypeId,
             m_clipboard.origin + clipboardNode.relativePosition + pasteOffset,
-            clipboardNode.size,
-            clipboardNode.connectors);
+            clipboardNode.size);
 
         if (newNode == nullptr) {
             continue;

@@ -5,11 +5,15 @@
 
 #include <glm/vec2.hpp>
 
+#include <string>
 #include <vector>
 
 class CreateNodeCommand : public Command {
 public:
-    CreateNodeCommand(DiagramModel& model, const glm::vec2& position, const glm::vec2& size);
+    CreateNodeCommand(DiagramModel& model,
+                      const std::string& nodeTypeId,
+                      const glm::vec2& position,
+                      const glm::vec2& size);
 
     void execute() override;
     void undo() override;

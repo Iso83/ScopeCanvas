@@ -4,7 +4,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <string>
 #include <vector>
+
+struct NodeType;
+class NodeTypeRegistry;
 
 enum class ConnectorSide {
     Top,
@@ -13,16 +18,23 @@ enum class ConnectorSide {
     Left,
 };
 
+enum class ConnectorDirection {
+    Input,
+    Output,
+};
+
 struct Connector {
     uint32_t id;
     uint32_t nodeId;
     ConnectorSide side;
     float offset;
+    ConnectorDirection direction = ConnectorDirection::Input;
 };
 
 struct ConnectorTemplate {
     ConnectorSide side;
     float offset;
+    ConnectorDirection direction;
 };
 
 struct Edge {
@@ -36,6 +48,8 @@ struct Edge {
 
 struct Node {
     uint32_t id;
+    std::string nodeTypeId;
+    std::string title;
     glm::vec2 position;
     glm::vec2 size;
     bool selected;
@@ -47,7 +61,13 @@ std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextCo
 
 class DiagramModel {
 public:
-    DiagramModel() = default;
+    DiagramModel();
+    ~DiagramModel();
+
+    DiagramModel(const DiagramModel&) = delete;
+    DiagramModel& operator=(const DiagramModel&) = delete;
+    DiagramModel(DiagramModel&&) = delete;
+    DiagramModel& operator=(DiagramModel&&) = delete;
 
     std::vector<Node>& nodes() { return m_nodes; }
     const std::vector<Node>& nodes() const { return m_nodes; }
@@ -56,9 +76,14 @@ public:
     const std::vector<Edge>& edges() const { return m_edges; }
 
     Node* createNode(const glm::vec2& position, const glm::vec2& size = {200.0f, 120.0f});
+    Node* createNodeOfType(const std::string& nodeTypeId,
+                           const glm::vec2& position,
+                           const glm::vec2& size = {200.0f, 120.0f});
     Node* createNodeWithConnectors(const glm::vec2& position,
                                    const glm::vec2& size,
-                                   const std::vector<ConnectorTemplate>& connectors);
+                                   const std::vector<ConnectorTemplate>& connectors,
+                                   const std::string& nodeTypeId = "Custom",
+                                   const std::string& title = "Node");
     Node* addNode(const Node& node);
     Node* duplicateNode(uint32_t nodeId, const glm::vec2& offset = {40.0f, 40.0f});
     bool removeNode(uint32_t nodeId);
@@ -81,6 +106,8 @@ public:
     Edge* findEdge(uint32_t edgeId);
     const Edge* findEdge(uint32_t edgeId) const;
 
+    const NodeTypeRegistry& nodeTypeRegistry() const;
+
 private:
     bool removeEdgesForNode(uint32_t nodeId);
 
@@ -89,4 +116,5 @@ private:
     uint32_t m_nextEdgeId = 1;
     std::vector<Node> m_nodes;
     std::vector<Edge> m_edges;
+    std::unique_ptr<NodeTypeRegistry> m_nodeTypeRegistry;
 };

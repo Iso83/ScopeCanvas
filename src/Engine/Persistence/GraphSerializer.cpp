@@ -1,5 +1,7 @@
 #include "Engine/Persistence/GraphSerializer.h"
 
+#include "Engine/NodeTypes.h"
+
 #include <nlohmann/json.hpp>
 
 #include <fstream>
@@ -8,39 +10,25 @@
 namespace {
 using json = nlohmann::json;
 
-const char* connectorSideToString(ConnectorSide side) {
-    switch (side) {
-    case ConnectorSide::Top:
-        return "Top";
-    case ConnectorSide::Right:
-        return "Right";
-    case ConnectorSide::Bottom:
-        return "Bottom";
-    case ConnectorSide::Left:
-        return "Left";
+const char* connectorDirectionToString(ConnectorDirection direction) {
+    switch (direction) {
+    case ConnectorDirection::Input:
+        return "Input";
+    case ConnectorDirection::Output:
+        return "Output";
     }
 
-    return "Top";
+    return "Input";
 }
 
-bool connectorSideFromString(const std::string& value, ConnectorSide& side) {
-    if (value == "Top") {
-        side = ConnectorSide::Top;
+bool connectorDirectionFromString(const std::string& value, ConnectorDirection& direction) {
+    if (value == "Input") {
+        direction = ConnectorDirection::Input;
         return true;
     }
 
-    if (value == "Right") {
-        side = ConnectorSide::Right;
-        return true;
-    }
-
-    if (value == "Bottom") {
-        side = ConnectorSide::Bottom;
-        return true;
-    }
-
-    if (value == "Left") {
-        side = ConnectorSide::Left;
+    if (value == "Output") {
+        direction = ConnectorDirection::Output;
         return true;
     }
 
@@ -56,6 +44,8 @@ bool GraphSerializer::save(const DiagramModel& model, const std::string& filepat
     for (const Node& node : model.nodes()) {
         json serializedNode;
         serializedNode["id"] = node.id;
+        serializedNode["type"] = node.nodeTypeId;
+        serializedNode["title"] = node.title;
         serializedNode["position"] = {node.position.x, node.position.y};
         serializedNode["size"] = {node.size.x, node.size.y};
         serializedNode["connectors"] = json::array();
@@ -63,8 +53,8 @@ bool GraphSerializer::save(const DiagramModel& model, const std::string& filepat
         for (const Connector& connector : node.connectors) {
             serializedNode["connectors"].push_back({
                 {"id", connector.id},
-                {"side", connectorSideToString(connector.side)},
                 {"offset", connector.offset},
+                {"direction", connectorDirectionToString(connector.direction)},
             });
         }
 
@@ -118,48 +108,75 @@ bool GraphSerializer::load(DiagramModel& model, const std::string& filepath) {
         }
 
         if (!serializedNode.contains("id") || !serializedNode["id"].is_number_unsigned() ||
+            !serializedNode.contains("type") || !serializedNode["type"].is_string() ||
             !serializedNode.contains("position") || !serializedNode["position"].is_array() ||
             serializedNode["position"].size() != 2 || !serializedNode.contains("size") ||
-            !serializedNode["size"].is_array() || serializedNode["size"].size() != 2 ||
-            !serializedNode.contains("connectors") || !serializedNode["connectors"].is_array()) {
+            !serializedNode["size"].is_array() || serializedNode["size"].size() != 2) {
             continue;
         }
 
         Node node{};
         node.id = serializedNode["id"].get<uint32_t>();
+        node.nodeTypeId = serializedNode["type"].get<std::string>();
+        node.title = serializedNode.contains("title") && serializedNode["title"].is_string()
+            ? serializedNode["title"].get<std::string>()
+            : node.nodeTypeId;
         node.position.x = serializedNode["position"][0].get<float>();
         node.position.y = serializedNode["position"][1].get<float>();
         node.size.x = serializedNode["size"][0].get<float>();
         node.size.y = serializedNode["size"][1].get<float>();
         node.selected = false;
 
-        for (const json& serializedConnector : serializedNode["connectors"]) {
-            if (!serializedConnector.is_object()) {
-                continue;
-            }
-
-            if (!serializedConnector.contains("id") || !serializedConnector["id"].is_number_unsigned() ||
-                !serializedConnector.contains("side") || !serializedConnector["side"].is_string() ||
-                !serializedConnector.contains("offset") || !serializedConnector["offset"].is_number()) {
-                continue;
-            }
-
-            ConnectorSide side = ConnectorSide::Top;
-            const std::string sideText = serializedConnector["side"].get<std::string>();
-            if (!connectorSideFromString(sideText, side)) {
-                continue;
-            }
-
-            node.connectors.push_back(Connector{
-                serializedConnector["id"].get<uint32_t>(),
-                node.id,
-                side,
-                serializedConnector["offset"].get<float>(),
-            });
-        }
-
         if (loadedNodeIds.find(node.id) != loadedNodeIds.end()) {
             continue;
+        }
+
+        const NodeType* nodeType = model.nodeTypeRegistry().getType(node.nodeTypeId);
+        if (nodeType == nullptr) {
+            continue;
+        }
+
+        std::vector<ConnectorTemplate> connectorTemplates;
+        connectorTemplates.reserve(nodeType->inputs.size() + nodeType->outputs.size());
+        connectorTemplates.insert(connectorTemplates.end(), nodeType->inputs.begin(), nodeType->inputs.end());
+        connectorTemplates.insert(connectorTemplates.end(), nodeType->outputs.begin(), nodeType->outputs.end());
+
+        std::vector<uint32_t> loadedConnectorIds;
+        std::vector<ConnectorDirection> loadedDirections;
+        if (serializedNode.contains("connectors") && serializedNode["connectors"].is_array()) {
+            for (const json& serializedConnector : serializedNode["connectors"]) {
+                if (!serializedConnector.is_object()) {
+                    continue;
+                }
+
+                if (!serializedConnector.contains("id") || !serializedConnector["id"].is_number_unsigned()) {
+                    continue;
+                }
+
+                loadedConnectorIds.push_back(serializedConnector["id"].get<uint32_t>());
+
+                ConnectorDirection direction = ConnectorDirection::Input;
+                if (serializedConnector.contains("direction") && serializedConnector["direction"].is_string()) {
+                    (void)connectorDirectionFromString(serializedConnector["direction"].get<std::string>(), direction);
+                }
+
+                loadedDirections.push_back(direction);
+            }
+        }
+
+        node.connectors.clear();
+        for (size_t i = 0; i < connectorTemplates.size(); ++i) {
+            ConnectorDirection direction = connectorTemplates[i].direction;
+            if (i < loadedDirections.size()) {
+                direction = loadedDirections[i];
+            }
+
+            const uint32_t connectorId = i < loadedConnectorIds.size() ? loadedConnectorIds[i] : 0;
+            node.connectors.push_back(Connector{connectorId,
+                                                node.id,
+                                                connectorTemplates[i].side,
+                                                connectorTemplates[i].offset,
+                                                direction});
         }
 
         model.nodes().push_back(node);
