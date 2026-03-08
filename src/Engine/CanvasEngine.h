@@ -4,6 +4,8 @@
 #include "Engine/NodeDefinitionRegistry.h"
 #include "Interaction/Commands/CommandManager.h"
 
+#include <string>
+
 using GraphDocument = DiagramModel;
 using CommandStack = CommandManager;
 
@@ -17,6 +19,8 @@ public:
 
     NodeDefinitionRegistry& definitions();
     const NodeDefinitionRegistry& definitions() const;
+
+    Node* createNodeFromDefinition(const std::string& type);
 
 private:
     GraphDocument m_graph;
