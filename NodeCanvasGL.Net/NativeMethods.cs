@@ -27,4 +27,7 @@ internal static class NativeMethods
         uint toNode,
         uint toConnector
     );
+
+    [DllImport("nodecanvasgl")]
+    internal static extern void nc_render(IntPtr engine);
 }

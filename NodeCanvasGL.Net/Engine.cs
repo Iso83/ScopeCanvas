@@ -21,6 +21,11 @@ public sealed class Engine : IDisposable
         return NativeMethods.nc_connect(_native, fromNode, fromConnector, toNode, toConnector);
     }
 
+    public void Render()
+    {
+        NativeMethods.nc_render(_native);
+    }
+
     public void Dispose()
     {
         if (_native == IntPtr.Zero)

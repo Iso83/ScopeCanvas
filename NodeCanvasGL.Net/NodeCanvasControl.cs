@@ -13,12 +13,21 @@ public class NodeCanvasControl : UserControl
 
     public uint CreateNode(string type, float x, float y)
     {
-        return _engine.CreateNode(type, x, y);
+        uint nodeId = _engine.CreateNode(type, x, y);
+        Invalidate();
+        return nodeId;
     }
 
     public void Connect(uint a, uint ac, uint b, uint bc)
     {
         _engine.Connect(a, ac, b, bc);
+        Invalidate();
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        _engine.Render();
     }
 
     protected override void Dispose(bool disposing)
