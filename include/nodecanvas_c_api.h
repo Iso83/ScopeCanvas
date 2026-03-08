@@ -25,6 +25,9 @@ bool nc_connect(
     uint32_t toConnector
 );
 
+void nc_undo(NC_Engine* engine);
+void nc_redo(NC_Engine* engine);
+
 #ifdef __cplusplus
 }
 #endif

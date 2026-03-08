@@ -69,3 +69,19 @@ bool nc_connect(
         toConnector
     );
 }
+
+void nc_undo(NC_Engine* engine) {
+    if (engine == nullptr || engine->engine == nullptr) {
+        return;
+    }
+
+    engine->engine->commands().undo();
+}
+
+void nc_redo(NC_Engine* engine) {
+    if (engine == nullptr || engine->engine == nullptr) {
+        return;
+    }
+
+    engine->engine->commands().redo();
+}
