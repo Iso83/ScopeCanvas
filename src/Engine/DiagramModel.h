@@ -75,6 +75,12 @@ struct Group {
     std::vector<uint32_t> children;
 };
 
+struct GraphView {
+    uint32_t id;
+    glm::vec2 cameraPosition;
+    float zoom = 1.0f;
+};
+
 glm::vec2 connectorWorldPosition(const Node& node, const Connector& connector);
 std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextConnectorId);
 
