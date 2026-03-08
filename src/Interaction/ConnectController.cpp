@@ -104,6 +104,7 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
     }
 
     const bool sameEndpoint = endNodeId == m_startNodeId && endConnector->id == m_startConnectorId;
+    const bool sameNodeConnection = endNodeId == m_startNodeId;
 
     bool duplicateEdge = false;
     if (!sameEndpoint) {
@@ -125,7 +126,7 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
         }
     }
 
-    if (sameEndpoint || duplicateEdge) {
+    if (sameEndpoint || sameNodeConnection || duplicateEdge) {
         std::cout << "Connection cancelled\n";
         reset();
         return {.handled = true};
