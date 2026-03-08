@@ -32,3 +32,21 @@ void nc_engine_destroy(NC_Engine* engine) {
     engine->engine = nullptr;
     delete engine;
 }
+
+uint32_t nc_create_node(
+    NC_Engine* engine,
+    const char* nodeType,
+    float x,
+    float y
+) {
+    if (engine == nullptr || engine->engine == nullptr || nodeType == nullptr) {
+        return 0;
+    }
+
+    Node* node = engine->engine->graph().createNodeOfType(nodeType, {x, y});
+    if (node == nullptr) {
+        return 0;
+    }
+
+    return node->id;
+}
