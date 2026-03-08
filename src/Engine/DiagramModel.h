@@ -34,6 +34,13 @@ struct ConnectorDefinition {
     int maxConnections = 1;
 };
 
+struct NodeDefinition {
+    std::string type;
+    std::string title;
+    std::vector<ConnectorDefinition> inputs;
+    std::vector<ConnectorDefinition> outputs;
+};
+
 struct ConnectorTemplate {
     ConnectorSide side;
     float offset;
