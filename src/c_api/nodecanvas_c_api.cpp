@@ -50,3 +50,22 @@ uint32_t nc_create_node(
 
     return node->id;
 }
+
+bool nc_connect(
+    NC_Engine* engine,
+    uint32_t fromNode,
+    uint32_t fromConnector,
+    uint32_t toNode,
+    uint32_t toConnector
+) {
+    if (engine == nullptr || engine->engine == nullptr) {
+        return false;
+    }
+
+    return engine->engine->graph().createEdge(
+        fromNode,
+        fromConnector,
+        toNode,
+        toConnector
+    );
+}

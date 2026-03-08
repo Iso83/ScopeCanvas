@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -14,6 +15,14 @@ uint32_t nc_create_node(
     const char* nodeType,
     float x,
     float y
+);
+
+bool nc_connect(
+    NC_Engine* engine,
+    uint32_t fromNode,
+    uint32_t fromConnector,
+    uint32_t toNode,
+    uint32_t toConnector
 );
 
 #ifdef __cplusplus
