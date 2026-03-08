@@ -15,3 +15,11 @@ CommandStack& CanvasEngine::commands() {
 const CommandStack& CanvasEngine::commands() const {
     return m_commands;
 }
+
+NodeDefinitionRegistry& CanvasEngine::definitions() {
+    return m_definitions;
+}
+
+const NodeDefinitionRegistry& CanvasEngine::definitions() const {
+    return m_definitions;
+}
