@@ -44,7 +44,7 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
 App::App()
     : m_window(nullptr),
       m_renderer(),
-      m_engine,
+      m_engine(),
       m_hoveredEdgeId(0),
       m_selectedEdgeId(0),
       m_hoveredConnectorId(0),
@@ -143,16 +143,18 @@ void App::run() {
         lastTime = currentTime;
 
         processInput(deltaTime);
-        m_renderer.render(m_engine.graph(),
-                          m_hoveredEdgeId,
-                          m_hoveredConnectorId,
-                          m_selectionController.isBoxSelecting(),
-                          m_selectionController.boxStart(),
-                          m_selectionController.boxEnd(),
-                          m_connectController.isConnecting(),
-                          m_connectController.startNodeId(),
-                          m_connectController.startConnectorId(),
-                          m_connectController.previewPosition());
+        const Viewport viewport{
+            .hoveredEdgeId = m_hoveredEdgeId,
+            .hoveredConnectorId = m_hoveredConnectorId,
+            .selectionRectActive = m_selectionController.isBoxSelecting(),
+            .selectionRectStart = m_selectionController.boxStart(),
+            .selectionRectEnd = m_selectionController.boxEnd(),
+            .previewActive = m_connectController.isConnecting(),
+            .previewStartNode = m_connectController.startNodeId(),
+            .previewStartConnector = m_connectController.startConnectorId(),
+            .previewPosition = m_connectController.previewPosition()};
+
+        m_renderer.render(m_engine.graph(), viewport);
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();

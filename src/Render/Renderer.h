@@ -6,6 +6,9 @@
 #include "Render/NodeRenderer.h"
 #include "Render/SelectionRectRenderer.h"
 #include "View/Camera2D.h"
+#include "View/Viewport.h"
+
+using GraphDocument = DiagramModel;
 
 class Renderer {
 public:
@@ -22,16 +25,7 @@ public:
               int viewportWidth,
               int viewportHeight);
     void resize(int width, int height);
-    void render(const DiagramModel& model,
-                uint32_t hoveredEdgeId,
-                uint32_t hoveredConnectorId,
-                bool selectionRectActive = false,
-                const glm::vec2& selectionRectStart = glm::vec2(0.0f),
-                const glm::vec2& selectionRectEnd = glm::vec2(0.0f),
-                bool previewActive = false,
-                uint32_t previewStartNode = 0,
-                uint32_t previewStartConnector = 0,
-                const glm::vec2& previewPosition = glm::vec2(0.0f));
+    void render(const GraphDocument& model, const Viewport& viewport);
 
     Camera2D& camera() { return m_camera; }
     int viewportWidth() const { return m_viewportWidth; }

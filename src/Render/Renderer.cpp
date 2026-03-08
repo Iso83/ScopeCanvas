@@ -43,35 +43,26 @@ void Renderer::resize(int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void Renderer::render(const DiagramModel& model,
-                      uint32_t hoveredEdgeId,
-                      uint32_t hoveredConnectorId,
-                      bool selectionRectActive,
-                      const glm::vec2& selectionRectStart,
-                      const glm::vec2& selectionRectEnd,
-                      bool previewActive,
-                      uint32_t previewStartNode,
-                      uint32_t previewStartConnector,
-                      const glm::vec2& previewPosition) {
+void Renderer::render(const GraphDocument& model, const Viewport& viewport) {
     glClearColor(0.10f, 0.11f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
     const glm::mat4 viewProjection = m_camera.viewProjection();
 
     m_gridRenderer.render(viewProjection, m_viewportWidth, m_viewportHeight);
-    m_edgeRenderer.renderEdges(model, viewProjection, hoveredEdgeId);
+    m_edgeRenderer.renderEdges(model, viewProjection, viewport.hoveredEdgeId);
     m_nodeRenderer.render(model.nodes(), viewProjection);
-    m_edgeRenderer.renderConnectors(model.nodes(), viewProjection, hoveredConnectorId);
+    m_edgeRenderer.renderConnectors(model.nodes(), viewProjection, viewport.hoveredConnectorId);
 
-    if (selectionRectActive) {
-        m_selectionRectRenderer.render(viewProjection, selectionRectStart, selectionRectEnd);
+    if (viewport.selectionRectActive) {
+        m_selectionRectRenderer.render(viewProjection, viewport.selectionRectStart, viewport.selectionRectEnd);
     }
 
-    if (previewActive) {
+    if (viewport.previewActive) {
         m_edgeRenderer.renderPreviewEdge(model,
-                                         previewStartNode,
-                                         previewStartConnector,
-                                         previewPosition,
+                                         viewport.previewStartNode,
+                                         viewport.previewStartConnector,
+                                         viewport.previewPosition,
                                          viewProjection);
     }
 }
