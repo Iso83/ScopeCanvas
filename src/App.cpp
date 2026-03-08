@@ -44,7 +44,7 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
 App::App()
     : m_window(nullptr),
       m_renderer(),
-      m_model(),
+      m_engine,
       m_hoveredEdgeId(0),
       m_selectedEdgeId(0),
       m_hoveredConnectorId(0),
@@ -116,16 +116,16 @@ bool App::init() {
         return false;
     }
 
-    Node* node1 = m_model.createNodeOfType("Number", {-280.0f, -40.0f}, {180.0f, 100.0f});
-    Node* node2 = m_model.createNodeOfType("Add", {0.0f, 90.0f}, {220.0f, 120.0f});
-    Node* node3 = m_model.createNodeOfType("Output", {260.0f, -150.0f}, {200.0f, 110.0f});
+    Node* node1 = m_engine.graph().createNodeOfType("Number", {-280.0f, -40.0f}, {180.0f, 100.0f});
+    Node* node2 = m_engine.graph().createNodeOfType("Add", {0.0f, 90.0f}, {220.0f, 120.0f});
+    Node* node3 = m_engine.graph().createNodeOfType("Output", {260.0f, -150.0f}, {200.0f, 110.0f});
     (void)node1;
     (void)node3;
     if (node2 != nullptr) {
         node2->selected = true;
     }
 
-    m_model.syncIdCounters();
+    m_engine.graph().syncIdCounters();
 
     m_initialized = true;
     return true;
@@ -143,7 +143,7 @@ void App::run() {
         lastTime = currentTime;
 
         processInput(deltaTime);
-        m_renderer.render(m_model,
+        m_renderer.render(m_engine.graph(),
                           m_hoveredEdgeId,
                           m_hoveredConnectorId,
                           m_selectionController.isBoxSelecting(),
@@ -205,17 +205,17 @@ void App::processInput(float deltaTime) {
     const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
     const float zoom = m_renderer.camera().zoom();
 
-    const Edge* hoveredEdge = EdgeInteractionController::hitTestEdge(m_model, mouseWorld, zoom);
+    const Edge* hoveredEdge = EdgeInteractionController::hitTestEdge(m_engine.graph(), mouseWorld, zoom);
     m_hoveredEdgeId = hoveredEdge != nullptr ? hoveredEdge->id : 0;
 
     const Connector* hoveredConnector =
-        EdgeInteractionController::hitTestConnector(m_model, mouseWorld, zoom, nullptr);
+        EdgeInteractionController::hitTestConnector(m_engine.graph(), mouseWorld, zoom, nullptr);
     m_hoveredConnectorId = hoveredConnector != nullptr ? hoveredConnector->id : 0;
 
     if (m_input.leftDown && !m_connectController.isConnecting()) {
-        m_dragController.update(m_model, mouseWorld);
+        m_dragController.update(m_engine.graph(), mouseWorld);
         if (!m_dragController.isDragging()) {
-            m_selectionController.onMouseDrag(m_model, mouseWorld);
+            m_selectionController.onMouseDrag(m_engine.graph(), mouseWorld);
         }
     }
 
@@ -247,16 +247,16 @@ void App::processInput(float deltaTime) {
                 mouseWorld.y >= bottomRightWorld.y;
 
             if (insideView) {
-                m_model.clearNodeSelection();
-                const size_t nodeCountBefore = m_model.nodes().size();
+                m_engine.graph().clearNodeSelection();
+                const size_t nodeCountBefore = m_engine.graph().nodes().size();
                 auto command = std::make_unique<CreateNodeCommand>(
-                    m_model,
+                    m_engine.graph(),
                     createTypeId,
                     mouseWorld,
                     glm::vec2(200.0f, 120.0f));
                 m_commandManager.execute(std::move(command));
-                if (m_model.nodes().size() > nodeCountBefore) {
-                    Node* createdNode = &m_model.nodes().back();
+                if (m_engine.graph().nodes().size() > nodeCountBefore) {
+                    Node* createdNode = &m_engine.graph().nodes().back();
                     createdNode->selected = true;
                 }
                 clearEdgeSelection();
@@ -273,7 +273,7 @@ void App::processInput(float deltaTime) {
     if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
         if (!m_duplicateHandled) {
             const Node* selectedNode = nullptr;
-            for (const Node& node : m_model.nodes()) {
+            for (const Node& node : m_engine.graph().nodes()) {
                 if (node.selected) {
                     selectedNode = &node;
                     break;
@@ -282,8 +282,8 @@ void App::processInput(float deltaTime) {
 
             if (selectedNode != nullptr) {
                 const uint32_t selectedNodeId = selectedNode->id;
-                m_model.clearNodeSelection();
-                Node* duplicate = m_model.duplicateNode(selectedNodeId);
+                m_engine.graph().clearNodeSelection();
+                Node* duplicate = m_engine.graph().duplicateNode(selectedNodeId);
                 if (duplicate != nullptr) {
                     duplicate->selected = true;
                 }
@@ -317,14 +317,14 @@ void App::processInput(float deltaTime) {
         if (!m_deleteHandled) {
             bool deletedAnyNode = false;
             std::vector<uint32_t> selectedNodeIds;
-            for (const Node& node : m_model.nodes()) {
+            for (const Node& node : m_engine.graph().nodes()) {
                 if (node.selected) {
                     selectedNodeIds.push_back(node.id);
                 }
             }
 
             for (uint32_t nodeId : selectedNodeIds) {
-                auto command = std::make_unique<DeleteNodeCommand>(m_model, nodeId);
+                auto command = std::make_unique<DeleteNodeCommand>(m_engine.graph(), nodeId);
                 m_commandManager.execute(std::move(command));
                 deletedAnyNode = true;
             }
@@ -332,8 +332,8 @@ void App::processInput(float deltaTime) {
             if (deletedAnyNode) {
                 clearEdgeSelection();
                 m_hoveredEdgeId = 0;
-            } else if (m_selectedEdgeId != 0 && m_model.findEdge(m_selectedEdgeId) != nullptr) {
-                auto command = std::make_unique<DeleteEdgeCommand>(m_model, m_selectedEdgeId);
+            } else if (m_selectedEdgeId != 0 && m_engine.graph().findEdge(m_selectedEdgeId) != nullptr) {
+                auto command = std::make_unique<DeleteEdgeCommand>(m_engine.graph(), m_selectedEdgeId);
                 m_commandManager.execute(std::move(command));
                 clearEdgeSelection();
                 m_hoveredEdgeId = 0;
@@ -423,10 +423,10 @@ void App::onMouseButton(int button, int action, int mods) {
             const bool shiftDown = (mods & GLFW_MOD_SHIFT) != 0;
 
             const EdgeEndpointHit endpointHit =
-                EdgeInteractionController::hitTestEdgeEndpoint(m_model, mouseWorld, zoom);
+                EdgeInteractionController::hitTestEdgeEndpoint(m_engine.graph(), mouseWorld, zoom);
             if (endpointHit.hit) {
                 Edge* edge = nullptr;
-                for (Edge& candidate : m_model.edges()) {
+                for (Edge& candidate : m_engine.graph().edges()) {
                     if (candidate.id == endpointHit.edgeId) {
                         edge = &candidate;
                         break;
@@ -438,7 +438,7 @@ void App::onMouseButton(int button, int action, int mods) {
                     const uint32_t fixedConnectorId =
                         endpointHit.startEndpoint ? edge->toConnector : edge->fromConnector;
 
-                    auto deleteCommand = std::make_unique<DeleteEdgeCommand>(m_model, edge->id);
+                    auto deleteCommand = std::make_unique<DeleteEdgeCommand>(m_engine.graph(), edge->id);
                     m_commandManager.execute(std::move(deleteCommand));
                     m_connectController.beginReconnect(
                         endpointHit.edgeId,
@@ -453,21 +453,21 @@ void App::onMouseButton(int button, int action, int mods) {
             }
 
             const bool altDown = (mods & GLFW_MOD_ALT) != 0;
-            const bool startConnect = m_connectController.onMouseDown(m_model, mouseWorld, zoom, altDown);
+            const bool startConnect = m_connectController.onMouseDown(m_engine.graph(), mouseWorld, zoom, altDown);
             if (!startConnect) {
-                Edge* hitEdge = EdgeInteractionController::hitTestEdge(m_model, mouseWorld, zoom);
+                Edge* hitEdge = EdgeInteractionController::hitTestEdge(m_engine.graph(), mouseWorld, zoom);
                 if (hitEdge != nullptr) {
-                    for (Node& node : m_model.nodes()) {
+                    for (Node& node : m_engine.graph().nodes()) {
                         node.selected = false;
                     }
                     selectEdge(hitEdge->id);
                 } else {
                     clearEdgeSelection();
-                    m_selectionController.onMouseDown(m_model, mouseWorld, shiftDown);
+                    m_selectionController.onMouseDown(m_engine.graph(), mouseWorld, shiftDown);
                 }
 
                 const bool wasDragging = m_dragController.isDragging();
-                m_dragController.onMouseDown(m_model, mouseWorld);
+                m_dragController.onMouseDown(m_engine.graph(), mouseWorld);
                 if (!wasDragging && m_dragController.isDragging()) {
                     m_hoveredEdgeId = 0;
                 }
@@ -479,19 +479,19 @@ void App::onMouseButton(int button, int action, int mods) {
 
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
             const ConnectController::ConnectionResult connectResult =
-                m_connectController.onMouseUp(m_model, mouseWorld, m_renderer.camera().zoom());
+                m_connectController.onMouseUp(m_engine.graph(), mouseWorld, m_renderer.camera().zoom());
             if (connectResult.createEdge) {
-                auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(m_model, connectResult.edge);
+                auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(m_engine.graph(), connectResult.edge);
                 m_commandManager.execute(std::move(createEdgeCommand));
             }
 
             if (!connectResult.handled) {
-                const std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(m_model);
+                const std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(m_engine.graph());
                 if (!moveItems.empty()) {
-                    auto moveCommand = std::make_unique<MoveNodesCommand>(m_model, moveItems);
+                    auto moveCommand = std::make_unique<MoveNodesCommand>(m_engine.graph(), moveItems);
                     m_commandManager.execute(std::move(moveCommand));
                 }
-                m_selectionController.onMouseUp(m_model, mouseWorld);
+                m_selectionController.onMouseUp(m_engine.graph(), mouseWorld);
             }
 
             if (m_draggingEdgeEndpoint.active) {
@@ -515,7 +515,7 @@ void App::onScroll(double xOffset, double yOffset) {
 }
 
 bool App::saveGraph() {
-    const bool saved = GraphSerializer::save(m_model, "graph.json");
+    const bool saved = GraphSerializer::save(m_engine.graph(), "graph.json");
     if (!saved) {
         std::cerr << "Failed to save graph to graph.json\n";
         return false;
@@ -526,7 +526,7 @@ bool App::saveGraph() {
 }
 
 bool App::loadGraph() {
-    const bool loaded = GraphSerializer::load(m_model, "graph.json");
+    const bool loaded = GraphSerializer::load(m_engine.graph(), "graph.json");
     if (!loaded) {
         std::cerr << "Failed to load graph from graph.json\n";
         return false;
@@ -547,14 +547,14 @@ bool App::loadGraph() {
 
 void App::clearEdgeSelection() {
     m_selectedEdgeId = 0;
-    for (Edge& edge : m_model.edges()) {
+    for (Edge& edge : m_engine.graph().edges()) {
         edge.selected = false;
     }
 }
 
 void App::selectEdge(uint32_t edgeId) {
     m_selectedEdgeId = edgeId;
-    for (Edge& edge : m_model.edges()) {
+    for (Edge& edge : m_engine.graph().edges()) {
         edge.selected = (edge.id == edgeId);
     }
 }
@@ -565,7 +565,7 @@ void App::copySelectionToClipboard() {
     std::unordered_map<uint32_t, const Node*> selectedNodes;
     glm::vec2 minPosition(0.0f);
     bool hasMin = false;
-    for (const Node& node : m_model.nodes()) {
+    for (const Node& node : m_engine.graph().nodes()) {
         if (!node.selected) {
             continue;
         }
@@ -605,7 +605,7 @@ void App::copySelectionToClipboard() {
         return ids;
     }();
 
-    for (const Edge& edge : m_model.edges()) {
+    for (const Edge& edge : m_engine.graph().edges()) {
         if (selectedNodeIds.contains(edge.fromNode) && selectedNodeIds.contains(edge.toNode)) {
             m_clipboard.edges.push_back({edge.fromNode, edge.fromConnector, edge.toNode, edge.toConnector});
         }
@@ -620,11 +620,11 @@ void App::pasteClipboard() {
     std::unordered_map<uint32_t, uint32_t> nodeIdMap;
     std::unordered_map<uint32_t, uint32_t> connectorIdMap;
 
-    m_model.clearNodeSelection();
+    m_engine.graph().clearNodeSelection();
 
     constexpr glm::vec2 pasteOffset(40.0f, 40.0f);
     for (const ClipboardNode& clipboardNode : m_clipboard.nodes) {
-        Node* newNode = m_model.createNodeOfType(
+        Node* newNode = m_engine.graph().createNodeOfType(
             clipboardNode.nodeTypeId,
             m_clipboard.origin + clipboardNode.relativePosition + pasteOffset,
             clipboardNode.size);
@@ -636,7 +636,7 @@ void App::pasteClipboard() {
         newNode->selected = true;
         nodeIdMap[clipboardNode.originalNodeId] = newNode->id;
 
-        const Node* sourceNode = m_model.findNode(clipboardNode.originalNodeId);
+        const Node* sourceNode = m_engine.graph().findNode(clipboardNode.originalNodeId);
         if (sourceNode == nullptr) {
             continue;
         }
@@ -659,7 +659,7 @@ void App::pasteClipboard() {
             continue;
         }
 
-        m_model.createEdge(fromNodeIt->second,
+        m_engine.graph().createEdge(fromNodeIt->second,
                            fromConnectorIt->second,
                            toNodeIt->second,
                            toConnectorIt->second);

@@ -2,7 +2,7 @@
 
 struct GLFWwindow;
 
-#include "Engine/DiagramModel.h"
+#include "Engine/CanvasEngine.h"
 #include "Engine/Persistence/GraphSerializer.h"
 #include "Interaction/CameraController.h"
 #include "Interaction/Commands/CommandManager.h"
@@ -77,7 +77,7 @@ private:
 
     GLFWwindow* m_window;
     Renderer m_renderer;
-    DiagramModel m_model;
+    CanvasEngine m_engine;
     InputState m_input;
     SelectionController m_selectionController;
     DragController m_dragController;
