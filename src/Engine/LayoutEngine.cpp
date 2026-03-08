@@ -64,12 +64,19 @@ void LayoutEngine::applyLayout(DiagramModel& graph) {
     }
 
     constexpr float verticalSpacing = 200.0f;
+    constexpr float horizontalSpacing = 240.0f;
+    std::unordered_map<int, size_t> levelNodeIndices;
+    levelNodeIndices.reserve(graph.nodes().size());
+
     for (Node& node : graph.nodes()) {
         auto levelIt = nodeLevels.find(node.id);
         if (levelIt == nodeLevels.end()) {
             continue;
         }
 
-        node.position.y = static_cast<float>(levelIt->second) * verticalSpacing;
+        const int level = levelIt->second;
+        const size_t nodeIndexInLevel = levelNodeIndices[level]++;
+        node.position.x = static_cast<float>(nodeIndexInLevel) * horizontalSpacing;
+        node.position.y = static_cast<float>(level) * verticalSpacing;
     }
 }
