@@ -9,6 +9,8 @@ public:
     struct ConnectionResult {
         bool handled = false;
         bool createEdge = false;
+        bool removeEdge = false;
+        uint32_t edgeToRemoveId = 0;
         Edge edge{};
     };
 

@@ -27,7 +27,7 @@ bool tryBuildDirectedConnection(const DiagramModel& model,
         outFromConnector = startConnectorId;
         outToNode = endNodeId;
         outToConnector = endConnectorId;
-        return model.isValidConnection(outFromNode, outFromConnector, outToNode, outToConnector);
+        return true;
     }
 
     if (startConnector->direction == ConnectorDirection::Input &&
@@ -36,10 +36,38 @@ bool tryBuildDirectedConnection(const DiagramModel& model,
         outFromConnector = endConnectorId;
         outToNode = startNodeId;
         outToConnector = startConnectorId;
-        return model.isValidConnection(outFromNode, outFromConnector, outToNode, outToConnector);
+        return true;
     }
 
     return false;
+}
+
+int connectionCountFor(const DiagramModel& model, uint32_t nodeId, uint32_t connectorId) {
+    int currentConnections = 0;
+    for (const Edge& edge : model.edges()) {
+        if ((edge.fromNode == nodeId && edge.fromConnector == connectorId) ||
+            (edge.toNode == nodeId && edge.toConnector == connectorId)) {
+            ++currentConnections;
+        }
+    }
+
+    return currentConnections;
+}
+
+uint32_t findEdgeToReplace(const DiagramModel& model,
+                           uint32_t nodeId,
+                           uint32_t connectorId,
+                           uint32_t excludedEdgeId) {
+    for (const Edge& edge : model.edges()) {
+        const bool usesConnector =
+            (edge.fromNode == nodeId && edge.fromConnector == connectorId) ||
+            (edge.toNode == nodeId && edge.toConnector == connectorId);
+        if (usesConnector && edge.id != excludedEdgeId) {
+            return edge.id;
+        }
+    }
+
+    return 0;
 }
 }
 
@@ -169,6 +197,39 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
 
     ConnectionResult result;
     result.handled = true;
+
+    if (!model.isValidConnection(fromNode, fromConnector, toNode, toConnector)) {
+        if (!m_reconnectActive) {
+            std::cout << "Connection cancelled\n";
+            reset();
+            return {.handled = true};
+        }
+
+        const Connector* toConnectorPtr = model.findConnector(toNode, toConnector);
+        if (toConnectorPtr == nullptr) {
+            std::cout << "Connection cancelled\n";
+            reset();
+            return {.handled = true};
+        }
+
+        const int toConnectionCount = connectionCountFor(model, toNode, toConnector);
+        if (toConnectionCount < toConnectorPtr->maxConnections) {
+            std::cout << "Connection cancelled\n";
+            reset();
+            return {.handled = true};
+        }
+
+        const uint32_t edgeToReplace = findEdgeToReplace(model, toNode, toConnector, m_reconnectEdgeId);
+        if (edgeToReplace == 0) {
+            std::cout << "Connection cancelled\n";
+            reset();
+            return {.handled = true};
+        }
+
+        result.removeEdge = true;
+        result.edgeToRemoveId = edgeToReplace;
+    }
+
     result.createEdge = true;
     result.edge = Edge{allocateEdgeId(model), fromNode, fromConnector, toNode, toConnector, false};
 

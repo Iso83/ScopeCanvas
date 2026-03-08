@@ -482,6 +482,12 @@ void App::onMouseButton(int button, int action, int mods) {
             const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
             const ConnectController::ConnectionResult connectResult =
                 m_connectController.onMouseUp(m_engine.graph(), mouseWorld, m_renderer.camera().zoom());
+            if (connectResult.removeEdge) {
+                auto deleteEdgeCommand =
+                    std::make_unique<DeleteEdgeCommand>(m_engine.graph(), connectResult.edgeToRemoveId);
+                m_engine.commands().execute(std::move(deleteEdgeCommand));
+            }
+
             if (connectResult.createEdge) {
                 auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(m_engine.graph(), connectResult.edge);
                 m_engine.commands().execute(std::move(createEdgeCommand));
