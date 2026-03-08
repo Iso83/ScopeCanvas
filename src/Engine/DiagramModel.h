@@ -132,6 +132,7 @@ public:
     bool addEdge(const Edge& edge);
     bool createEdge(uint32_t fromNode, uint32_t fromConnector, uint32_t toNode, uint32_t toConnector);
     bool removeEdge(uint32_t edgeId);
+    void recomputeRoutesForNode(uint32_t nodeId);
 
     Group* createGroup();
     bool addNodeToGroup(uint32_t nodeId, uint32_t groupId);

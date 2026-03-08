@@ -254,6 +254,27 @@ bool DiagramModel::createEdge(uint32_t fromNode,
     return addEdge(Edge{m_nextEdgeId++, fromNode, fromConnector, toNode, toConnector, false});
 }
 
+void DiagramModel::recomputeRoutesForNode(uint32_t nodeId) {
+    for (Edge& edge : m_edges) {
+        if (edge.fromNode != nodeId && edge.toNode != nodeId) {
+            continue;
+        }
+
+        const Node* fromNode = findNode(edge.fromNode);
+        const Node* toNode = findNode(edge.toNode);
+        const Connector* fromConnector = findConnector(edge.fromNode, edge.fromConnector);
+        const Connector* toConnector = findConnector(edge.toNode, edge.toConnector);
+        if (fromNode == nullptr || toNode == nullptr || fromConnector == nullptr || toConnector == nullptr) {
+            edge.route.points.clear();
+            continue;
+        }
+
+        const glm::vec2 start = connectorWorldPosition(*fromNode, *fromConnector);
+        const glm::vec2 end = connectorWorldPosition(*toNode, *toConnector);
+        edge.route = buildOrthogonalRoute(start, end);
+    }
+}
+
 Group* DiagramModel::createGroup() {
     m_groups.push_back(Group{m_nextGroupId++});
     return &m_groups.back();

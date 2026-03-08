@@ -83,6 +83,7 @@ void MoveNodesCommand::execute() {
         }
 
         node->position = item.endPosition;
+        m_model.recomputeRoutesForNode(node->id);
     }
 }
 
@@ -94,6 +95,7 @@ void MoveNodesCommand::undo() {
         }
 
         node->position = item.startPosition;
+        m_model.recomputeRoutesForNode(node->id);
     }
 }
 

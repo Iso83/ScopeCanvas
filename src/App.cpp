@@ -544,6 +544,7 @@ void App::onMouseButton(int button, int action, int mods) {
                         Node* node = m_engine.graph().findNode(moveItem.nodeId);
                         if (node != nullptr) {
                             node->position = moveItem.endPosition;
+                            m_engine.graph().recomputeRoutesForNode(node->id);
                         }
                     }
 

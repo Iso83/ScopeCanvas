@@ -62,6 +62,7 @@ void DragController::update(DiagramModel& model, const glm::vec2& mouseWorld) {
         }
 
         node->position = dragItem.startPosition + delta;
+        model.recomputeRoutesForNode(node->id);
     }
 }
 
