@@ -68,6 +68,12 @@ struct Node {
     std::vector<Connector> connectors;
 };
 
+struct Group {
+    uint32_t id;
+    bool collapsed = false;
+    std::vector<uint32_t> children;
+};
+
 glm::vec2 connectorWorldPosition(const Node& node, const Connector& connector);
 std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextConnectorId);
 
