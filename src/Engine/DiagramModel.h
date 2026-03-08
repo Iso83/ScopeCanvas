@@ -65,6 +65,7 @@ struct Node {
     glm::vec2 position;
     glm::vec2 size;
     bool selected;
+    uint32_t groupId = 0;
     std::vector<Connector> connectors;
 };
 
