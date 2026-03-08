@@ -49,6 +49,10 @@ struct ConnectorTemplate {
     int maxConnections = 1;
 };
 
+struct EdgeRoute {
+    std::vector<glm::vec2> points;
+};
+
 struct Edge {
     uint32_t id;
     uint32_t fromNode;
@@ -56,6 +60,7 @@ struct Edge {
     uint32_t toNode;
     uint32_t toConnector;
     bool selected = false;
+    EdgeRoute route;
 };
 
 struct Node {
