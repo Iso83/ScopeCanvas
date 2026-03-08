@@ -22,8 +22,13 @@ public:
 
     Node* createNodeFromDefinition(const std::string& type);
 
+    GraphView* createView();
+    GraphView* findView(uint32_t viewId);
+
 private:
     GraphDocument m_graph;
     CommandStack m_commands;
     NodeDefinitionRegistry m_definitions;
+    uint32_t m_nextViewId = 1;
+    std::vector<GraphView> m_views;
 };

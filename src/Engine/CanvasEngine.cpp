@@ -54,3 +54,18 @@ Node* CanvasEngine::createNodeFromDefinition(const std::string& type) {
                                             definition->type,
                                             definition->title);
 }
+
+GraphView* CanvasEngine::createView() {
+    m_views.push_back(GraphView{m_nextViewId++, glm::vec2(0.0f, 0.0f), 1.0f});
+    return &m_views.back();
+}
+
+GraphView* CanvasEngine::findView(uint32_t viewId) {
+    for (GraphView& view : m_views) {
+        if (view.id == viewId) {
+            return &view;
+        }
+    }
+
+    return nullptr;
+}
