@@ -56,7 +56,15 @@ void Renderer::render(const GraphDocument& model,
     glClearColor(0.10f, 0.11f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    m_camera.setPosition(view.cameraPosition);
+    glm::vec2 cameraPosition = view.cameraPosition;
+    if (view.focusNode != 0) {
+        const Node* focusNode = model.findNode(view.focusNode);
+        if (focusNode != nullptr) {
+            cameraPosition = focusNode->position + (focusNode->size * 0.5f);
+        }
+    }
+
+    m_camera.setPosition(cameraPosition);
     m_camera.setZoom(view.zoom);
     const glm::mat4 viewProjection = m_camera.viewProjection();
 

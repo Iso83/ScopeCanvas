@@ -79,6 +79,7 @@ struct GraphView {
     uint32_t id;
     glm::vec2 cameraPosition;
     float zoom = 1.0f;
+    uint32_t focusNode = 0;
 };
 
 glm::vec2 connectorWorldPosition(const Node& node, const Connector& connector);
