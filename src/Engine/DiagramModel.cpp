@@ -20,6 +20,19 @@ glm::vec2 sidePosition(const Node& node, ConnectorSide side, float offset) {
 
     return node.position;
 }
+
+
+EdgeRoute buildOrthogonalRoute(const glm::vec2& start, const glm::vec2& end) {
+    const float midX = (start.x + end.x) * 0.5f;
+
+    EdgeRoute route;
+    route.points.reserve(4);
+    route.points.push_back(start);
+    route.points.push_back({midX, start.y});
+    route.points.push_back({midX, end.y});
+    route.points.push_back(end);
+    return route;
+}
 }
 
 glm::vec2 connectorWorldPosition(const Node& node, const Connector& connector) {
@@ -212,12 +225,25 @@ bool DiagramModel::addEdge(const Edge& edge) {
         }
     }
 
-    m_edges.push_back(edge);
-    if (edge.id >= m_nextEdgeId) {
-        m_nextEdgeId = edge.id + 1;
+    const Node* fromNode = findNode(edge.fromNode);
+    const Node* toNode = findNode(edge.toNode);
+    const Connector* fromConnector = findConnector(edge.fromNode, edge.fromConnector);
+    const Connector* toConnector = findConnector(edge.toNode, edge.toConnector);
+    if (fromNode == nullptr || toNode == nullptr || fromConnector == nullptr || toConnector == nullptr) {
+        return false;
     }
 
-    std::cout << "Edge created: " << edge.id << "\n";
+    Edge routedEdge = edge;
+    const glm::vec2 start = connectorWorldPosition(*fromNode, *fromConnector);
+    const glm::vec2 end = connectorWorldPosition(*toNode, *toConnector);
+    routedEdge.route = buildOrthogonalRoute(start, end);
+
+    m_edges.push_back(routedEdge);
+    if (routedEdge.id >= m_nextEdgeId) {
+        m_nextEdgeId = routedEdge.id + 1;
+    }
+
+    std::cout << "Edge created: " << routedEdge.id << "\n";
     return true;
 }
 
