@@ -45,8 +45,6 @@ bool EdgeRenderer::init(const char* vertexShaderPath, const char* fragmentShader
 void EdgeRenderer::renderEdges(const DiagramModel& model,
                                const glm::mat4& viewProjection,
                                uint32_t hoveredEdgeId) {
-    constexpr int kSegments = 20;
-
     std::unordered_set<uint32_t> hiddenNodeIds;
     for (const Group& group : model.groups()) {
         if (!group.collapsed) {
@@ -63,24 +61,10 @@ void EdgeRenderer::renderEdges(const DiagramModel& model,
             hiddenNodeIds.find(edge.toNode) != hiddenNodeIds.end()) {
             continue;
         }
-        const Node* fromNode = model.findNode(edge.fromNode);
-        const Node* toNode = model.findNode(edge.toNode);
-        const Connector* fromConnector = model.findConnector(edge.fromNode, edge.fromConnector);
-        const Connector* toConnector = model.findConnector(edge.toNode, edge.toConnector);
-
-        if (fromNode == nullptr || toNode == nullptr || fromConnector == nullptr || toConnector == nullptr) {
+        if (edge.route.points.size() < 2) {
             continue;
         }
 
-        const glm::vec2 p0 = connectorWorldPosition(*fromNode, *fromConnector);
-        const glm::vec2 p3 = connectorWorldPosition(*toNode, *toConnector);
-
-        glm::vec2 p1(0.0f);
-        glm::vec2 p2(0.0f);
-        computeBezierControls(p0, p3, p1, p2);
-
-        m_scratchPoints.clear();
-        appendBezierSamples(m_scratchPoints, p0, p1, p2, p3, kSegments);
         glm::vec3 color(0.8f, 0.8f, 0.85f);
         if (edge.selected) {
             color = glm::vec3(1.0f, 0.8f, 0.3f);
@@ -89,7 +73,9 @@ void EdgeRenderer::renderEdges(const DiagramModel& model,
             color = glm::vec3(1.0f, 1.0f, 1.0f);
         }
 
-        renderPolyline(m_scratchPoints, viewProjection, color, 2.0f);
+        for (size_t i = 0; i + 1 < edge.route.points.size(); ++i) {
+            renderLineSegment(edge.route.points[i], edge.route.points[i + 1], viewProjection, color, 2.0f);
+        }
     }
 }
 
@@ -191,6 +177,17 @@ void EdgeRenderer::computeBezierControls(const glm::vec2& p0,
     const float controlDistance = glm::max(80.0f, dx * 0.5f);
     p1 = p0 + glm::vec2(controlDistance, 0.0f);
     p2 = p3 - glm::vec2(controlDistance, 0.0f);
+}
+
+void EdgeRenderer::renderLineSegment(const glm::vec2& start,
+                                     const glm::vec2& end,
+                                     const glm::mat4& viewProjection,
+                                     const glm::vec3& color,
+                                     float thickness) {
+    m_scratchPoints.clear();
+    m_scratchPoints.push_back(start);
+    m_scratchPoints.push_back(end);
+    renderPolyline(m_scratchPoints, viewProjection, color, thickness);
 }
 
 void EdgeRenderer::ensureBufferCapacity(size_t pointCount) {

@@ -51,6 +51,11 @@ private:
                         const glm::mat4& viewProjection,
                         const glm::vec3& color,
                         float thickness);
+    void renderLineSegment(const glm::vec2& start,
+                           const glm::vec2& end,
+                           const glm::mat4& viewProjection,
+                           const glm::vec3& color,
+                           float thickness);
 
     Shader m_shader;
     GLuint m_vao;
