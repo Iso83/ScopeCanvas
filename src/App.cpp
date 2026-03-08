@@ -6,6 +6,7 @@
 #include <glm/vec4.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -494,7 +495,26 @@ void App::onMouseButton(int button, int action, int mods) {
             }
 
             if (!connectResult.handled) {
-                const std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(m_engine.graph());
+                std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(m_engine.graph());
+
+                if (m_gridSettings.snapEnabled) {
+                    const float cellSize = std::max(m_gridSettings.cellSize, 1.0f);
+                    for (MoveNodesCommand::MoveItem& moveItem : moveItems) {
+                        const float snappedX = std::round(moveItem.endPosition.x / cellSize) * cellSize;
+                        const float snappedY = std::round(moveItem.endPosition.y / cellSize) * cellSize;
+                        moveItem.endPosition = {snappedX, snappedY};
+
+                        Node* node = m_engine.graph().findNode(moveItem.nodeId);
+                        if (node != nullptr) {
+                            node->position = moveItem.endPosition;
+                        }
+                    }
+
+                    std::erase_if(moveItems, [](const MoveNodesCommand::MoveItem& moveItem) {
+                        return moveItem.startPosition == moveItem.endPosition;
+                    });
+                }
+
                 if (!moveItems.empty()) {
                     auto moveCommand = std::make_unique<MoveNodesCommand>(m_engine.graph(), moveItems);
                     m_engine.commands().execute(std::move(moveCommand));
