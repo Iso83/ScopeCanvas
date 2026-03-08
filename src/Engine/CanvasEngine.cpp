@@ -41,7 +41,7 @@ Node* CanvasEngine::createNodeFromDefinition(const std::string& type) {
         for (size_t i = 0; i < count; ++i) {
             const float offset = count == 0 ? 0.5f : static_cast<float>(i + 1) / static_cast<float>(count + 1);
             connectorTemplates.push_back(
-                ConnectorTemplate{side, offset, defs[i].direction});
+                ConnectorTemplate{side, offset, defs[i].direction, defs[i].maxConnections});
         }
     };
 

@@ -176,7 +176,8 @@ bool GraphSerializer::load(DiagramModel& model, const std::string& filepath) {
                                                 node.id,
                                                 connectorTemplates[i].side,
                                                 connectorTemplates[i].offset,
-                                                direction});
+                                                direction,
+                                                connectorTemplates[i].maxConnections});
         }
 
         model.nodes().push_back(node);

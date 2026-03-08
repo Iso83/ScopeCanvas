@@ -26,6 +26,7 @@ struct Connector {
     ConnectorSide side;
     float offset;
     ConnectorDirection direction = ConnectorDirection::Input;
+    int maxConnections = 1;
 };
 
 struct ConnectorDefinition {
@@ -45,6 +46,7 @@ struct ConnectorTemplate {
     ConnectorSide side;
     float offset;
     ConnectorDirection direction;
+    int maxConnections = 1;
 };
 
 struct Edge {

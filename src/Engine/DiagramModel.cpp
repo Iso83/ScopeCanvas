@@ -28,9 +28,9 @@ glm::vec2 connectorWorldPosition(const Node& node, const Connector& connector) {
 
 std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t& nextConnectorId) {
     return {
-        Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.333f, ConnectorDirection::Input},
-        Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.666f, ConnectorDirection::Input},
-        Connector{nextConnectorId++, nodeId, ConnectorSide::Right, 0.5f, ConnectorDirection::Output},
+        Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.333f, ConnectorDirection::Input, 1},
+        Connector{nextConnectorId++, nodeId, ConnectorSide::Left, 0.666f, ConnectorDirection::Input, 1},
+        Connector{nextConnectorId++, nodeId, ConnectorSide::Right, 0.5f, ConnectorDirection::Output, 1},
     };
 }
 
@@ -79,7 +79,8 @@ Node* DiagramModel::createNodeWithConnectors(const glm::vec2& position,
                       node.id,
                       connectorTemplate.side,
                       connectorTemplate.offset,
-                      connectorTemplate.direction});
+                      connectorTemplate.direction,
+                      connectorTemplate.maxConnections});
     }
 
     m_nodes.push_back(node);
@@ -170,8 +171,32 @@ bool DiagramModel::isValidConnection(uint32_t fromNode,
         return false;
     }
 
-    return fromConnectorPtr->direction == ConnectorDirection::Output &&
-           toConnectorPtr->direction == ConnectorDirection::Input;
+    if (fromConnectorPtr->direction != ConnectorDirection::Output ||
+        toConnectorPtr->direction != ConnectorDirection::Input) {
+        return false;
+    }
+
+    const auto connectionCountFor = [this](uint32_t nodeId, uint32_t connectorId) {
+        int currentConnections = 0;
+        for (const Edge& edge : m_edges) {
+            if ((edge.fromNode == nodeId && edge.fromConnector == connectorId) ||
+                (edge.toNode == nodeId && edge.toConnector == connectorId)) {
+                ++currentConnections;
+            }
+        }
+
+        return currentConnections;
+    };
+
+    if (connectionCountFor(fromNode, fromConnector) >= fromConnectorPtr->maxConnections) {
+        return false;
+    }
+
+    if (connectionCountFor(toNode, toConnector) >= toConnectorPtr->maxConnections) {
+        return false;
+    }
+
+    return true;
 }
 
 bool DiagramModel::addEdge(const Edge& edge) {
