@@ -1,10 +1,12 @@
 #include "Render/EdgeRenderer.h"
 
+#include <algorithm>
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/vec3.hpp>
 
 #include <cmath>
+#include <unordered_set>
 
 EdgeRenderer::EdgeRenderer() : m_vao(0), m_vbo(0), m_vboCapacityBytes(0) {}
 
@@ -45,7 +47,22 @@ void EdgeRenderer::renderEdges(const DiagramModel& model,
                                uint32_t hoveredEdgeId) {
     constexpr int kSegments = 20;
 
+    std::unordered_set<uint32_t> hiddenNodeIds;
+    for (const Group& group : model.groups()) {
+        if (!group.collapsed) {
+            continue;
+        }
+
+        for (uint32_t childNodeId : group.children) {
+            hiddenNodeIds.insert(childNodeId);
+        }
+    }
+
     for (const Edge& edge : model.edges()) {
+        if (hiddenNodeIds.find(edge.fromNode) != hiddenNodeIds.end() ||
+            hiddenNodeIds.find(edge.toNode) != hiddenNodeIds.end()) {
+            continue;
+        }
         const Node* fromNode = model.findNode(edge.fromNode);
         const Node* toNode = model.findNode(edge.toNode);
         const Connector* fromConnector = model.findConnector(edge.fromNode, edge.fromConnector);
@@ -118,6 +135,16 @@ void EdgeRenderer::renderPreviewEdge(const DiagramModel& model,
                                      uint32_t startConnectorId,
                                      const glm::vec2& previewPosition,
                                      const glm::mat4& viewProjection) {
+    for (const Group& group : model.groups()) {
+        if (!group.collapsed) {
+            continue;
+        }
+
+        if (std::find(group.children.begin(), group.children.end(), startNodeId) != group.children.end()) {
+            return;
+        }
+    }
+
     const Node* fromNode = model.findNode(startNodeId);
     const Connector* fromConnector = model.findConnector(startNodeId, startConnectorId);
     if (fromNode == nullptr || fromConnector == nullptr) {

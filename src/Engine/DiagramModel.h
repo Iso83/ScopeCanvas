@@ -94,6 +94,9 @@ public:
     std::vector<Edge>& edges() { return m_edges; }
     const std::vector<Edge>& edges() const { return m_edges; }
 
+    std::vector<Group>& groups() { return m_groups; }
+    const std::vector<Group>& groups() const { return m_groups; }
+
     Node* createNode(const glm::vec2& position, const glm::vec2& size = {200.0f, 120.0f});
     Node* createNodeOfType(const std::string& nodeTypeId,
                            const glm::vec2& position,
