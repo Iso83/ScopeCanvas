@@ -59,6 +59,7 @@ App::App()
       m_redoHandled(false),
       m_saveHandled(false),
       m_loadHandled(false),
+      m_gridToggleHandled(false),
       m_initialized(false) {}
 
 App::~App() {
@@ -387,6 +388,15 @@ void App::processInput(float deltaTime) {
         m_loadHandled = true;
     } else {
         m_loadHandled = false;
+    }
+
+    if (glfwGetKey(m_window, GLFW_KEY_G) == GLFW_PRESS) {
+        if (!m_gridToggleHandled) {
+            m_gridSettings.enabled = !m_gridSettings.enabled;
+        }
+        m_gridToggleHandled = true;
+    } else {
+        m_gridToggleHandled = false;
     }
 
     m_connectController.onMouseMove(mouseWorld);

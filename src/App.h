@@ -98,6 +98,7 @@ private:
     bool m_redoHandled;
     bool m_saveHandled;
     bool m_loadHandled;
+    bool m_gridToggleHandled;
     bool m_initialized;
 
 };
