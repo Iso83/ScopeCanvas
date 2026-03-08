@@ -119,6 +119,7 @@ public:
     bool removeEdge(uint32_t edgeId);
 
     Group* createGroup();
+    bool addNodeToGroup(uint32_t nodeId, uint32_t groupId);
 
     void syncIdCounters();
 

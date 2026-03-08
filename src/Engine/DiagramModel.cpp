@@ -233,6 +233,37 @@ Group* DiagramModel::createGroup() {
     return &m_groups.back();
 }
 
+bool DiagramModel::addNodeToGroup(uint32_t nodeId, uint32_t groupId) {
+    Node* node = findNode(nodeId);
+    if (node == nullptr) {
+        return false;
+    }
+
+    auto groupIt = std::find_if(m_groups.begin(), m_groups.end(),
+                                [groupId](const Group& group) { return group.id == groupId; });
+    if (groupIt == m_groups.end()) {
+        return false;
+    }
+
+    if (node->groupId != 0 && node->groupId != groupId) {
+        auto previousGroupIt = std::find_if(m_groups.begin(), m_groups.end(),
+                                            [node](const Group& group) { return group.id == node->groupId; });
+        if (previousGroupIt != m_groups.end()) {
+            auto& previousChildren = previousGroupIt->children;
+            previousChildren.erase(std::remove(previousChildren.begin(), previousChildren.end(), nodeId),
+                                   previousChildren.end());
+        }
+    }
+
+    node->groupId = groupId;
+
+    if (std::find(groupIt->children.begin(), groupIt->children.end(), nodeId) == groupIt->children.end()) {
+        groupIt->children.push_back(nodeId);
+    }
+
+    return true;
+}
+
 bool DiagramModel::removeEdge(uint32_t edgeId) {
     const auto oldSize = m_edges.size();
     m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(),
