@@ -28,6 +28,12 @@ struct Connector {
     ConnectorDirection direction = ConnectorDirection::Input;
 };
 
+struct ConnectorDefinition {
+    std::string name;
+    ConnectorDirection direction;
+    int maxConnections = 1;
+};
+
 struct ConnectorTemplate {
     ConnectorSide side;
     float offset;
