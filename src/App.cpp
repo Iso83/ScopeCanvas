@@ -254,7 +254,7 @@ void App::processInput(float deltaTime) {
                     createTypeId,
                     mouseWorld,
                     glm::vec2(200.0f, 120.0f));
-                m_commandManager.execute(std::move(command));
+                m_engine.commands().execute(std::move(command));
                 if (m_engine.graph().nodes().size() > nodeCountBefore) {
                     Node* createdNode = &m_engine.graph().nodes().back();
                     createdNode->selected = true;
@@ -325,7 +325,7 @@ void App::processInput(float deltaTime) {
 
             for (uint32_t nodeId : selectedNodeIds) {
                 auto command = std::make_unique<DeleteNodeCommand>(m_engine.graph(), nodeId);
-                m_commandManager.execute(std::move(command));
+                m_engine.commands().execute(std::move(command));
                 deletedAnyNode = true;
             }
 
@@ -334,7 +334,7 @@ void App::processInput(float deltaTime) {
                 m_hoveredEdgeId = 0;
             } else if (m_selectedEdgeId != 0 && m_engine.graph().findEdge(m_selectedEdgeId) != nullptr) {
                 auto command = std::make_unique<DeleteEdgeCommand>(m_engine.graph(), m_selectedEdgeId);
-                m_commandManager.execute(std::move(command));
+                m_engine.commands().execute(std::move(command));
                 clearEdgeSelection();
                 m_hoveredEdgeId = 0;
             }
@@ -346,7 +346,7 @@ void App::processInput(float deltaTime) {
 
     if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_Z) == GLFW_PRESS) {
         if (!m_undoHandled) {
-            if (m_commandManager.undo()) {
+            if (m_engine.commands().undo()) {
                 clearEdgeSelection();
                 m_hoveredEdgeId = 0;
             }
@@ -358,7 +358,7 @@ void App::processInput(float deltaTime) {
 
     if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_Y) == GLFW_PRESS) {
         if (!m_redoHandled) {
-            if (m_commandManager.redo()) {
+            if (m_engine.commands().redo()) {
                 clearEdgeSelection();
                 m_hoveredEdgeId = 0;
             }
@@ -439,7 +439,7 @@ void App::onMouseButton(int button, int action, int mods) {
                         endpointHit.startEndpoint ? edge->toConnector : edge->fromConnector;
 
                     auto deleteCommand = std::make_unique<DeleteEdgeCommand>(m_engine.graph(), edge->id);
-                    m_commandManager.execute(std::move(deleteCommand));
+                    m_engine.commands().execute(std::move(deleteCommand));
                     m_connectController.beginReconnect(
                         endpointHit.edgeId,
                         endpointHit.startEndpoint,
@@ -482,14 +482,14 @@ void App::onMouseButton(int button, int action, int mods) {
                 m_connectController.onMouseUp(m_engine.graph(), mouseWorld, m_renderer.camera().zoom());
             if (connectResult.createEdge) {
                 auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(m_engine.graph(), connectResult.edge);
-                m_commandManager.execute(std::move(createEdgeCommand));
+                m_engine.commands().execute(std::move(createEdgeCommand));
             }
 
             if (!connectResult.handled) {
                 const std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(m_engine.graph());
                 if (!moveItems.empty()) {
                     auto moveCommand = std::make_unique<MoveNodesCommand>(m_engine.graph(), moveItems);
-                    m_commandManager.execute(std::move(moveCommand));
+                    m_engine.commands().execute(std::move(moveCommand));
                 }
                 m_selectionController.onMouseUp(m_engine.graph(), mouseWorld);
             }
@@ -532,7 +532,7 @@ bool App::loadGraph() {
         return false;
     }
 
-    m_commandManager.clear();
+    m_engine.commands().clear();
     m_selectionController = SelectionController();
     m_dragController = DragController();
     m_connectController = ConnectController();

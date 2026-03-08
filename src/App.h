@@ -5,7 +5,6 @@ struct GLFWwindow;
 #include "Engine/CanvasEngine.h"
 #include "Engine/Persistence/GraphSerializer.h"
 #include "Interaction/CameraController.h"
-#include "Interaction/Commands/CommandManager.h"
 #include "Interaction/Commands/GraphCommands.h"
 #include "Interaction/ConnectController.h"
 #include "Interaction/DragController.h"
@@ -99,5 +98,4 @@ private:
     bool m_loadHandled;
     bool m_initialized;
 
-    CommandManager m_commandManager;
 };
