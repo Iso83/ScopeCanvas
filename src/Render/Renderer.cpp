@@ -48,10 +48,16 @@ void Renderer::resize(int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void Renderer::render(const GraphDocument& model, const Viewport& viewport, bool gridEnabled, float gridCellSize) {
+void Renderer::render(const GraphDocument& model,
+                      const GraphView& view,
+                      const Viewport& viewport,
+                      bool gridEnabled,
+                      float gridCellSize) {
     glClearColor(0.10f, 0.11f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    m_camera.setPosition(view.cameraPosition);
+    m_camera.setZoom(view.zoom);
     const glm::mat4 viewProjection = m_camera.viewProjection();
 
     std::unordered_set<uint32_t> hiddenNodeIds;
