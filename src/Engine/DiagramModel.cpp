@@ -142,9 +142,11 @@ size_t DiagramModel::removeSelectedNodes() {
 void DiagramModel::clear() {
     m_nodes.clear();
     m_edges.clear();
+    m_groups.clear();
     m_nextNodeId = 1;
     m_nextConnectorId = 1;
     m_nextEdgeId = 1;
+    m_nextGroupId = 1;
 }
 
 void DiagramModel::clearNodeSelection() {
@@ -226,6 +228,11 @@ bool DiagramModel::createEdge(uint32_t fromNode,
     return addEdge(Edge{m_nextEdgeId++, fromNode, fromConnector, toNode, toConnector, false});
 }
 
+Group* DiagramModel::createGroup() {
+    m_groups.push_back(Group{m_nextGroupId++});
+    return &m_groups.back();
+}
+
 bool DiagramModel::removeEdge(uint32_t edgeId) {
     const auto oldSize = m_edges.size();
     m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(),
@@ -254,6 +261,12 @@ void DiagramModel::syncIdCounters() {
     for (const Edge& edge : m_edges) {
         if (edge.id >= m_nextEdgeId) {
             m_nextEdgeId = edge.id + 1;
+        }
+    }
+
+    for (const Group& group : m_groups) {
+        if (group.id >= m_nextGroupId) {
+            m_nextGroupId = group.id + 1;
         }
     }
 }

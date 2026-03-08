@@ -118,6 +118,8 @@ public:
     bool createEdge(uint32_t fromNode, uint32_t fromConnector, uint32_t toNode, uint32_t toConnector);
     bool removeEdge(uint32_t edgeId);
 
+    Group* createGroup();
+
     void syncIdCounters();
 
     Node* findNode(uint32_t nodeId);
@@ -137,7 +139,9 @@ private:
     uint32_t m_nextNodeId = 1;
     uint32_t m_nextConnectorId = 1;
     uint32_t m_nextEdgeId = 1;
+    uint32_t m_nextGroupId = 1;
     std::vector<Node> m_nodes;
     std::vector<Edge> m_edges;
+    std::vector<Group> m_groups;
     std::unique_ptr<NodeTypeRegistry> m_nodeTypeRegistry;
 };
