@@ -152,24 +152,26 @@ void DiagramModel::clearNodeSelection() {
     }
 }
 
+bool DiagramModel::isValidConnection(uint32_t fromNode,
+                                     uint32_t fromConnector,
+                                     uint32_t toNode,
+                                     uint32_t toConnector) const {
+    if (findNode(fromNode) == nullptr || findNode(toNode) == nullptr) {
+        return false;
+    }
+
+    const Connector* fromConnectorPtr = findConnector(fromNode, fromConnector);
+    const Connector* toConnectorPtr = findConnector(toNode, toConnector);
+    if (fromConnectorPtr == nullptr || toConnectorPtr == nullptr) {
+        return false;
+    }
+
+    return fromConnectorPtr->direction == ConnectorDirection::Output &&
+           toConnectorPtr->direction == ConnectorDirection::Input;
+}
+
 bool DiagramModel::addEdge(const Edge& edge) {
-    if (findNode(edge.fromNode) == nullptr || findNode(edge.toNode) == nullptr) {
-        return false;
-    }
-
-    if (findConnector(edge.fromNode, edge.fromConnector) == nullptr ||
-        findConnector(edge.toNode, edge.toConnector) == nullptr) {
-        return false;
-    }
-
-    const Connector* fromConnector = findConnector(edge.fromNode, edge.fromConnector);
-    const Connector* toConnector = findConnector(edge.toNode, edge.toConnector);
-    if (fromConnector == nullptr || toConnector == nullptr) {
-        return false;
-    }
-
-    if (fromConnector->direction != ConnectorDirection::Output ||
-        toConnector->direction != ConnectorDirection::Input) {
+    if (!isValidConnection(edge.fromNode, edge.fromConnector, edge.toNode, edge.toConnector)) {
         return false;
     }
 

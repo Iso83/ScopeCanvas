@@ -101,6 +101,10 @@ public:
 
     void clear();
     void clearNodeSelection();
+    bool isValidConnection(uint32_t fromNode,
+                           uint32_t fromConnector,
+                           uint32_t toNode,
+                           uint32_t toConnector) const;
     bool addEdge(const Edge& edge);
     bool createEdge(uint32_t fromNode, uint32_t fromConnector, uint32_t toNode, uint32_t toConnector);
     bool removeEdge(uint32_t edgeId);

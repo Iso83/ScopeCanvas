@@ -27,7 +27,7 @@ bool tryBuildDirectedConnection(const DiagramModel& model,
         outFromConnector = startConnectorId;
         outToNode = endNodeId;
         outToConnector = endConnectorId;
-        return true;
+        return model.isValidConnection(outFromNode, outFromConnector, outToNode, outToConnector);
     }
 
     if (startConnector->direction == ConnectorDirection::Input &&
@@ -36,7 +36,7 @@ bool tryBuildDirectedConnection(const DiagramModel& model,
         outFromConnector = endConnectorId;
         outToNode = startNodeId;
         outToConnector = startConnectorId;
-        return true;
+        return model.isValidConnection(outFromNode, outFromConnector, outToNode, outToConnector);
     }
 
     return false;
