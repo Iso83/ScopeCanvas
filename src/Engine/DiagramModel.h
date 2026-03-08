@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "Engine/ConnectorDirection.h"
+
 struct NodeType;
 class NodeTypeRegistry;
 
@@ -16,11 +18,6 @@ enum class ConnectorSide {
     Right,
     Bottom,
     Left,
-};
-
-enum class ConnectorDirection {
-    Input,
-    Output,
 };
 
 struct Connector {
