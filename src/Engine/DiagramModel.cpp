@@ -156,6 +156,10 @@ bool DiagramModel::isValidConnection(uint32_t fromNode,
                                      uint32_t fromConnector,
                                      uint32_t toNode,
                                      uint32_t toConnector) const {
+    if (fromNode == toNode) {
+        return false;
+    }
+
     if (findNode(fromNode) == nullptr || findNode(toNode) == nullptr) {
         return false;
     }
