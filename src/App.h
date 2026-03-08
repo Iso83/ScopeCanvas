@@ -12,6 +12,7 @@ struct GLFWwindow;
 #include "Interaction/InputState.h"
 #include "Interaction/SelectionController.h"
 #include "Render/Renderer.h"
+#include "GridSettings.h"
 
 #include <glm/vec2.hpp>
 
@@ -83,6 +84,7 @@ private:
     ConnectController m_connectController;
     CameraController m_cameraController;
     ClipboardData m_clipboard;
+    GridSettings m_gridSettings;
     uint32_t m_hoveredEdgeId;
     uint32_t m_selectedEdgeId;
     uint32_t m_hoveredConnectorId;

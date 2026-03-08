@@ -15,7 +15,7 @@ public:
     GridRenderer& operator=(const GridRenderer&) = delete;
 
     bool init(const char* vertexShaderPath, const char* fragmentShaderPath);
-    void render(const glm::mat4& viewProjection, int viewportWidth, int viewportHeight) const;
+    void render(const glm::mat4& viewProjection, int viewportWidth, int viewportHeight, float cellSize) const;
 
 private:
     void destroy();

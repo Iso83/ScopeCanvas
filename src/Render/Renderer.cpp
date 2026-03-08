@@ -48,7 +48,7 @@ void Renderer::resize(int width, int height) {
     glViewport(0, 0, width, height);
 }
 
-void Renderer::render(const GraphDocument& model, const Viewport& viewport) {
+void Renderer::render(const GraphDocument& model, const Viewport& viewport, bool gridEnabled, float gridCellSize) {
     glClearColor(0.10f, 0.11f, 0.12f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -108,7 +108,9 @@ void Renderer::render(const GraphDocument& model, const Viewport& viewport) {
 
     visibleNodes.insert(visibleNodes.end(), groupNodes.begin(), groupNodes.end());
 
-    m_gridRenderer.render(viewProjection, m_viewportWidth, m_viewportHeight);
+    if (gridEnabled) {
+        m_gridRenderer.render(viewProjection, m_viewportWidth, m_viewportHeight, gridCellSize);
+    }
     m_edgeRenderer.renderEdges(model, viewProjection, viewport.hoveredEdgeId);
     m_nodeRenderer.render(visibleNodes, viewProjection);
     m_edgeRenderer.renderConnectors(visibleNodes, viewProjection, viewport.hoveredConnectorId);

@@ -25,7 +25,7 @@ public:
               int viewportWidth,
               int viewportHeight);
     void resize(int width, int height);
-    void render(const GraphDocument& model, const Viewport& viewport);
+    void render(const GraphDocument& model, const Viewport& viewport, bool gridEnabled, float gridCellSize);
 
     Camera2D& camera() { return m_camera; }
     int viewportWidth() const { return m_viewportWidth; }

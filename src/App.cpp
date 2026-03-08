@@ -154,7 +154,7 @@ void App::run() {
             .previewStartConnector = m_connectController.startConnectorId(),
             .previewPosition = m_connectController.previewPosition()};
 
-        m_renderer.render(m_engine.graph(), viewport);
+        m_renderer.render(m_engine.graph(), viewport, m_gridSettings.enabled, m_gridSettings.cellSize);
 
         glfwSwapBuffers(m_window);
         glfwPollEvents();

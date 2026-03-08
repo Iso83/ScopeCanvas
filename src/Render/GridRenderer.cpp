@@ -33,18 +33,20 @@ bool GridRenderer::init(const char* vertexShaderPath, const char* fragmentShader
     return true;
 }
 
-void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, int viewportHeight) const {
+void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, int viewportHeight, float cellSize) const {
     m_shader.use();
 
     const GLuint programId = m_shader.id();
     const GLint vpLoc = glGetUniformLocation(programId, "uViewProjection");
     const GLint invVpLoc = glGetUniformLocation(programId, "uInvViewProjection");
     const GLint vpSizeLoc = glGetUniformLocation(programId, "uViewportSize");
+    const GLint cellSizeLoc = glGetUniformLocation(programId, "uCellSize");
 
     const glm::mat4 invViewProjection = glm::inverse(viewProjection);
     glUniformMatrix4fv(vpLoc, 1, GL_FALSE, glm::value_ptr(viewProjection));
     glUniformMatrix4fv(invVpLoc, 1, GL_FALSE, glm::value_ptr(invViewProjection));
     glUniform2f(vpSizeLoc, static_cast<float>(viewportWidth), static_cast<float>(viewportHeight));
+    glUniform1f(cellSizeLoc, cellSize);
 
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
