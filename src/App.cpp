@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstddef>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <unordered_set>
 
@@ -399,6 +400,19 @@ void App::processInput(float deltaTime) {
         m_gridToggleHandled = false;
     }
 
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        alignNodesLeft();
+    }
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        alignNodesRight();
+    }
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS) {
+        alignNodesTop();
+    }
+    if (ctrlDown && glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        alignNodesBottom();
+    }
+
     m_connectController.onMouseMove(mouseWorld);
 
     m_cameraController.update(m_renderer.camera(), m_input);
@@ -543,6 +557,102 @@ void App::onMouseButton(int button, int action, int mods) {
             m_input.middleDown = true;
         } else if (action == GLFW_RELEASE) {
             m_input.middleDown = false;
+        }
+    }
+}
+
+void App::alignNodesLeft() {
+    float minX = std::numeric_limits<float>::max();
+    bool hasSelection = false;
+
+    for (const Node& node : m_engine.graph().nodes()) {
+        if (!node.selected) {
+            continue;
+        }
+
+        minX = std::min(minX, node.position.x);
+        hasSelection = true;
+    }
+
+    if (!hasSelection) {
+        return;
+    }
+
+    for (Node& node : m_engine.graph().nodes()) {
+        if (node.selected) {
+            node.position.x = minX;
+        }
+    }
+}
+
+void App::alignNodesRight() {
+    float maxX = std::numeric_limits<float>::lowest();
+    bool hasSelection = false;
+
+    for (const Node& node : m_engine.graph().nodes()) {
+        if (!node.selected) {
+            continue;
+        }
+
+        maxX = std::max(maxX, node.position.x + node.size.x);
+        hasSelection = true;
+    }
+
+    if (!hasSelection) {
+        return;
+    }
+
+    for (Node& node : m_engine.graph().nodes()) {
+        if (node.selected) {
+            node.position.x = maxX - node.size.x;
+        }
+    }
+}
+
+void App::alignNodesTop() {
+    float maxY = std::numeric_limits<float>::lowest();
+    bool hasSelection = false;
+
+    for (const Node& node : m_engine.graph().nodes()) {
+        if (!node.selected) {
+            continue;
+        }
+
+        maxY = std::max(maxY, node.position.y + node.size.y);
+        hasSelection = true;
+    }
+
+    if (!hasSelection) {
+        return;
+    }
+
+    for (Node& node : m_engine.graph().nodes()) {
+        if (node.selected) {
+            node.position.y = maxY - node.size.y;
+        }
+    }
+}
+
+void App::alignNodesBottom() {
+    float minY = std::numeric_limits<float>::max();
+    bool hasSelection = false;
+
+    for (const Node& node : m_engine.graph().nodes()) {
+        if (!node.selected) {
+            continue;
+        }
+
+        minY = std::min(minY, node.position.y);
+        hasSelection = true;
+    }
+
+    if (!hasSelection) {
+        return;
+    }
+
+    for (Node& node : m_engine.graph().nodes()) {
+        if (node.selected) {
+            node.position.y = minY;
         }
     }
 }

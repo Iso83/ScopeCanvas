@@ -68,6 +68,11 @@ private:
     void copySelectionToClipboard();
     void pasteClipboard();
 
+    void alignNodesLeft();
+    void alignNodesRight();
+    void alignNodesTop();
+    void alignNodesBottom();
+
     bool saveGraph();
     bool loadGraph();
 
