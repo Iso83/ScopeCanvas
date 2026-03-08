@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <queue>
 #include <unordered_map>
+#include <vector>
 
 void LayoutEngine::applyLayout(DiagramModel& graph) {
     std::unordered_map<uint32_t, int> nodeLevels;
@@ -63,11 +64,39 @@ void LayoutEngine::applyLayout(DiagramModel& graph) {
         }
     }
 
+    std::unordered_map<int, std::vector<uint32_t>> levelNodeOrder;
+    levelNodeOrder.reserve(graph.nodes().size());
+
+    for (const Node& node : graph.nodes()) {
+        auto levelIt = nodeLevels.find(node.id);
+        if (levelIt == nodeLevels.end()) {
+            continue;
+        }
+
+        levelNodeOrder[levelIt->second].push_back(node.id);
+    }
+
+    std::unordered_map<uint32_t, std::size_t> nodeIndexWithinLevel;
+    nodeIndexWithinLevel.reserve(graph.nodes().size());
+
+    for (const auto& [level, nodeIds] : levelNodeOrder) {
+        (void)level;
+        for (std::size_t index = 0; index < nodeIds.size(); ++index) {
+            nodeIndexWithinLevel[nodeIds[index]] = index;
+        }
+    }
+
+    constexpr float horizontalSpacing = 240.0f;
     constexpr float verticalSpacing = 200.0f;
     for (Node& node : graph.nodes()) {
         auto levelIt = nodeLevels.find(node.id);
         if (levelIt == nodeLevels.end()) {
             continue;
+        }
+
+        auto indexIt = nodeIndexWithinLevel.find(node.id);
+        if (indexIt != nodeIndexWithinLevel.end()) {
+            node.position.x = static_cast<float>(indexIt->second) * horizontalSpacing;
         }
 
         node.position.y = static_cast<float>(levelIt->second) * verticalSpacing;
