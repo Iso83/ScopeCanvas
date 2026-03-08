@@ -63,5 +63,13 @@ void LayoutEngine::applyLayout(DiagramModel& graph) {
         }
     }
 
-    (void)nodeLevels;
+    constexpr float verticalSpacing = 200.0f;
+    for (Node& node : graph.nodes()) {
+        auto levelIt = nodeLevels.find(node.id);
+        if (levelIt == nodeLevels.end()) {
+            continue;
+        }
+
+        node.position.y = static_cast<float>(levelIt->second) * verticalSpacing;
+    }
 }
