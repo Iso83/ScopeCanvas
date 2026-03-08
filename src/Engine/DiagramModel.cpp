@@ -264,6 +264,22 @@ bool DiagramModel::addNodeToGroup(uint32_t nodeId, uint32_t groupId) {
     return true;
 }
 
+void DiagramModel::collapseGroup(uint32_t groupId) {
+    auto groupIt = std::find_if(m_groups.begin(), m_groups.end(),
+                                [groupId](const Group& group) { return group.id == groupId; });
+    if (groupIt != m_groups.end()) {
+        groupIt->collapsed = true;
+    }
+}
+
+void DiagramModel::expandGroup(uint32_t groupId) {
+    auto groupIt = std::find_if(m_groups.begin(), m_groups.end(),
+                                [groupId](const Group& group) { return group.id == groupId; });
+    if (groupIt != m_groups.end()) {
+        groupIt->collapsed = false;
+    }
+}
+
 bool DiagramModel::removeEdge(uint32_t edgeId) {
     const auto oldSize = m_edges.size();
     m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(),

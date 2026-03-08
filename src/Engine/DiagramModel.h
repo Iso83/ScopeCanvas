@@ -120,6 +120,8 @@ public:
 
     Group* createGroup();
     bool addNodeToGroup(uint32_t nodeId, uint32_t groupId);
+    void collapseGroup(uint32_t groupId);
+    void expandGroup(uint32_t groupId);
 
     void syncIdCounters();
 
