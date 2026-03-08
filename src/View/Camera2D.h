@@ -8,6 +8,8 @@ public:
     Camera2D();
 
     void setViewportSize(int width, int height);
+    void setPosition(const glm::vec2& position);
+    const glm::vec2& position() const;
     void move(const glm::vec2& delta);
     void setZoom(float zoom);
     float zoom() const;

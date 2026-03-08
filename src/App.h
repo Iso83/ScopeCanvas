@@ -90,6 +90,7 @@ private:
     CameraController m_cameraController;
     ClipboardData m_clipboard;
     GridSettings m_gridSettings;
+    GraphView m_mainView;
     uint32_t m_hoveredEdgeId;
     uint32_t m_selectedEdgeId;
     uint32_t m_hoveredConnectorId;

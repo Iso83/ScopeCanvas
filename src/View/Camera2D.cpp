@@ -20,6 +20,15 @@ void Camera2D::setViewportSize(int width, int height) {
     updateProjection();
 }
 
+
+void Camera2D::setPosition(const glm::vec2& position) {
+    m_position = position;
+}
+
+const glm::vec2& Camera2D::position() const {
+    return m_position;
+}
+
 void Camera2D::move(const glm::vec2& delta) {
     m_position += delta;
 }

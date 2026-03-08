@@ -47,6 +47,7 @@ App::App()
     : m_window(nullptr),
       m_renderer(),
       m_engine(),
+      m_mainView{1, glm::vec2(0.0f, 0.0f), 1.0f},
       m_hoveredEdgeId(0),
       m_selectedEdgeId(0),
       m_hoveredConnectorId(0),
@@ -118,6 +119,9 @@ bool App::init() {
         shutdown();
         return false;
     }
+
+    m_renderer.camera().setPosition(m_mainView.cameraPosition);
+    m_renderer.camera().setZoom(m_mainView.zoom);
 
     Node* node1 = m_engine.graph().createNodeOfType("Number", {-280.0f, -40.0f}, {180.0f, 100.0f});
     Node* node2 = m_engine.graph().createNodeOfType("Add", {0.0f, 90.0f}, {220.0f, 120.0f});
@@ -195,16 +199,23 @@ void App::processInput(float deltaTime) {
         panDelta.y -= panSpeed * deltaTime;
     }
 
-    m_renderer.camera().move(panDelta);
+    m_renderer.camera().setPosition(m_mainView.cameraPosition);
+    m_renderer.camera().setZoom(m_mainView.zoom);
 
-    static float cameraZoom = 1.0f;
+    if (panDelta != glm::vec2(0.0f)) {
+        m_mainView.cameraPosition += panDelta;
+        m_renderer.camera().setPosition(m_mainView.cameraPosition);
+    }
+
     if (glfwGetKey(m_window, GLFW_KEY_Q) == GLFW_PRESS) {
-        cameraZoom *= 1.0f + deltaTime;
-        m_renderer.camera().setZoom(cameraZoom);
+        m_mainView.zoom *= 1.0f + deltaTime;
+        m_renderer.camera().setZoom(m_mainView.zoom);
+        m_mainView.zoom = m_renderer.camera().zoom();
     }
     if (glfwGetKey(m_window, GLFW_KEY_E) == GLFW_PRESS) {
-        cameraZoom *= 1.0f - deltaTime;
-        m_renderer.camera().setZoom(cameraZoom);
+        m_mainView.zoom *= 1.0f - deltaTime;
+        m_renderer.camera().setZoom(m_mainView.zoom);
+        m_mainView.zoom = m_renderer.camera().zoom();
     }
 
     const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
@@ -416,6 +427,8 @@ void App::processInput(float deltaTime) {
     m_connectController.onMouseMove(mouseWorld);
 
     m_cameraController.update(m_renderer.camera(), m_input);
+    m_mainView.cameraPosition = m_renderer.camera().position();
+    m_mainView.zoom = m_renderer.camera().zoom();
     m_input.scrollDelta = 0.0f;
 }
 
