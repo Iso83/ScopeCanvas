@@ -78,7 +78,7 @@ bool App::init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(1280, 720, "NodeCanvasGL", nullptr, nullptr);
+    m_window = glfwCreateWindow(1280, 720, "ScopeCanvas Editor", nullptr, nullptr);
     if (m_window == nullptr) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();

@@ -19,7 +19,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(1280, 800, "NodeCanvasGL", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1280, 800, "ScopeCanvas", nullptr, nullptr);
     if (!window) {
         std::cout << "Failed to create window\n";
         glfwTerminate();
