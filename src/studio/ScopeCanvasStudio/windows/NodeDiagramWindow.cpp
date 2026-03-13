@@ -7,8 +7,8 @@
 #include <glm/vec4.hpp>
 
 #include <algorithm>
+#include <cstdint>
 #include <utility>
-
 
 namespace {
 const Connector *findConnectorByDirection(const Node *node, ConnectorDirection direction) {
@@ -56,10 +56,67 @@ NodeDiagramWindow::NodeDiagramWindow(
     GraphView *view,
     std::string windowTitle)
     : m_window(window),
-    m_renderer(renderer),
-    m_graph(graph),
-    m_view(view),
-    m_windowTitle(std::move(windowTitle)) {
+      m_renderer(renderer),
+      m_graph(graph),
+      m_view(view),
+      m_windowTitle(std::move(windowTitle)) {
+}
+
+NodeDiagramWindow::~NodeDiagramWindow() {
+    releaseRenderTarget();
+}
+
+void NodeDiagramWindow::ensureRenderTarget(int width, int height) {
+    width = std::max(width, 1);
+    height = std::max(height, 1);
+
+    if (m_framebuffer != 0 && m_renderWidth == width && m_renderHeight == height) {
+        return;
+    }
+
+    releaseRenderTarget();
+
+    m_renderWidth = width;
+    m_renderHeight = height;
+
+    glGenFramebuffers(1, &m_framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+
+    glGenTextures(1, &m_colorTexture);
+    glBindTexture(GL_TEXTURE_2D, m_colorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_renderWidth, m_renderHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture, 0);
+
+    glGenRenderbuffers(1, &m_depthStencilRenderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_depthStencilRenderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_renderWidth, m_renderHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthStencilRenderbuffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void NodeDiagramWindow::releaseRenderTarget() {
+    if (m_depthStencilRenderbuffer != 0) {
+        glDeleteRenderbuffers(1, &m_depthStencilRenderbuffer);
+        m_depthStencilRenderbuffer = 0;
+    }
+
+    if (m_colorTexture != 0) {
+        glDeleteTextures(1, &m_colorTexture);
+        m_colorTexture = 0;
+    }
+
+    if (m_framebuffer != 0) {
+        glDeleteFramebuffers(1, &m_framebuffer);
+        m_framebuffer = 0;
+    }
+
+    m_renderWidth = 0;
+    m_renderHeight = 0;
 }
 
 glm::vec2 NodeDiagramWindow::screenToWorld(float localX, float localY) const {
@@ -82,6 +139,8 @@ void NodeDiagramWindow::Draw() {
     canvasSize.x = std::max(canvasSize.x, 1.0f);
     canvasSize.y = std::max(canvasSize.y, 1.0f);
 
+    ensureRenderTarget(static_cast<int>(canvasSize.x), static_cast<int>(canvasSize.y));
+
     ImGui::InvisibleButton((m_windowTitle + "_canvas").c_str(),
         canvasSize,
         ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle);
@@ -97,7 +156,7 @@ void NodeDiagramWindow::Draw() {
 
     m_renderer->camera().setPosition(m_view->cameraPosition);
     m_renderer->camera().setZoom(m_view->zoom);
-    m_renderer->resize(static_cast<int>(canvasSize.x), static_cast<int>(canvasSize.y));
+    m_renderer->resize(m_renderWidth, m_renderHeight);
 
     const glm::vec2 mouseWorld = screenToWorld(static_cast<float>(m_input.mouseX), static_cast<float>(m_input.mouseY));
     const float zoom = m_renderer->camera().zoom();
@@ -164,23 +223,6 @@ void NodeDiagramWindow::Draw() {
     m_view->zoom = m_renderer->camera().zoom();
     m_input.scrollDelta = 0.0f;
 
-    int fbWidth = 0;
-    int fbHeight = 0;
-    glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
-
-    int vx = static_cast<int>(canvasPos.x);
-    int vy = static_cast<int>(fbHeight - canvasPos.y - canvasSize.y);
-    int vw = static_cast<int>(canvasSize.x);
-    int vh = static_cast<int>(canvasSize.y);
-
-    GLint oldViewport[4];
-    glGetIntegerv(GL_VIEWPORT, oldViewport);
-
-    glViewport(vx, vy, vw, vh);
-
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(vx, vy, vw, vh);
-
     const Viewport vp{
         .hoveredEdgeId = m_hoveredEdgeId,
         .hoveredConnectorId = m_hoveredConnectorId,
@@ -193,15 +235,25 @@ void NodeDiagramWindow::Draw() {
         .previewPosition = m_connectController.previewPosition()
     };
 
-    m_renderer->render(*m_graph, *m_view, vp, true, 32.0f);
+    GLint oldFramebuffer = 0;
+    GLint oldViewport[4];
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFramebuffer);
+    glGetIntegerv(GL_VIEWPORT, oldViewport);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+    glViewport(0, 0, m_renderWidth, m_renderHeight);
     glDisable(GL_SCISSOR_TEST);
 
-    glViewport(
-        oldViewport[0],
-        oldViewport[1],
-        oldViewport[2],
-        oldViewport[3]);
+    m_renderer->render(*m_graph, *m_view, vp, true, 32.0f);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, oldFramebuffer);
+    glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+
+    ImGui::SetCursorScreenPos(canvasPos);
+    ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<intptr_t>(m_colorTexture)),
+        canvasSize,
+        ImVec2(0.0f, 1.0f),
+        ImVec2(1.0f, 0.0f));
 
     ImGui::End();
 }

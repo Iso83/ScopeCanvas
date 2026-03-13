@@ -26,9 +26,13 @@ public:
         GraphView *view,
         std::string windowTitle);
 
+    ~NodeDiagramWindow();
+
     void Draw();
 
 private:
+    void ensureRenderTarget(int width, int height);
+    void releaseRenderTarget();
     glm::vec2 screenToWorld(float localX, float localY) const;
 
     GLFWwindow *m_window;
@@ -45,4 +49,10 @@ private:
 
     uint32_t m_hoveredEdgeId = 0;
     uint32_t m_hoveredConnectorId = 0;
+
+    unsigned int m_framebuffer = 0;
+    unsigned int m_colorTexture = 0;
+    unsigned int m_depthStencilRenderbuffer = 0;
+    int m_renderWidth = 0;
+    int m_renderHeight = 0;
 };
