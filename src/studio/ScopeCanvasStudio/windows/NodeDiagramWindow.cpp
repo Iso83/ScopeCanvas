@@ -9,6 +9,46 @@
 #include <algorithm>
 #include <utility>
 
+
+namespace {
+const Connector *findConnectorByDirection(const Node *node, ConnectorDirection direction) {
+    if (node == nullptr) {
+        return nullptr;
+    }
+
+    for (const Connector &connector : node->connectors) {
+        if (connector.direction == direction) {
+            return &connector;
+        }
+    }
+
+    return nullptr;
+}
+}
+
+void NodeDiagramWindow::SeedDemoGraph(DiagramModel &graph) {
+    graph.clear();
+
+    Node *node1 = graph.createNodeOfType("Number", { -280.0f, -40.0f }, { 180.0f, 100.0f });
+    Node *node2 = graph.createNodeOfType("Add", { 0.0f, 90.0f }, { 220.0f, 120.0f });
+    Node *node3 = graph.createNodeOfType("Output", { 260.0f, -150.0f }, { 200.0f, 110.0f });
+
+    const Connector *node1Output = findConnectorByDirection(node1, ConnectorDirection::Output);
+    const Connector *node2Input = findConnectorByDirection(node2, ConnectorDirection::Input);
+    const Connector *node2Output = findConnectorByDirection(node2, ConnectorDirection::Output);
+    const Connector *node3Input = findConnectorByDirection(node3, ConnectorDirection::Input);
+
+    if (node1 != nullptr && node2 != nullptr && node1Output != nullptr && node2Input != nullptr) {
+        graph.createEdge(node1->id, node1Output->id, node2->id, node2Input->id);
+    }
+
+    if (node2 != nullptr && node3 != nullptr && node2Output != nullptr && node3Input != nullptr) {
+        graph.createEdge(node2->id, node2Output->id, node3->id, node3Input->id);
+    }
+
+    graph.syncIdCounters();
+}
+
 NodeDiagramWindow::NodeDiagramWindow(
     GLFWwindow *window,
     Renderer *renderer,

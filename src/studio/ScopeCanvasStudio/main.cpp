@@ -9,7 +9,8 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-int main() {
+namespace {
+int RunStudioApp() {
 	if (!glfwInit()) {
 		return -1;
 	}
@@ -45,16 +46,7 @@ int main() {
 	ImGui_ImplOpenGL3_Init("#version 130");
 
 	CanvasEngine engine;
-	Node *node1 = engine.graph().createNodeOfType("Number", { -280.0f, -40.0f }, { 180.0f, 100.0f });
-	Node *node2 = engine.graph().createNodeOfType("Add", { 0.0f, 90.0f }, { 220.0f, 120.0f });
-	Node *node3 = engine.graph().createNodeOfType("Output", { 260.0f, -150.0f }, { 200.0f, 110.0f });
-	if (node1 != nullptr && node2 != nullptr) {
-		engine.graph().createEdge(node1->id, node1->connectors[0].id, node2->id, node2->connectors[0].id);
-	}
-	if (node2 != nullptr && node3 != nullptr) {
-		engine.graph().createEdge(node2->id, node2->connectors.back().id, node3->id, node3->connectors[0].id);
-	}
-	engine.graph().syncIdCounters();
+	NodeDiagramWindow::SeedDemoGraph(engine.graph());
 
 	Renderer renderer;
 	int w = 0;
@@ -121,3 +113,16 @@ int main() {
 
 	return 0;
 }
+}
+
+#ifdef _WIN32
+#include <windows.h>
+
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+	return RunStudioApp();
+}
+#else
+int main() {
+	return RunStudioApp();
+}
+#endif

@@ -17,6 +17,8 @@
 
 class NodeDiagramWindow {
 public:
+    static void SeedDemoGraph(DiagramModel &graph);
+
     NodeDiagramWindow(
         GLFWwindow *window,
         Renderer *renderer,
