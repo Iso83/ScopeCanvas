@@ -3,6 +3,7 @@
 #include "imgui_impl_opengl3.h"
 
 #include "Engine/CanvasEngine.h"
+#include "GridSettings.h"
 #include "windows/NodeDiagramWindow.h"
 
 #include <glad/glad.h>
@@ -46,6 +47,7 @@ int RunStudioApp() {
 	ImGui_ImplOpenGL3_Init("#version 130");
 
 	CanvasEngine engine;
+	GridSettings gridSettings;
 	NodeDiagramWindow::SeedDemoGraph(engine.graph());
 
 	Renderer renderer;
@@ -57,8 +59,8 @@ int RunStudioApp() {
 	GraphView viewA{ 1, glm::vec2(0.0f, 0.0f), 1.0f, 0 };
 	GraphView viewB{ 2, glm::vec2(200.0f, -80.0f), 0.9f, 0 };
 
-	NodeDiagramWindow diagramA(window, &renderer, &engine.graph(), &viewA, "Diagram View A");
-	NodeDiagramWindow diagramB(window, &renderer, &engine.graph(), &viewB, "Diagram View B");
+	NodeDiagramWindow diagramA(window, &renderer, &engine.graph(), &engine.commands(), &gridSettings, &viewA, "Diagram View A");
+	NodeDiagramWindow diagramB(window, &renderer, &engine.graph(), &engine.commands(), &gridSettings, &viewB, "Diagram View B");
 
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -79,6 +81,39 @@ int RunStudioApp() {
 				}
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::BeginMenu("Edit")) {
+				const bool canUndo = engine.commands().canUndo();
+				const bool canRedo = engine.commands().canRedo();
+				if (ImGui::MenuItem("Undo", "Ctrl+Z", false, canUndo)) {
+					(void)engine.commands().undo();
+				}
+				if (ImGui::MenuItem("Redo", "Ctrl+Y / Ctrl+Shift+Z", false, canRedo)) {
+					(void)engine.commands().redo();
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("View")) {
+				ImGui::MenuItem("Show Grid", "G", &gridSettings.enabled);
+				ImGui::MenuItem("Snap to Grid", "Shift+G", &gridSettings.snapEnabled);
+
+				if (ImGui::BeginMenu("Grid Size")) {
+					if (ImGui::MenuItem("16")) {
+						gridSettings.cellSize = 16.0f;
+					}
+					if (ImGui::MenuItem("32")) {
+						gridSettings.cellSize = 32.0f;
+					}
+					if (ImGui::MenuItem("64")) {
+						gridSettings.cellSize = 64.0f;
+					}
+					ImGui::EndMenu();
+				}
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMainMenuBar();
 		}
 

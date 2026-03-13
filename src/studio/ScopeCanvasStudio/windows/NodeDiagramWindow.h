@@ -4,7 +4,9 @@
 #include <GLFW/glfw3.h>
 
 #include "Engine/DiagramModel.h"
+#include "GridSettings.h"
 #include "Interaction/CameraController.h"
+#include "Interaction/Commands/CommandManager.h"
 #include "Interaction/ConnectController.h"
 #include "Interaction/DragController.h"
 #include "Interaction/EdgeInteractionController.h"
@@ -23,6 +25,8 @@ public:
         GLFWwindow *window,
         Renderer *renderer,
         DiagramModel *graph,
+        CommandManager *commands,
+        GridSettings *gridSettings,
         GraphView *view,
         std::string windowTitle);
 
@@ -31,6 +35,7 @@ public:
     void Draw();
 
 private:
+    void handleShortcuts(bool focused);
     void ensureRenderTarget(int width, int height);
     void releaseRenderTarget();
     glm::vec2 screenToWorld(float localX, float localY) const;
@@ -38,6 +43,8 @@ private:
     GLFWwindow *m_window;
     Renderer *m_renderer;
     DiagramModel *m_graph;
+    CommandManager *m_commands;
+    GridSettings *m_gridSettings;
     GraphView *m_view;
     std::string m_windowTitle;
 

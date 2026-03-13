@@ -4,10 +4,14 @@
 
 #include "NodeDiagramWindow.h"
 
+#include "Interaction/Commands/GraphCommands.h"
+
 #include <glm/vec4.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <memory>
 #include <utility>
 
 namespace {
@@ -53,17 +57,53 @@ NodeDiagramWindow::NodeDiagramWindow(
     GLFWwindow *window,
     Renderer *renderer,
     DiagramModel *graph,
+    CommandManager *commands,
+    GridSettings *gridSettings,
     GraphView *view,
     std::string windowTitle)
     : m_window(window),
       m_renderer(renderer),
       m_graph(graph),
+      m_commands(commands),
+      m_gridSettings(gridSettings),
       m_view(view),
       m_windowTitle(std::move(windowTitle)) {
 }
 
 NodeDiagramWindow::~NodeDiagramWindow() {
     releaseRenderTarget();
+}
+
+void NodeDiagramWindow::handleShortcuts(bool focused) {
+    if (!focused || m_commands == nullptr || m_gridSettings == nullptr) {
+        return;
+    }
+
+    ImGuiIO &io = ImGui::GetIO();
+    const bool ctrl = io.KeyCtrl;
+    const bool shift = io.KeyShift;
+
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
+        if (shift) {
+            (void)m_commands->redo();
+        }
+        else {
+            (void)m_commands->undo();
+        }
+    }
+
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
+        (void)m_commands->redo();
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
+        if (shift) {
+            m_gridSettings->snapEnabled = !m_gridSettings->snapEnabled;
+        }
+        else {
+            m_gridSettings->enabled = !m_gridSettings->enabled;
+        }
+    }
 }
 
 void NodeDiagramWindow::ensureRenderTarget(int width, int height) {
@@ -134,6 +174,9 @@ glm::vec2 NodeDiagramWindow::screenToWorld(float localX, float localY) const {
 void NodeDiagramWindow::Draw() {
     ImGui::Begin(m_windowTitle.c_str());
 
+    const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+    handleShortcuts(focused);
+
     ImVec2 canvasPos = ImGui::GetCursorScreenPos();
     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
     canvasSize.x = std::max(canvasSize.x, 1.0f);
@@ -188,14 +231,51 @@ void NodeDiagramWindow::Draw() {
         const ConnectController::ConnectionResult connectResult =
             m_connectController.onMouseUp(*m_graph, mouseWorld, zoom);
         if (connectResult.removeEdge) {
-            m_graph->removeEdge(connectResult.edgeToRemoveId);
+            if (m_commands != nullptr) {
+                auto deleteEdgeCommand = std::make_unique<DeleteEdgeCommand>(*m_graph, connectResult.edgeToRemoveId);
+                m_commands->execute(std::move(deleteEdgeCommand));
+            }
+            else {
+                m_graph->removeEdge(connectResult.edgeToRemoveId);
+            }
         }
         if (connectResult.createEdge) {
-            m_graph->addEdge(connectResult.edge);
+            if (m_commands != nullptr) {
+                auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(*m_graph, connectResult.edge);
+                m_commands->execute(std::move(createEdgeCommand));
+            }
+            else {
+                m_graph->addEdge(connectResult.edge);
+            }
         }
 
         if (!connectResult.handled) {
-            m_dragController.onMouseUp(*m_graph);
+            std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(*m_graph);
+
+            if (m_gridSettings != nullptr && m_gridSettings->snapEnabled) {
+                const float cellSize = std::max(m_gridSettings->cellSize, 1.0f);
+                for (MoveNodesCommand::MoveItem &moveItem : moveItems) {
+                    const float snappedX = std::round(moveItem.endPosition.x / cellSize) * cellSize;
+                    const float snappedY = std::round(moveItem.endPosition.y / cellSize) * cellSize;
+                    moveItem.endPosition = { snappedX, snappedY };
+
+                    Node *node = m_graph->findNode(moveItem.nodeId);
+                    if (node != nullptr) {
+                        node->position = moveItem.endPosition;
+                        m_graph->recomputeRoutesForNode(node->id);
+                    }
+                }
+
+                std::erase_if(moveItems, [](const MoveNodesCommand::MoveItem &moveItem) {
+                    return moveItem.startPosition == moveItem.endPosition;
+                });
+            }
+
+            if (!moveItems.empty() && m_commands != nullptr) {
+                auto moveCommand = std::make_unique<MoveNodesCommand>(*m_graph, moveItems);
+                m_commands->execute(std::move(moveCommand));
+            }
+
             m_selectionController.onMouseUp(*m_graph, mouseWorld);
         }
     }
@@ -244,13 +324,16 @@ void NodeDiagramWindow::Draw() {
     glViewport(0, 0, m_renderWidth, m_renderHeight);
     glDisable(GL_SCISSOR_TEST);
 
-    m_renderer->render(*m_graph, *m_view, vp, true, 32.0f);
+    const bool gridEnabled = m_gridSettings != nullptr ? m_gridSettings->enabled : true;
+    const float gridCellSize = m_gridSettings != nullptr ? m_gridSettings->cellSize : 32.0f;
+    m_renderer->render(*m_graph, *m_view, vp, gridEnabled, gridCellSize);
 
     glBindFramebuffer(GL_FRAMEBUFFER, oldFramebuffer);
     glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
 
     ImGui::SetCursorScreenPos(canvasPos);
-    ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<intptr_t>(m_colorTexture)),
+    ImGui::Image(
+        (ImTextureID)m_colorTexture,
         canvasSize,
         ImVec2(0.0f, 1.0f),
         ImVec2(1.0f, 0.0f));
