@@ -10,6 +10,12 @@
 #include <cstdint>
 #include <vector>
 
+struct StudioViewSettings {
+    bool curvedEdgeOverlay = false;
+    bool shaNodeStyling = true;
+    bool connectorStateColors = true;
+};
+
 class DiagramBasics {
 public:
     DiagramBasics();
@@ -19,6 +25,9 @@ public:
 
     GridSettings &gridSettings() { return m_gridSettings; }
     const GridSettings &gridSettings() const { return m_gridSettings; }
+
+    StudioViewSettings &viewSettings() { return m_viewSettings; }
+    const StudioViewSettings &viewSettings() const { return m_viewSettings; }
 
     void seedDefaultDemo();
     void seedSha256Demo();
@@ -36,4 +45,5 @@ public:
 private:
     CanvasEngine m_engine;
     GridSettings m_gridSettings;
+    StudioViewSettings m_viewSettings;
 };

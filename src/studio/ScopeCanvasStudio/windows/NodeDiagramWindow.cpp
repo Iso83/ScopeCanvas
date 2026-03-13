@@ -13,6 +13,66 @@
 #include <utility>
 #include <vector>
 
+namespace {
+bool contains(const std::string &text, const std::string &token) {
+    return text.find(token) != std::string::npos;
+}
+
+ImU32 styleColorForNode(const Node &node) {
+    if (contains(node.title, "Bits Container")) {
+        return IM_COL32(70, 74, 82, 170);
+    }
+    if (contains(node.title, "Bit[")) {
+        return IM_COL32(200, 200, 120, 120);
+    }
+    if (contains(node.title, "Loop#")) {
+        return IM_COL32(80, 120, 190, 120);
+    }
+    if (contains(node.title, "Const True")) {
+        return IM_COL32(70, 180, 90, 140);
+    }
+    if (contains(node.title, "Const False")) {
+        return IM_COL32(180, 80, 80, 140);
+    }
+    if (contains(node.title, "BitShift")) {
+        return IM_COL32(170, 120, 70, 130);
+    }
+
+    return IM_COL32(130, 130, 130, 95);
+}
+
+ImU32 connectorStateColor(const Node &node, const Connector &connector) {
+    if (connector.direction == ConnectorDirection::Input) {
+        return IM_COL32(215, 215, 230, 255);
+    }
+
+    if (contains(node.title, "Const True")) {
+        return IM_COL32(70, 240, 90, 255);
+    }
+    if (contains(node.title, "Const False")) {
+        return IM_COL32(255, 90, 90, 255);
+    }
+    if (contains(node.title, "BitShift")) {
+        return IM_COL32(255, 180, 90, 255);
+    }
+
+    return IM_COL32(225, 225, 240, 255);
+}
+
+ImVec2 worldToCanvasScreen(const Camera2D &camera, const glm::vec2 &world, const ImVec2 &canvasPos, const ImVec2 &canvasSize) {
+    const glm::vec4 p = camera.viewProjection() * glm::vec4(world, 0.0f, 1.0f);
+    if (p.w == 0.0f) {
+        return canvasPos;
+    }
+
+    const float ndcX = p.x / p.w;
+    const float ndcY = p.y / p.w;
+    const float sx = canvasPos.x + ((ndcX + 1.0f) * 0.5f) * canvasSize.x;
+    const float sy = canvasPos.y + ((1.0f - ndcY) * 0.5f) * canvasSize.y;
+    return { sx, sy };
+}
+}
+
 NodeDiagramWindow::NodeDiagramWindow(
     GLFWwindow *window,
     Renderer *renderer,
@@ -311,18 +371,61 @@ void NodeDiagramWindow::Draw() {
         ImVec2(0.0f, 1.0f),
         ImVec2(1.0f, 0.0f));
 
-    // basic labels in studio layer (engine stays renderer-agnostic regarding fonts/widgets)
     ImDrawList *drawList = ImGui::GetWindowDrawList();
-    for (const Node &node : graph.nodes()) {
-        const glm::vec4 p = m_renderer->camera().viewProjection() * glm::vec4(node.position.x + 8.0f, node.position.y + 18.0f, 0.0f, 1.0f);
-        if (p.w == 0.0f) {
-            continue;
+
+    if (m_basics->viewSettings().curvedEdgeOverlay) {
+        for (const Edge &edge : graph.edges()) {
+            const Node *fromNode = graph.findNode(edge.fromNode);
+            const Node *toNode = graph.findNode(edge.toNode);
+            const Connector *fromConnector = graph.findConnector(edge.fromNode, edge.fromConnector);
+            const Connector *toConnector = graph.findConnector(edge.toNode, edge.toConnector);
+            if (fromNode == nullptr || toNode == nullptr || fromConnector == nullptr || toConnector == nullptr) {
+                continue;
+            }
+
+            const glm::vec2 p0w = connectorWorldPosition(*fromNode, *fromConnector);
+            const glm::vec2 p3w = connectorWorldPosition(*toNode, *toConnector);
+            const ImVec2 p0 = worldToCanvasScreen(m_renderer->camera(), p0w, canvasPos, canvasSize);
+            const ImVec2 p3 = worldToCanvasScreen(m_renderer->camera(), p3w, canvasPos, canvasSize);
+
+            const float dx = std::abs(p3.x - p0.x);
+            const float c = std::max(80.0f, dx * 0.45f);
+            const ImVec2 p1(p0.x + c, p0.y);
+            const ImVec2 p2(p3.x - c, p3.y);
+            drawList->AddBezierCubic(p0, p1, p2, p3, IM_COL32(215, 215, 230, 190), 2.0f, 20);
         }
-        const float ndcX = p.x / p.w;
-        const float ndcY = p.y / p.w;
-        const float sx = canvasPos.x + ((ndcX + 1.0f) * 0.5f) * canvasSize.x;
-        const float sy = canvasPos.y + ((1.0f - ndcY) * 0.5f) * canvasSize.y;
-        drawList->AddText(ImVec2(sx, sy), IM_COL32(235, 235, 235, 255), node.title.c_str());
+    }
+
+    if (m_basics->viewSettings().shaNodeStyling) {
+        for (const Node &node : graph.nodes()) {
+            const ImVec2 a = worldToCanvasScreen(m_renderer->camera(), node.position, canvasPos, canvasSize);
+            const ImVec2 b = worldToCanvasScreen(m_renderer->camera(), node.position + node.size, canvasPos, canvasSize);
+
+            const ImVec2 minPt(std::min(a.x, b.x), std::min(a.y, b.y));
+            const ImVec2 maxPt(std::max(a.x, b.x), std::max(a.y, b.y));
+            drawList->AddRectFilled(minPt, maxPt, styleColorForNode(node), 4.0f);
+            drawList->AddRect(minPt, maxPt, IM_COL32(235, 235, 240, 180), 4.0f, 0, 1.0f);
+
+            const bool bitIndexMode = contains(node.title, "Bit[");
+            const char *label = node.title.c_str();
+            std::string tmp;
+            if (bitIndexMode) {
+                const size_t endIx = node.title.find(']');
+                if (endIx != std::string::npos) {
+                    tmp = node.title.substr(0, endIx + 1);
+                    label = tmp.c_str();
+                }
+            }
+            drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 6.0f), IM_COL32(245, 245, 245, 255), label);
+
+            if (m_basics->viewSettings().connectorStateColors) {
+                for (const Connector &connector : node.connectors) {
+                    const glm::vec2 world = connectorWorldPosition(node, connector);
+                    const ImVec2 s = worldToCanvasScreen(m_renderer->camera(), world, canvasPos, canvasSize);
+                    drawList->AddCircleFilled(s, 4.0f, connectorStateColor(node, connector));
+                }
+            }
+        }
     }
 
     ImGui::End();

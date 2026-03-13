@@ -138,6 +138,9 @@ int RunStudioApp() {
 			if (ImGui::BeginMenu("View")) {
 				ImGui::MenuItem("Show Grid", "G", &basics.gridSettings().enabled);
 				ImGui::MenuItem("Snap to Grid", "Shift+G", &basics.gridSettings().snapEnabled);
+				ImGui::MenuItem("Curved Edge Overlay", nullptr, &basics.viewSettings().curvedEdgeOverlay);
+				ImGui::MenuItem("SHA Node Styling", nullptr, &basics.viewSettings().shaNodeStyling);
+				ImGui::MenuItem("Connector State Colors", nullptr, &basics.viewSettings().connectorStateColors);
 
 				if (ImGui::BeginMenu("Grid Size")) {
 					if (ImGui::MenuItem("16")) {
