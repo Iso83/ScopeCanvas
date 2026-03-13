@@ -36,7 +36,13 @@ FetchContent_Declare(
     GIT_TAG v3.11.3
 )
 
-FetchContent_MakeAvailable(glfw glm nlohmann_json)
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG docking
+)
+
+FetchContent_MakeAvailable(glfw glm nlohmann_json imgui)
 
 # ---------- Organize third party targets ----------
 
@@ -68,50 +74,33 @@ target_include_directories(glad PUBLIC
 
 set_property(TARGET glad PROPERTY FOLDER "third_party/glad")
 
-# ---------- Sources ----------
+# ---------- IMGUI ----------
 
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
-    src/*.cpp
+add_library(imgui STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS
-    src/*.h
+target_include_directories(imgui PUBLIC
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
 )
 
-# IDE folder structure
-source_group(TREE ${CMAKE_SOURCE_DIR}/src FILES ${SRC_FILES} ${HEADER_FILES})
-
-# ---------- Assets (IDE only) ----------
-
-file(GLOB_RECURSE ASSET_FILES CONFIGURE_DEPENDS
-    assets/*
-)
-
-# Show assets in Visual Studio solution tree
-source_group(TREE ${CMAKE_SOURCE_DIR}/assets FILES ${ASSET_FILES})
-
-set_property(SOURCE ${ASSET_FILES} PROPERTY VS_SETTINGS "ExcludedFromBuild=true")
-
-# ---------- Target ----------
-
-add_executable(ScopeCanvas
-    ${SRC_FILES}
-    ${HEADER_FILES}
-	${ASSET_FILES}
-)
-
-target_include_directories(ScopeCanvas PRIVATE
-    src
-    include
-)
-
-set_property(TARGET ScopeCanvas PROPERTY FOLDER "engine")
-
-# ---------- Link ----------
-
-target_link_libraries(ScopeCanvas
+target_link_libraries(imgui
     glfw
-    glm
     glad
-    nlohmann_json::nlohmann_json
+    opengl32
 )
+
+set_property(TARGET imgui PROPERTY FOLDER "third_party/imgui")
+
+
+
+
+add_subdirectory(src/engine)
+add_subdirectory(src/studio)
