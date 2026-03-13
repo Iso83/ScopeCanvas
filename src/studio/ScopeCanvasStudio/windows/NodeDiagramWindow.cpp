@@ -10,62 +10,18 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
-#include <memory>
 #include <utility>
-
-namespace {
-const Connector *findConnectorByDirection(const Node *node, ConnectorDirection direction) {
-    if (node == nullptr) {
-        return nullptr;
-    }
-
-    for (const Connector &connector : node->connectors) {
-        if (connector.direction == direction) {
-            return &connector;
-        }
-    }
-
-    return nullptr;
-}
-}
-
-void NodeDiagramWindow::SeedDemoGraph(DiagramModel &graph) {
-    graph.clear();
-
-    Node *node1 = graph.createNodeOfType("Number", { -280.0f, -40.0f }, { 180.0f, 100.0f });
-    Node *node2 = graph.createNodeOfType("Add", { 0.0f, 90.0f }, { 220.0f, 120.0f });
-    Node *node3 = graph.createNodeOfType("Output", { 260.0f, -150.0f }, { 200.0f, 110.0f });
-
-    const Connector *node1Output = findConnectorByDirection(node1, ConnectorDirection::Output);
-    const Connector *node2Input = findConnectorByDirection(node2, ConnectorDirection::Input);
-    const Connector *node2Output = findConnectorByDirection(node2, ConnectorDirection::Output);
-    const Connector *node3Input = findConnectorByDirection(node3, ConnectorDirection::Input);
-
-    if (node1 != nullptr && node2 != nullptr && node1Output != nullptr && node2Input != nullptr) {
-        graph.createEdge(node1->id, node1Output->id, node2->id, node2Input->id);
-    }
-
-    if (node2 != nullptr && node3 != nullptr && node2Output != nullptr && node3Input != nullptr) {
-        graph.createEdge(node2->id, node2Output->id, node3->id, node3Input->id);
-    }
-
-    graph.syncIdCounters();
-}
+#include <vector>
 
 NodeDiagramWindow::NodeDiagramWindow(
     GLFWwindow *window,
     Renderer *renderer,
-    DiagramModel *graph,
-    CommandManager *commands,
-    GridSettings *gridSettings,
+    DiagramBasics *basics,
     GraphView *view,
     std::string windowTitle)
     : m_window(window),
       m_renderer(renderer),
-      m_graph(graph),
-      m_commands(commands),
-      m_gridSettings(gridSettings),
+      m_basics(basics),
       m_view(view),
       m_windowTitle(std::move(windowTitle)) {
 }
@@ -75,7 +31,7 @@ NodeDiagramWindow::~NodeDiagramWindow() {
 }
 
 void NodeDiagramWindow::handleShortcuts(bool focused) {
-    if (!focused || m_commands == nullptr || m_gridSettings == nullptr) {
+    if (!focused || m_basics == nullptr) {
         return;
     }
 
@@ -85,24 +41,45 @@ void NodeDiagramWindow::handleShortcuts(bool focused) {
 
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
         if (shift) {
-            (void)m_commands->redo();
+            (void)m_basics->engine().commands().redo();
         }
         else {
-            (void)m_commands->undo();
+            (void)m_basics->engine().commands().undo();
         }
     }
 
     if (ctrl && ImGui::IsKeyPressed(ImGuiKey_Y, false)) {
-        (void)m_commands->redo();
+        (void)m_basics->engine().commands().redo();
+    }
+
+    if (ctrl && ImGui::IsKeyPressed(ImGuiKey_D, false)) {
+        m_basics->duplicateSelected();
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+        m_basics->deleteSelected();
     }
 
     if (ImGui::IsKeyPressed(ImGuiKey_G, false)) {
         if (shift) {
-            m_gridSettings->snapEnabled = !m_gridSettings->snapEnabled;
+            m_basics->gridSettings().snapEnabled = !m_basics->gridSettings().snapEnabled;
         }
         else {
-            m_gridSettings->enabled = !m_gridSettings->enabled;
+            m_basics->gridSettings().enabled = !m_basics->gridSettings().enabled;
         }
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_1, false)) {
+        m_basics->createNode("Number", m_view->cameraPosition + glm::vec2(-140.0f, 0.0f));
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_2, false)) {
+        m_basics->createNode("Add", m_view->cameraPosition + glm::vec2(0.0f, 0.0f));
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_3, false)) {
+        m_basics->createNode("Multiply", m_view->cameraPosition + glm::vec2(140.0f, 0.0f));
+    }
+    if (ImGui::IsKeyPressed(ImGuiKey_4, false)) {
+        m_basics->createNode("Output", m_view->cameraPosition + glm::vec2(280.0f, 0.0f));
     }
 }
 
@@ -172,6 +149,14 @@ glm::vec2 NodeDiagramWindow::screenToWorld(float localX, float localY) const {
 }
 
 void NodeDiagramWindow::Draw() {
+    if (m_basics == nullptr) {
+        return;
+    }
+
+    DiagramModel &graph = m_basics->engine().graph();
+    CommandManager &commands = m_basics->engine().commands();
+    GridSettings &gridSettings = m_basics->gridSettings();
+
     ImGui::Begin(m_windowTitle.c_str());
 
     const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
@@ -208,11 +193,11 @@ void NodeDiagramWindow::Draw() {
     m_hoveredConnectorId = 0;
 
     if (hovered) {
-        const Edge *hoveredEdge = EdgeInteractionController::hitTestEdge(*m_graph, mouseWorld, zoom);
+        const Edge *hoveredEdge = EdgeInteractionController::hitTestEdge(graph, mouseWorld, zoom);
         m_hoveredEdgeId = hoveredEdge != nullptr ? hoveredEdge->id : 0;
 
         const Connector *hoveredConnector =
-            EdgeInteractionController::hitTestConnector(*m_graph, mouseWorld, zoom, nullptr);
+            EdgeInteractionController::hitTestConnector(graph, mouseWorld, zoom, nullptr);
         m_hoveredConnectorId = hoveredConnector != nullptr ? hoveredConnector->id : 0;
     }
 
@@ -220,49 +205,39 @@ void NodeDiagramWindow::Draw() {
         const bool shiftDown = ImGui::GetIO().KeyShift;
         const bool altDown = ImGui::GetIO().KeyAlt;
 
-        const bool startConnect = m_connectController.onMouseDown(*m_graph, mouseWorld, zoom, altDown);
+        const bool startConnect = m_connectController.onMouseDown(graph, mouseWorld, zoom, altDown);
         if (!startConnect) {
-            m_selectionController.onMouseDown(*m_graph, mouseWorld, shiftDown);
-            m_dragController.onMouseDown(*m_graph, mouseWorld);
+            m_selectionController.onMouseDown(graph, mouseWorld, shiftDown);
+            m_dragController.onMouseDown(graph, mouseWorld);
         }
     }
 
     if (m_input.leftDown && !leftDownNow) {
         const ConnectController::ConnectionResult connectResult =
-            m_connectController.onMouseUp(*m_graph, mouseWorld, zoom);
+            m_connectController.onMouseUp(graph, mouseWorld, zoom);
         if (connectResult.removeEdge) {
-            if (m_commands != nullptr) {
-                auto deleteEdgeCommand = std::make_unique<DeleteEdgeCommand>(*m_graph, connectResult.edgeToRemoveId);
-                m_commands->execute(std::move(deleteEdgeCommand));
-            }
-            else {
-                m_graph->removeEdge(connectResult.edgeToRemoveId);
-            }
+            auto deleteEdgeCommand = std::make_unique<DeleteEdgeCommand>(graph, connectResult.edgeToRemoveId);
+            commands.execute(std::move(deleteEdgeCommand));
         }
         if (connectResult.createEdge) {
-            if (m_commands != nullptr) {
-                auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(*m_graph, connectResult.edge);
-                m_commands->execute(std::move(createEdgeCommand));
-            }
-            else {
-                m_graph->addEdge(connectResult.edge);
-            }
+            auto createEdgeCommand = std::make_unique<CreateEdgeCommand>(graph, connectResult.edge);
+            commands.execute(std::move(createEdgeCommand));
         }
 
         if (!connectResult.handled) {
-            std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(*m_graph);
+            std::vector<MoveNodesCommand::MoveItem> moveItems = m_dragController.onMouseUp(graph);
 
-            if (m_gridSettings != nullptr && m_gridSettings->snapEnabled) {
-                const float cellSize = std::max(m_gridSettings->cellSize, 1.0f);
+            if (gridSettings.snapEnabled) {
+                const float cellSize = std::max(gridSettings.cellSize, 1.0f);
                 for (MoveNodesCommand::MoveItem &moveItem : moveItems) {
                     const float snappedX = std::round(moveItem.endPosition.x / cellSize) * cellSize;
                     const float snappedY = std::round(moveItem.endPosition.y / cellSize) * cellSize;
                     moveItem.endPosition = { snappedX, snappedY };
 
-                    Node *node = m_graph->findNode(moveItem.nodeId);
+                    Node *node = graph.findNode(moveItem.nodeId);
                     if (node != nullptr) {
                         node->position = moveItem.endPosition;
-                        m_graph->recomputeRoutesForNode(node->id);
+                        graph.recomputeRoutesForNode(node->id);
                     }
                 }
 
@@ -271,12 +246,12 @@ void NodeDiagramWindow::Draw() {
                 });
             }
 
-            if (!moveItems.empty() && m_commands != nullptr) {
-                auto moveCommand = std::make_unique<MoveNodesCommand>(*m_graph, moveItems);
-                m_commands->execute(std::move(moveCommand));
+            if (!moveItems.empty()) {
+                auto moveCommand = std::make_unique<MoveNodesCommand>(graph, moveItems);
+                commands.execute(std::move(moveCommand));
             }
 
-            m_selectionController.onMouseUp(*m_graph, mouseWorld);
+            m_selectionController.onMouseUp(graph, mouseWorld);
         }
     }
 
@@ -291,9 +266,9 @@ void NodeDiagramWindow::Draw() {
     }
 
     if (m_input.leftDown && !m_connectController.isConnecting()) {
-        m_dragController.update(*m_graph, mouseWorld);
+        m_dragController.update(graph, mouseWorld);
         if (!m_dragController.isDragging()) {
-            m_selectionController.onMouseDrag(*m_graph, mouseWorld);
+            m_selectionController.onMouseDrag(graph, mouseWorld);
         }
     }
 
@@ -324,9 +299,7 @@ void NodeDiagramWindow::Draw() {
     glViewport(0, 0, m_renderWidth, m_renderHeight);
     glDisable(GL_SCISSOR_TEST);
 
-    const bool gridEnabled = m_gridSettings != nullptr ? m_gridSettings->enabled : true;
-    const float gridCellSize = m_gridSettings != nullptr ? m_gridSettings->cellSize : 32.0f;
-    m_renderer->render(*m_graph, *m_view, vp, gridEnabled, gridCellSize);
+    m_renderer->render(graph, *m_view, vp, gridSettings.enabled, gridSettings.cellSize);
 
     glBindFramebuffer(GL_FRAMEBUFFER, oldFramebuffer);
     glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
@@ -337,6 +310,20 @@ void NodeDiagramWindow::Draw() {
         canvasSize,
         ImVec2(0.0f, 1.0f),
         ImVec2(1.0f, 0.0f));
+
+    // basic labels in studio layer (engine stays renderer-agnostic regarding fonts/widgets)
+    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    for (const Node &node : graph.nodes()) {
+        const glm::vec4 p = m_renderer->camera().viewProjection() * glm::vec4(node.position.x + 8.0f, node.position.y + 18.0f, 0.0f, 1.0f);
+        if (p.w == 0.0f) {
+            continue;
+        }
+        const float ndcX = p.x / p.w;
+        const float ndcY = p.y / p.w;
+        const float sx = canvasPos.x + ((ndcX + 1.0f) * 0.5f) * canvasSize.x;
+        const float sy = canvasPos.y + ((1.0f - ndcY) * 0.5f) * canvasSize.y;
+        drawList->AddText(ImVec2(sx, sy), IM_COL32(235, 235, 235, 255), node.title.c_str());
+    }
 
     ImGui::End();
 }

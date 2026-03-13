@@ -4,9 +4,8 @@
 #include <GLFW/glfw3.h>
 
 #include "Engine/DiagramModel.h"
-#include "GridSettings.h"
 #include "Interaction/CameraController.h"
-#include "Interaction/Commands/CommandManager.h"
+#include "diagram/DiagramBasics.h"
 #include "Interaction/ConnectController.h"
 #include "Interaction/DragController.h"
 #include "Interaction/EdgeInteractionController.h"
@@ -19,14 +18,10 @@
 
 class NodeDiagramWindow {
 public:
-    static void SeedDemoGraph(DiagramModel &graph);
-
     NodeDiagramWindow(
         GLFWwindow *window,
         Renderer *renderer,
-        DiagramModel *graph,
-        CommandManager *commands,
-        GridSettings *gridSettings,
+        DiagramBasics *basics,
         GraphView *view,
         std::string windowTitle);
 
@@ -42,9 +37,7 @@ private:
 
     GLFWwindow *m_window;
     Renderer *m_renderer;
-    DiagramModel *m_graph;
-    CommandManager *m_commands;
-    GridSettings *m_gridSettings;
+    DiagramBasics *m_basics;
     GraphView *m_view;
     std::string m_windowTitle;
 
