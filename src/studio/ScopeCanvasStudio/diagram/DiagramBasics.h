@@ -8,12 +8,26 @@
 #include <cstddef>
 #include <string>
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 
 struct StudioViewSettings {
     bool curvedEdgeOverlay = false;
     bool shaNodeStyling = true;
     bool connectorStateColors = true;
+};
+
+struct ParentLayoutSlot {
+    uint32_t childNodeId = 0;
+};
+
+struct ParentLayout {
+    uint32_t parentNodeId = 0;
+    int slotCount = 0;
+    float topPadding = 40.0f;
+    float slotHeight = 52.0f;
+    float slotGap = 6.0f;
+    std::vector<ParentLayoutSlot> slots;
 };
 
 class DiagramBasics {
@@ -42,8 +56,15 @@ public:
     void createGroupFromSelection(bool collapsed);
     void toggleSelectedGroupsCollapsed();
 
+    void alignSelectedConnectors();
+
+    void registerParentLayout(uint32_t parentNodeId, int slotCount);
+    const std::unordered_map<uint32_t, ParentLayout> &parentLayouts() const { return m_parentLayouts; }
+    void applyParentLayouts();
+
 private:
     CanvasEngine m_engine;
     GridSettings m_gridSettings;
     StudioViewSettings m_viewSettings;
+    std::unordered_map<uint32_t, ParentLayout> m_parentLayouts;
 };

@@ -38,13 +38,22 @@ void connectIfPossible(DiagramModel &graph, const Node *from, int fromIx, const 
         to->id,
         to->connectors[static_cast<size_t>(toIx)].id);
 }
+
+void setAllMaxConnections(Node *node, int maxConnections) {
+    if (node == nullptr) {
+        return;
+    }
+
+    for (Connector &connector : node->connectors) {
+        connector.maxConnections = maxConnections;
+    }
+}
 }
 
 void Sha256Demo::Build(DiagramModel &graph) {
     graph.clear();
 
-    Node *dataBlock = createCustomNode(graph, "Bits Container W[t]", { -920.0f, -240.0f }, { 300.0f, 480.0f }, 0, 0);
-    (void)dataBlock;
+    Node *dataBlock = createCustomNode(graph, "Bits Container W[t]", { -920.0f, -240.0f }, { 320.0f, 520.0f }, 8, 8);
 
     std::vector<Node *> bits;
     bits.reserve(8);
@@ -69,8 +78,17 @@ void Sha256Demo::Build(DiagramModel &graph) {
     Node *bitShift = createCustomNode(graph, "BitShift >>> / ROTR", { 120.0f, 120.0f }, { 300.0f, 100.0f }, 2, 1);
     Node *outputHash = createCustomNode(graph, "Hash Out H[t]", { 500.0f, -20.0f }, { 220.0f, 120.0f }, 2, 1);
 
+    setAllMaxConnections(dataBlock, 4);
+    setAllMaxConnections(loopA, 4);
+    setAllMaxConnections(loopB, 4);
+    setAllMaxConnections(loopC, 4);
+
+    for (int i = 0; i < 8; ++i) {
+        connectIfPossible(graph, bits[static_cast<size_t>(i)], 0, dataBlock, i);
+    }
+
     for (int i = 0; i < 4; ++i) {
-        connectIfPossible(graph, bits[static_cast<size_t>(i)], 0, loopA, i);
+        connectIfPossible(graph, dataBlock, i, loopA, i);
     }
 
     connectIfPossible(graph, prime, 0, loopB, 3);
@@ -90,6 +108,9 @@ void Sha256Demo::Build(DiagramModel &graph) {
 
     Group *dataGroup = graph.createGroup();
     if (dataGroup != nullptr) {
+        if (dataBlock != nullptr) {
+            graph.addNodeToGroup(dataBlock->id, dataGroup->id);
+        }
         for (Node *bitNode : bits) {
             if (bitNode != nullptr) {
                 graph.addNodeToGroup(bitNode->id, dataGroup->id);

@@ -211,6 +211,13 @@ bool DiagramModel::isValidConnection(uint32_t fromNode,
 		return false;
 	}
 
+	for (const Edge &edge : m_edges) {
+		if (edge.fromNode == fromNode && edge.fromConnector == fromConnector &&
+			edge.toNode == toNode && edge.toConnector == toConnector) {
+			return false;
+		}
+	}
+
 	return true;
 }
 

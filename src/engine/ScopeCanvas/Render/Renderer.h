@@ -22,7 +22,8 @@ public:
 		const GraphView &view,
 		const Viewport &viewport,
 		bool gridEnabled,
-		float gridCellSize);
+		float gridCellSize,
+		bool renderEdges = true);
 
 	Camera2D &camera() { return m_camera; }
 	int viewportWidth() const { return m_viewportWidth; }

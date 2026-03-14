@@ -141,6 +141,14 @@ void NodeDiagramWindow::handleShortcuts(bool focused) {
     if (ImGui::IsKeyPressed(ImGuiKey_4, false)) {
         m_basics->createNode("Output", m_view->cameraPosition + glm::vec2(280.0f, 0.0f));
     }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+        m_basics->alignSelectedConnectors();
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+        m_basics->toggleSelectedGroupsCollapsed();
+    }
 }
 
 void NodeDiagramWindow::ensureRenderTarget(int width, int height) {
@@ -216,6 +224,8 @@ void NodeDiagramWindow::Draw() {
     DiagramModel &graph = m_basics->engine().graph();
     CommandManager &commands = m_basics->engine().commands();
     GridSettings &gridSettings = m_basics->gridSettings();
+
+    m_basics->applyParentLayouts();
 
     ImGui::Begin(m_windowTitle.c_str());
 
@@ -359,7 +369,8 @@ void NodeDiagramWindow::Draw() {
     glViewport(0, 0, m_renderWidth, m_renderHeight);
     glDisable(GL_SCISSOR_TEST);
 
-    m_renderer->render(graph, *m_view, vp, gridSettings.enabled, gridSettings.cellSize);
+    const bool renderStraightEdges = !m_basics->viewSettings().curvedEdgeOverlay;
+    m_renderer->render(graph, *m_view, vp, gridSettings.enabled, gridSettings.cellSize, renderStraightEdges);
 
     glBindFramebuffer(GL_FRAMEBUFFER, oldFramebuffer);
     glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
@@ -405,6 +416,7 @@ void NodeDiagramWindow::Draw() {
             const ImVec2 maxPt(std::max(a.x, b.x), std::max(a.y, b.y));
             drawList->AddRectFilled(minPt, maxPt, styleColorForNode(node), 4.0f);
             drawList->AddRect(minPt, maxPt, IM_COL32(235, 235, 240, 180), 4.0f, 0, 1.0f);
+            drawList->AddRectFilled(minPt, ImVec2(maxPt.x, minPt.y + 22.0f), IM_COL32(30, 34, 44, 185), 4.0f);
 
             const bool bitIndexMode = contains(node.title, "Bit[");
             const char *label = node.title.c_str();
@@ -416,7 +428,7 @@ void NodeDiagramWindow::Draw() {
                     label = tmp.c_str();
                 }
             }
-            drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 6.0f), IM_COL32(245, 245, 245, 255), label);
+            drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 4.0f), IM_COL32(245, 245, 245, 255), label);
 
             if (m_basics->viewSettings().connectorStateColors) {
                 for (const Connector &connector : node.connectors) {
@@ -426,6 +438,62 @@ void NodeDiagramWindow::Draw() {
                 }
             }
         }
+    }
+
+
+    // parent-child function links (dash-dot style, straight)
+    for (const auto &entry : m_basics->parentLayouts()) {
+        const ParentLayout &layout = entry.second;
+        const Node *parent = graph.findNode(layout.parentNodeId);
+        if (parent == nullptr) {
+            continue;
+        }
+
+        const ImVec2 pTop = worldToCanvasScreen(m_renderer->camera(), parent->position + glm::vec2(parent->size.x * 0.5f, 0.0f), canvasPos, canvasSize);
+        const ImVec2 pBottom = worldToCanvasScreen(m_renderer->camera(), parent->position + glm::vec2(parent->size.x * 0.5f, parent->size.y), canvasPos, canvasSize);
+
+        for (size_t i = 0; i < layout.slots.size(); ++i) {
+            const uint32_t childId = layout.slots[i].childNodeId;
+            if (childId == 0) {
+                continue;
+            }
+
+            const Node *child = graph.findNode(childId);
+            if (child == nullptr) {
+                continue;
+            }
+
+            const ImVec2 cTop = worldToCanvasScreen(m_renderer->camera(), child->position + glm::vec2(child->size.x * 0.5f, 0.0f), canvasPos, canvasSize);
+            const ImVec2 cBottom = worldToCanvasScreen(m_renderer->camera(), child->position + glm::vec2(child->size.x * 0.5f, child->size.y), canvasPos, canvasSize);
+
+            const bool useTop = std::abs(cTop.y - pTop.y) < std::abs(cBottom.y - pBottom.y);
+            const ImVec2 a = useTop ? pTop : pBottom;
+            const ImVec2 b = useTop ? cTop : cBottom;
+
+            const int segments = 14;
+            for (int seg = 0; seg < segments; ++seg) {
+                if (seg % 3 == 2) {
+                    continue;
+                }
+                const float t0 = static_cast<float>(seg) / static_cast<float>(segments);
+                const float t1 = static_cast<float>(seg + 1) / static_cast<float>(segments);
+                const ImVec2 s0(a.x + (b.x - a.x) * t0, a.y + (b.y - a.y) * t0);
+                const ImVec2 s1(a.x + (b.x - a.x) * t1, a.y + (b.y - a.y) * t1);
+                drawList->AddLine(s0, s1, IM_COL32(140, 170, 220, 190), 1.5f);
+            }
+        }
+    }
+
+    // sticky notes demo style
+    for (const Node &node : graph.nodes()) {
+        if (!contains(node.title, "Const ")) {
+            continue;
+        }
+
+        const ImVec2 a = worldToCanvasScreen(m_renderer->camera(), node.position + glm::vec2(node.size.x + 8.0f, -6.0f), canvasPos, canvasSize);
+        const ImVec2 b(a.x + 140.0f, a.y + 34.0f);
+        drawList->AddRectFilled(a, b, IM_COL32(235, 205, 90, 210), 4.0f);
+        drawList->AddText(ImVec2(a.x + 6.0f, a.y + 8.0f), IM_COL32(40, 35, 20, 255), "fixed behavior");
     }
 
     ImGui::End();
