@@ -55,8 +55,12 @@ public:
 
     void createGroupFromSelection(bool collapsed);
     void toggleSelectedGroupsCollapsed();
+    void toggleBitContainersCollapsed();
 
     void alignSelectedConnectors();
+    void addInputConnectorToSelection();
+    void addOutputConnectorToSelection();
+    void removeLastConnectorFromSelection();
 
     void registerParentLayout(uint32_t parentNodeId, int slotCount);
     const std::unordered_map<uint32_t, ParentLayout> &parentLayouts() const { return m_parentLayouts; }

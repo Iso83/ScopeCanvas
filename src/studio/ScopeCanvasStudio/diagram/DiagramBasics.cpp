@@ -8,6 +8,57 @@
 #include <string>
 #include <unordered_set>
 
+namespace {
+uint32_t nextConnectorId(const DiagramModel &graph) {
+    uint32_t maxId = 0;
+    for (const Node &node : graph.nodes()) {
+        for (const Connector &connector : node.connectors) {
+            maxId = std::max(maxId, connector.id);
+        }
+    }
+
+    return maxId + 1;
+}
+
+Node *firstSelectedNode(DiagramModel &graph) {
+    for (Node &node : graph.nodes()) {
+        if (node.selected) {
+            return &node;
+        }
+    }
+
+    return nullptr;
+}
+
+void relayoutConnectors(Node &node) {
+    int inputIx = 0;
+    int outputIx = 0;
+    int inputCount = 0;
+    int outputCount = 0;
+    for (const Connector &c : node.connectors) {
+        if (c.direction == ConnectorDirection::Input) {
+            ++inputCount;
+        }
+        else {
+            ++outputCount;
+        }
+    }
+
+    for (Connector &connector : node.connectors) {
+        if (connector.direction == ConnectorDirection::Input) {
+            connector.side = ConnectorSide::Left;
+            connector.offset = static_cast<float>(inputIx + 1) / static_cast<float>(std::max(1, inputCount + 1));
+            ++inputIx;
+        }
+        else {
+            connector.side = ConnectorSide::Right;
+            connector.offset = static_cast<float>(outputIx + 1) / static_cast<float>(std::max(1, outputCount + 1));
+            ++outputIx;
+        }
+    }
+}
+}
+
 DiagramBasics::DiagramBasics() = default;
 
 void DiagramBasics::seedDefaultDemo() {
@@ -45,6 +96,10 @@ void DiagramBasics::seedSha256Demo() {
     }
 
     applyParentLayouts();
+
+    // first impression at macro level; bit-level visible on scope/collapse toggle
+    toggleBitContainersCollapsed();
+
     m_engine.commands().clear();
 }
 
@@ -148,38 +203,105 @@ void DiagramBasics::toggleSelectedGroupsCollapsed() {
     }
 }
 
+void DiagramBasics::toggleBitContainersCollapsed() {
+    std::unordered_set<uint32_t> bitGroupIds;
+
+    for (const Group &group : m_engine.graph().groups()) {
+        for (uint32_t nodeId : group.children) {
+            const Node *node = m_engine.graph().findNode(nodeId);
+            if (node == nullptr) {
+                continue;
+            }
+
+            if (node->title.find("Bits Container") != std::string::npos ||
+                node->title.find("Bit[") != std::string::npos) {
+                bitGroupIds.insert(group.id);
+                break;
+            }
+        }
+    }
+
+    for (uint32_t groupId : bitGroupIds) {
+        for (const Group &group : m_engine.graph().groups()) {
+            if (group.id != groupId) {
+                continue;
+            }
+            if (group.collapsed) {
+                m_engine.graph().expandGroup(group.id);
+            }
+            else {
+                m_engine.graph().collapseGroup(group.id);
+            }
+            break;
+        }
+    }
+}
+
 void DiagramBasics::alignSelectedConnectors() {
     for (Node &node : m_engine.graph().nodes()) {
         if (!node.selected || node.connectors.empty()) {
             continue;
         }
 
-        int inputIx = 0;
-        int outputIx = 0;
-        int inputCount = 0;
-        int outputCount = 0;
-        for (const Connector &c : node.connectors) {
-            if (c.direction == ConnectorDirection::Input) {
-                ++inputCount;
-            }
-            else {
-                ++outputCount;
-            }
-        }
-
-        for (Connector &connector : node.connectors) {
-            if (connector.direction == ConnectorDirection::Input) {
-                connector.side = ConnectorSide::Left;
-                connector.offset = static_cast<float>(inputIx + 1) / static_cast<float>(std::max(1, inputCount + 1));
-                ++inputIx;
-            }
-            else {
-                connector.side = ConnectorSide::Right;
-                connector.offset = static_cast<float>(outputIx + 1) / static_cast<float>(std::max(1, outputCount + 1));
-                ++outputIx;
-            }
-        }
+        relayoutConnectors(node);
+        m_engine.graph().recomputeRoutesForNode(node.id);
     }
+}
+
+void DiagramBasics::addInputConnectorToSelection() {
+    Node *node = firstSelectedNode(m_engine.graph());
+    if (node == nullptr) {
+        return;
+    }
+
+    Connector connector{};
+    connector.id = nextConnectorId(m_engine.graph());
+    connector.nodeId = node->id;
+    connector.side = ConnectorSide::Left;
+    connector.offset = 0.5f;
+    connector.direction = ConnectorDirection::Input;
+    connector.maxConnections = 1;
+    node->connectors.push_back(connector);
+    relayoutConnectors(*node);
+    m_engine.graph().recomputeRoutesForNode(node->id);
+    m_engine.graph().syncIdCounters();
+}
+
+void DiagramBasics::addOutputConnectorToSelection() {
+    Node *node = firstSelectedNode(m_engine.graph());
+    if (node == nullptr) {
+        return;
+    }
+
+    Connector connector{};
+    connector.id = nextConnectorId(m_engine.graph());
+    connector.nodeId = node->id;
+    connector.side = ConnectorSide::Right;
+    connector.offset = 0.5f;
+    connector.direction = ConnectorDirection::Output;
+    connector.maxConnections = 1;
+    node->connectors.push_back(connector);
+    relayoutConnectors(*node);
+    m_engine.graph().recomputeRoutesForNode(node->id);
+    m_engine.graph().syncIdCounters();
+}
+
+void DiagramBasics::removeLastConnectorFromSelection() {
+    Node *node = firstSelectedNode(m_engine.graph());
+    if (node == nullptr || node->connectors.empty()) {
+        return;
+    }
+
+    const uint32_t connectorId = node->connectors.back().id;
+    node->connectors.pop_back();
+
+    std::erase_if(m_engine.graph().edges(), [node, connectorId](const Edge &edge) {
+        return (edge.fromNode == node->id && edge.fromConnector == connectorId) ||
+            (edge.toNode == node->id && edge.toConnector == connectorId);
+    });
+
+    relayoutConnectors(*node);
+    m_engine.graph().recomputeRoutesForNode(node->id);
 }
 
 void DiagramBasics::registerParentLayout(uint32_t parentNodeId, int slotCount) {
@@ -236,13 +358,21 @@ void DiagramBasics::applyParentLayouts() {
                 continue;
             }
 
-            const float targetY = parent->position.y + layout.topPadding + static_cast<float>(i) * (layout.slotHeight + layout.slotGap);
-            child->position.x = parent->position.x + 40.0f;
-            child->position.y = targetY;
-            child->size.x = parent->size.x - 80.0f;
-            child->size.y = layout.slotHeight;
-            child->groupId = parent->groupId;
-            m_engine.graph().recomputeRoutesForNode(child->id);
+            const bool childOutsideParent =
+                child->position.x + child->size.x < parent->position.x ||
+                child->position.x > parent->position.x + parent->size.x ||
+                child->position.y + child->size.y < parent->position.y ||
+                child->position.y > parent->position.y + parent->size.y;
+
+            if (!childOutsideParent) {
+                const float targetY = parent->position.y + layout.topPadding + static_cast<float>(i) * (layout.slotHeight + layout.slotGap);
+                child->position.x = parent->position.x + 40.0f;
+                child->position.y = targetY;
+                child->size.x = parent->size.x - 80.0f;
+                child->size.y = layout.slotHeight;
+                child->groupId = parent->groupId;
+                m_engine.graph().recomputeRoutesForNode(child->id);
+            }
         }
     }
 }

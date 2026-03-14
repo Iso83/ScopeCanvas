@@ -71,6 +71,20 @@ ImVec2 worldToCanvasScreen(const Camera2D &camera, const glm::vec2 &world, const
     const float sy = canvasPos.y + ((1.0f - ndcY) * 0.5f) * canvasSize.y;
     return { sx, sy };
 }
+
+Node *hitTestNodeByWorld(DiagramModel &graph, const glm::vec2 &mouseWorld) {
+    for (auto it = graph.nodes().rbegin(); it != graph.nodes().rend(); ++it) {
+        Node &node = *it;
+        if (mouseWorld.x >= node.position.x &&
+            mouseWorld.x <= node.position.x + node.size.x &&
+            mouseWorld.y >= node.position.y &&
+            mouseWorld.y <= node.position.y + node.size.y) {
+            return &node;
+        }
+    }
+
+    return nullptr;
+}
 }
 
 NodeDiagramWindow::NodeDiagramWindow(
@@ -259,6 +273,29 @@ void NodeDiagramWindow::Draw() {
     const glm::vec2 mouseWorld = screenToWorld(static_cast<float>(m_input.mouseX), static_cast<float>(m_input.mouseY));
     const float zoom = m_renderer->camera().zoom();
 
+    Node *hoveredNode = hovered ? hitTestNodeByWorld(graph, mouseWorld) : nullptr;
+    if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        if (hoveredNode != nullptr) {
+            for (Node &node : graph.nodes()) {
+                node.selected = (node.id == hoveredNode->id);
+            }
+            ImGui::OpenPopup("NodeConnectorPopup");
+        }
+    }
+
+    if (ImGui::BeginPopup("NodeConnectorPopup")) {
+        if (ImGui::MenuItem("Add Input Connector")) {
+            m_basics->addInputConnectorToSelection();
+        }
+        if (ImGui::MenuItem("Add Output Connector")) {
+            m_basics->addOutputConnectorToSelection();
+        }
+        if (ImGui::MenuItem("Delete Last Connector")) {
+            m_basics->removeLastConnectorFromSelection();
+        }
+        ImGui::EndPopup();
+    }
+
     m_hoveredEdgeId = 0;
     m_hoveredConnectorId = 0;
 
@@ -343,6 +380,7 @@ void NodeDiagramWindow::Draw() {
     }
 
     m_connectController.onMouseMove(mouseWorld);
+    m_basics->applyParentLayouts();
     m_cameraController.update(m_renderer->camera(), m_input);
     m_view->cameraPosition = m_renderer->camera().position();
     m_view->zoom = m_renderer->camera().zoom();
@@ -460,6 +498,15 @@ void NodeDiagramWindow::Draw() {
 
             const Node *child = graph.findNode(childId);
             if (child == nullptr) {
+                continue;
+            }
+
+            const bool childInsideParent =
+                child->position.x >= parent->position.x &&
+                child->position.y >= parent->position.y &&
+                child->position.x + child->size.x <= parent->position.x + parent->size.x &&
+                child->position.y + child->size.y <= parent->position.y + parent->size.y;
+            if (childInsideParent) {
                 continue;
             }
 

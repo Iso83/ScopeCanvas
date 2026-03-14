@@ -103,6 +103,18 @@ int RunStudioApp() {
 				if (ImGui::MenuItem("Delete Selected", "Delete")) {
 					basics.deleteSelected();
 				}
+				if (ImGui::MenuItem("Rearrange Connectors", "R")) {
+					basics.alignSelectedConnectors();
+				}
+				if (ImGui::MenuItem("Add Input Connector")) {
+					basics.addInputConnectorToSelection();
+				}
+				if (ImGui::MenuItem("Add Output Connector")) {
+					basics.addOutputConnectorToSelection();
+				}
+				if (ImGui::MenuItem("Delete Last Connector")) {
+					basics.removeLastConnectorFromSelection();
+				}
 				ImGui::EndMenu();
 			}
 
@@ -129,8 +141,11 @@ int RunStudioApp() {
 				if (ImGui::MenuItem("Create Collapsed Group from Selection")) {
 					basics.createGroupFromSelection(true);
 				}
-				if (ImGui::MenuItem("Toggle Collapse on Selected Group(s)")) {
+				if (ImGui::MenuItem("Toggle Collapse on Selected Group(s)", "C")) {
 					basics.toggleSelectedGroupsCollapsed();
+				}
+				if (ImGui::MenuItem("Toggle Bit Container Scope")) {
+					basics.toggleBitContainersCollapsed();
 				}
 				ImGui::EndMenu();
 			}
