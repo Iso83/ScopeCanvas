@@ -85,6 +85,86 @@ Node *hitTestNodeByWorld(DiagramModel &graph, const glm::vec2 &mouseWorld) {
 
     return nullptr;
 }
+
+
+const ParentLayout *findParentLayoutForChild(const DiagramBasics &basics, uint32_t childNodeId) {
+    for (const auto &entry : basics.parentLayouts()) {
+        const ParentLayout &layout = entry.second;
+        for (const ParentLayoutSlot &slot : layout.slots) {
+            if (slot.childNodeId == childNodeId) {
+                return &layout;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+glm::vec2 effectiveConnectorWorld(const DiagramBasics &basics, const DiagramModel &graph, const Node &node, const Connector &connector) {
+    const ParentLayout *layout = findParentLayoutForChild(basics, node.id);
+    if (layout == nullptr) {
+        return connectorWorldPosition(node, connector);
+    }
+
+    const Node *parent = graph.findNode(layout->parentNodeId);
+    if (parent == nullptr) {
+        return connectorWorldPosition(node, connector);
+    }
+
+    const bool childInsideParent =
+        node.position.x >= parent->position.x &&
+        node.position.y >= parent->position.y &&
+        node.position.x + node.size.x <= parent->position.x + parent->size.x &&
+        node.position.y + node.size.y <= parent->position.y + parent->size.y;
+
+    if (!childInsideParent) {
+        return connectorWorldPosition(node, connector);
+    }
+
+    float railOffset = 0.5f;
+    if (connector.direction == ConnectorDirection::Input) {
+        int inputIndex = 0;
+        int inputCount = 0;
+        for (const Connector &c : node.connectors) {
+            if (c.direction == ConnectorDirection::Input) {
+                ++inputCount;
+            }
+        }
+        for (const Connector &c : node.connectors) {
+            if (c.direction != ConnectorDirection::Input) {
+                continue;
+            }
+            if (c.id == connector.id) {
+                break;
+            }
+            ++inputIndex;
+        }
+        railOffset = static_cast<float>(inputIndex + 1) / static_cast<float>(std::max(1, inputCount + 1));
+        Connector proxy{ 0, parent->id, ConnectorSide::Left, railOffset, ConnectorDirection::Input, 8 };
+        return connectorWorldPosition(*parent, proxy);
+    }
+
+    int outputIndex = 0;
+    int outputCount = 0;
+    for (const Connector &c : node.connectors) {
+        if (c.direction == ConnectorDirection::Output) {
+            ++outputCount;
+        }
+    }
+    for (const Connector &c : node.connectors) {
+        if (c.direction != ConnectorDirection::Output) {
+            continue;
+        }
+        if (c.id == connector.id) {
+            break;
+        }
+        ++outputIndex;
+    }
+    railOffset = static_cast<float>(outputIndex + 1) / static_cast<float>(std::max(1, outputCount + 1));
+    Connector proxy{ 0, parent->id, ConnectorSide::Right, railOffset, ConnectorDirection::Output, 8 };
+    return connectorWorldPosition(*parent, proxy);
+}
+
 }
 
 NodeDiagramWindow::NodeDiagramWindow(
@@ -162,6 +242,14 @@ void NodeDiagramWindow::handleShortcuts(bool focused) {
 
     if (ImGui::IsKeyPressed(ImGuiKey_C, false)) {
         m_basics->toggleSelectedGroupsCollapsed();
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_Equal, false)) {
+        m_basics->addOutputConnectorToSelection();
+    }
+
+    if (ImGui::IsKeyPressed(ImGuiKey_Minus, false)) {
+        m_basics->removeLastConnectorFromSelection();
     }
 }
 
@@ -407,8 +495,7 @@ void NodeDiagramWindow::Draw() {
     glViewport(0, 0, m_renderWidth, m_renderHeight);
     glDisable(GL_SCISSOR_TEST);
 
-    const bool renderStraightEdges = !m_basics->viewSettings().curvedEdgeOverlay;
-    m_renderer->render(graph, *m_view, vp, gridSettings.enabled, gridSettings.cellSize, renderStraightEdges);
+    m_renderer->render(graph, *m_view, vp, gridSettings.enabled, gridSettings.cellSize, false, false);
 
     glBindFramebuffer(GL_FRAMEBUFFER, oldFramebuffer);
     glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
@@ -422,29 +509,35 @@ void NodeDiagramWindow::Draw() {
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
-    if (m_basics->viewSettings().curvedEdgeOverlay) {
-        for (const Edge &edge : graph.edges()) {
-            const Node *fromNode = graph.findNode(edge.fromNode);
-            const Node *toNode = graph.findNode(edge.toNode);
-            const Connector *fromConnector = graph.findConnector(edge.fromNode, edge.fromConnector);
-            const Connector *toConnector = graph.findConnector(edge.toNode, edge.toConnector);
-            if (fromNode == nullptr || toNode == nullptr || fromConnector == nullptr || toConnector == nullptr) {
-                continue;
-            }
+    for (const Edge &edge : graph.edges()) {
+        const Node *fromNode = graph.findNode(edge.fromNode);
+        const Node *toNode = graph.findNode(edge.toNode);
+        const Connector *fromConnector = graph.findConnector(edge.fromNode, edge.fromConnector);
+        const Connector *toConnector = graph.findConnector(edge.toNode, edge.toConnector);
+        if (fromNode == nullptr || toNode == nullptr || fromConnector == nullptr || toConnector == nullptr) {
+            continue;
+        }
 
-            const glm::vec2 p0w = connectorWorldPosition(*fromNode, *fromConnector);
-            const glm::vec2 p3w = connectorWorldPosition(*toNode, *toConnector);
-            const ImVec2 p0 = worldToCanvasScreen(m_renderer->camera(), p0w, canvasPos, canvasSize);
-            const ImVec2 p3 = worldToCanvasScreen(m_renderer->camera(), p3w, canvasPos, canvasSize);
+        const glm::vec2 p0w = effectiveConnectorWorld(*m_basics, graph, *fromNode, *fromConnector);
+        const glm::vec2 p3w = effectiveConnectorWorld(*m_basics, graph, *toNode, *toConnector);
+        const ImVec2 p0 = worldToCanvasScreen(m_renderer->camera(), p0w, canvasPos, canvasSize);
+        const ImVec2 p3 = worldToCanvasScreen(m_renderer->camera(), p3w, canvasPos, canvasSize);
 
+        const ImU32 edgeColor = edge.selected ? IM_COL32(255, 210, 120, 220) : IM_COL32(220, 220, 235, 200);
+        if (m_basics->viewSettings().curvedEdgeOverlay) {
             const float dx = std::abs(p3.x - p0.x);
             const float c = std::max(80.0f, dx * 0.45f);
             const ImVec2 p1(p0.x + c, p0.y);
             const ImVec2 p2(p3.x - c, p3.y);
-            drawList->AddBezierCubic(p0, p1, p2, p3, IM_COL32(215, 215, 230, 190), 2.0f, 20);
+            drawList->AddBezierCubic(p0, p1, p2, p3, edgeColor, 2.0f, 20);
+        }
+        else {
+            const float midX = (p0.x + p3.x) * 0.5f;
+            drawList->AddLine(p0, ImVec2(midX, p0.y), edgeColor, 2.0f);
+            drawList->AddLine(ImVec2(midX, p0.y), ImVec2(midX, p3.y), edgeColor, 2.0f);
+            drawList->AddLine(ImVec2(midX, p3.y), p3, edgeColor, 2.0f);
         }
     }
-
     if (m_basics->viewSettings().shaNodeStyling) {
         for (const Node &node : graph.nodes()) {
             const ImVec2 a = worldToCanvasScreen(m_renderer->camera(), node.position, canvasPos, canvasSize);
@@ -468,9 +561,53 @@ void NodeDiagramWindow::Draw() {
             }
             drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 4.0f), IM_COL32(245, 245, 245, 255), label);
 
+            const bool containerNode = contains(node.title, "Container") || contains(node.title, "Loop#") || contains(node.title, "op#");
+            if (containerNode && hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                const ImVec2 m = ImGui::GetMousePos();
+                const ImVec2 arrowCenter(maxPt.x - 12.0f, minPt.y + 11.0f);
+                if (std::abs(m.x - arrowCenter.x) < 10.0f && std::abs(m.y - arrowCenter.y) < 10.0f) {
+                    for (const Group &group : graph.groups()) {
+                        for (uint32_t child : group.children) {
+                            if (child == node.id) {
+                                if (group.collapsed) {
+                                    m_basics->engine().graph().expandGroup(group.id);
+                                }
+                                else {
+                                    m_basics->engine().graph().collapseGroup(group.id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (containerNode) {
+                const bool collapsed = [&]() {
+                    for (const Group &group : graph.groups()) {
+                        for (uint32_t child : group.children) {
+                            if (child == node.id) {
+                                return group.collapsed;
+                            }
+                        }
+                    }
+                    return false;
+                }();
+                const ImVec2 arrowCenter(maxPt.x - 12.0f, minPt.y + 11.0f);
+                if (collapsed) {
+                    drawList->AddTriangleFilled(ImVec2(arrowCenter.x - 3.0f, arrowCenter.y - 4.0f),
+                        ImVec2(arrowCenter.x - 3.0f, arrowCenter.y + 4.0f),
+                        ImVec2(arrowCenter.x + 3.0f, arrowCenter.y), IM_COL32(245, 245, 245, 220));
+                }
+                else {
+                    drawList->AddTriangleFilled(ImVec2(arrowCenter.x - 4.0f, arrowCenter.y - 3.0f),
+                        ImVec2(arrowCenter.x + 4.0f, arrowCenter.y - 3.0f),
+                        ImVec2(arrowCenter.x, arrowCenter.y + 3.0f), IM_COL32(245, 245, 245, 220));
+                }
+            }
+
             if (m_basics->viewSettings().connectorStateColors) {
                 for (const Connector &connector : node.connectors) {
-                    const glm::vec2 world = connectorWorldPosition(node, connector);
+                    const glm::vec2 world = effectiveConnectorWorld(*m_basics, graph, node, connector);
                     const ImVec2 s = worldToCanvasScreen(m_renderer->camera(), world, canvasPos, canvasSize);
                     drawList->AddCircleFilled(s, 4.0f, connectorStateColor(node, connector));
                 }

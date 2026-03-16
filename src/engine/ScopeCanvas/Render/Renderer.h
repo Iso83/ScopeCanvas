@@ -23,7 +23,8 @@ public:
 		const Viewport &viewport,
 		bool gridEnabled,
 		float gridCellSize,
-		bool renderEdges = true);
+		bool renderEdges = true,
+		bool renderConnectors = true);
 
 	Camera2D &camera() { return m_camera; }
 	int viewportWidth() const { return m_viewportWidth; }

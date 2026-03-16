@@ -54,6 +54,9 @@ public:
     size_t selectedNodeCount() const;
 
     void createGroupFromSelection(bool collapsed);
+
+    void createContainerFromSelection();
+    void resizeSelectedNodes(const glm::vec2 &deltaSize);
     void toggleSelectedGroupsCollapsed();
     void toggleBitContainersCollapsed();
 

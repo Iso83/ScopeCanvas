@@ -2,6 +2,7 @@
 
 #include "Interaction/Commands/GraphCommands.h"
 #include "demo/Sha256Demo.h"
+#include "Engine/NodeTypes.h"
 
 #include <algorithm>
 #include <memory>
@@ -136,6 +137,35 @@ void DiagramBasics::deleteSelected() {
     }
 
     for (uint32_t id : ids) {
+        Node *selected = m_engine.graph().findNode(id);
+        if (selected == nullptr) {
+            continue;
+        }
+
+        const bool isContainer = selected->title.find("Container") != std::string::npos;
+        if (isContainer && selected->groupId != 0) {
+            for (Group &group : m_engine.graph().groups()) {
+                if (group.id != selected->groupId) {
+                    continue;
+                }
+
+                for (uint32_t childId : group.children) {
+                    if (childId == selected->id) {
+                        continue;
+                    }
+
+                    Node *child = m_engine.graph().findNode(childId);
+                    if (child != nullptr) {
+                        child->position += glm::vec2(80.0f, 20.0f);
+                        child->groupId = 0;
+                    }
+                }
+
+                group.children.clear();
+                break;
+            }
+        }
+
         auto deleteCmd = std::make_unique<DeleteNodeCommand>(m_engine.graph(), id);
         m_engine.commands().execute(std::move(deleteCmd));
     }
@@ -302,6 +332,70 @@ void DiagramBasics::removeLastConnectorFromSelection() {
 
     relayoutConnectors(*node);
     m_engine.graph().recomputeRoutesForNode(node->id);
+}
+
+
+
+void DiagramBasics::createContainerFromSelection() {
+    std::vector<Node *> selected;
+    for (Node &node : m_engine.graph().nodes()) {
+        if (node.selected) {
+            selected.push_back(&node);
+        }
+    }
+
+    if (selected.empty()) {
+        return;
+    }
+
+    float minX = selected.front()->position.x;
+    float minY = selected.front()->position.y;
+    float maxX = selected.front()->position.x + selected.front()->size.x;
+    float maxY = selected.front()->position.y + selected.front()->size.y;
+
+    for (const Node *node : selected) {
+        minX = std::min(minX, node->position.x);
+        minY = std::min(minY, node->position.y);
+        maxX = std::max(maxX, node->position.x + node->size.x);
+        maxY = std::max(maxY, node->position.y + node->size.y);
+    }
+
+    Node *container = m_engine.graph().createNodeWithConnectors(
+        { minX - 40.0f, minY - 40.0f },
+        { (maxX - minX) + 80.0f, (maxY - minY) + 80.0f },
+        createConnectorTemplatesForType(2, 2),
+        "Container",
+        "Work Container");
+
+    if (container == nullptr) {
+        return;
+    }
+
+    Group *group = m_engine.graph().createGroup();
+    if (group == nullptr) {
+        return;
+    }
+
+    m_engine.graph().addNodeToGroup(container->id, group->id);
+    for (Node *node : selected) {
+        if (node != nullptr) {
+            m_engine.graph().addNodeToGroup(node->id, group->id);
+        }
+    }
+
+    m_engine.graph().collapseGroup(group->id);
+}
+
+void DiagramBasics::resizeSelectedNodes(const glm::vec2 &deltaSize) {
+    for (Node &node : m_engine.graph().nodes()) {
+        if (!node.selected) {
+            continue;
+        }
+
+        node.size.x = std::max(80.0f, node.size.x + deltaSize.x);
+        node.size.y = std::max(60.0f, node.size.y + deltaSize.y);
+        m_engine.graph().recomputeRoutesForNode(node.id);
+    }
 }
 
 void DiagramBasics::registerParentLayout(uint32_t parentNodeId, int slotCount) {
