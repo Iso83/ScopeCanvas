@@ -1,76 +1,53 @@
 #pragma once
 
-#include "Engine/CanvasEngine.h"
-#include "GridSettings.h"
+#include "ScopeCanvasEngineCore/Core/DiagramModel.h"
+#include "ScopeCanvasRouting/Routing/EdgeRouter.h"
 
-#include <glm/vec2.hpp>
-
-#include <cstddef>
-#include <string>
-#include <cstdint>
-#include <unordered_map>
 #include <vector>
 
-struct StudioViewSettings {
-    bool curvedEdgeOverlay = false;
-    bool shaNodeStyling = true;
-    bool connectorStateColors = true;
+namespace ScopeCanvas::Studio
+{
+struct GridSettings
+{
+    bool enabled{true};
+    bool snapEnabled{true};
+    float cellSize{32.0F};
 };
 
-struct ParentLayoutSlot {
-    uint32_t childNodeId = 0;
+struct ViewState
+{
+    float cameraX{0.0F};
+    float cameraY{0.0F};
+    float zoom{1.0F};
 };
 
-struct ParentLayout {
-    uint32_t parentNodeId = 0;
-    int slotCount = 0;
-    float topPadding = 40.0f;
-    float slotHeight = 52.0f;
-    float slotGap = 6.0f;
-    std::vector<ParentLayoutSlot> slots;
-};
-
-class DiagramBasics {
+class DiagramBasics
+{
 public:
     DiagramBasics();
 
-    CanvasEngine &engine() { return m_engine; }
-    const CanvasEngine &engine() const { return m_engine; }
+    Engine::Core::DiagramModel& model();
+    const Engine::Core::DiagramModel& model() const;
 
-    GridSettings &gridSettings() { return m_gridSettings; }
-    const GridSettings &gridSettings() const { return m_gridSettings; }
+    GridSettings& gridSettings();
+    const GridSettings& gridSettings() const;
 
-    StudioViewSettings &viewSettings() { return m_viewSettings; }
-    const StudioViewSettings &viewSettings() const { return m_viewSettings; }
+    std::vector<Engine::Core::CanvasNodeId>& nodeIds();
+    const std::vector<Engine::Core::CanvasNodeId>& nodeIds() const;
 
-    void seedDefaultDemo();
+    std::vector<Engine::Core::CanvasEdgeId>& edgeIds();
+    const std::vector<Engine::Core::CanvasEdgeId>& edgeIds() const;
 
-    void createNode(const std::string &typeId, const glm::vec2 &position);
-    void duplicateSelected(const glm::vec2 &offset = { 60.0f, 40.0f });
-    void deleteSelected();
+    Engine::Core::CanvasNodeId createNode(Engine::Core::NodeTypeId typeId, Engine::Core::Vec2 position);
+    Engine::Core::CanvasEdgeId connect(Engine::Core::CanvasConnectorId a, Engine::Core::CanvasConnectorId b);
+    void deleteNode(Engine::Core::CanvasNodeId nodeId);
 
-    std::vector<uint32_t> selectedNodeIds() const;
-    size_t selectedNodeCount() const;
-
-    void createGroupFromSelection(bool collapsed);
-
-    void createContainerFromSelection();
-    void resizeSelectedNodes(const glm::vec2 &deltaSize);
-    void toggleSelectedGroupsCollapsed();
-    void toggleBitContainersCollapsed();
-
-    void alignSelectedConnectors();
-    void addInputConnectorToSelection();
-    void addOutputConnectorToSelection();
-    void removeLastConnectorFromSelection();
-
-    void registerParentLayout(uint32_t parentNodeId, int slotCount);
-    const std::unordered_map<uint32_t, ParentLayout> &parentLayouts() const { return m_parentLayouts; }
-    void applyParentLayouts();
+    std::vector<Engine::Routing::EdgeRoute> routeAllEdges() const;
 
 private:
-    CanvasEngine m_engine;
-    GridSettings m_gridSettings;
-    StudioViewSettings m_viewSettings;
-    std::unordered_map<uint32_t, ParentLayout> m_parentLayouts;
+    Engine::Core::DiagramModel m_model{};
+    GridSettings m_grid{};
+    std::vector<Engine::Core::CanvasNodeId> m_nodeIds{};
+    std::vector<Engine::Core::CanvasEdgeId> m_edgeIds{};
 };
+} // namespace ScopeCanvas::Studio
