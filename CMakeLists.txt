@@ -107,4 +107,5 @@ set_property(TARGET imgui PROPERTY FOLDER "third_party/imgui")
 
 
 add_subdirectory(src/engine)
+add_subdirectory(src/ScopeCanvasRenderGL)
 add_subdirectory(src/studio)
