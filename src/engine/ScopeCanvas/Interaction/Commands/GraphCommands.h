@@ -18,7 +18,7 @@ public:
 	void execute() override;
 	void undo() override;
 
-	uint32_t nodeId() const { return m_node.id; }
+	CanvasNodeId nodeId() const { return m_node.id; }
 
 private:
 	DiagramModel &m_model;
@@ -28,14 +28,14 @@ private:
 
 class DeleteNodeCommand : public Command {
 public:
-	DeleteNodeCommand(DiagramModel &model, uint32_t nodeId);
+	DeleteNodeCommand(DiagramModel &model, CanvasNodeId nodeId);
 
 	void execute() override;
 	void undo() override;
 
 private:
 	DiagramModel &m_model;
-	uint32_t m_nodeId = 0;
+	CanvasNodeId m_nodeId{};
 	Node m_deletedNode{};
 	std::vector<Edge> m_deletedEdges;
 	bool m_valid = false;
@@ -44,7 +44,7 @@ private:
 class MoveNodesCommand : public Command {
 public:
 	struct MoveItem {
-		uint32_t nodeId = 0;
+		CanvasNodeId nodeId{};
 		glm::vec2 startPosition = glm::vec2(0.0f);
 		glm::vec2 endPosition = glm::vec2(0.0f);
 	};
@@ -68,7 +68,7 @@ public:
 	void execute() override;
 	void undo() override;
 
-	uint32_t edgeId() const { return m_edge.id; }
+	CanvasEdgeId edgeId() const { return m_edge.id; }
 
 private:
 	DiagramModel &m_model;
@@ -78,7 +78,7 @@ private:
 
 class DeleteEdgeCommand : public Command {
 public:
-	DeleteEdgeCommand(DiagramModel &model, uint32_t edgeId);
+	DeleteEdgeCommand(DiagramModel &model, CanvasEdgeId edgeId);
 
 	void execute() override;
 	void undo() override;

@@ -34,10 +34,25 @@ const NodeType *NodeTypeRegistry::getType(const std::string &typeId) const {
 }
 
 void NodeTypeRegistry::registerBuiltInTypes() {
-	registerType(NodeType{ "Number", "Number", {}, makeTemplates(ConnectorSide::Right, ConnectorDirection::Output, 1) });
-	registerType(NodeType{ "Add", "Add", makeTemplates(ConnectorSide::Left, ConnectorDirection::Input, 2), makeTemplates(ConnectorSide::Right, ConnectorDirection::Output, 1) });
-	registerType(NodeType{ "Multiply", "Multiply", makeTemplates(ConnectorSide::Left, ConnectorDirection::Input, 2), makeTemplates(ConnectorSide::Right, ConnectorDirection::Output, 1) });
-	registerType(NodeType{ "Output", "Output", makeTemplates(ConnectorSide::Left, ConnectorDirection::Input, 1), {} });
+	NodeType number{ "Number", "Number" };
+	number.inputs = {};
+	number.outputs = makeTemplates(ConnectorSide::Right, ConnectorDirection::Output, 1);
+	registerType(number);
+
+	NodeType add{ "Add", "Add" };
+	add.inputs = makeTemplates(ConnectorSide::Left, ConnectorDirection::Input, 2);
+	add.outputs = makeTemplates(ConnectorSide::Right, ConnectorDirection::Output, 1);
+	registerType(add);
+
+	NodeType multiply{ "Multiply", "Multiply" };
+	multiply.inputs = makeTemplates(ConnectorSide::Left, ConnectorDirection::Input, 2);
+	multiply.outputs = makeTemplates(ConnectorSide::Right, ConnectorDirection::Output, 1);
+	registerType(multiply);
+
+	NodeType output{ "Output", "Output" };
+	output.inputs = makeTemplates(ConnectorSide::Left, ConnectorDirection::Input, 1);
+	output.outputs = {};
+	registerType(output);
 }
 
 std::vector<ConnectorTemplate> createConnectorTemplatesForType(size_t inputCount, size_t outputCount) {

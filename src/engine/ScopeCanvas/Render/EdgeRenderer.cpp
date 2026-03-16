@@ -57,7 +57,7 @@ void EdgeRenderer::renderEdges(const DiagramModel &model,
 		if (edge.selected) {
 			color = glm::vec3(1.0f, 0.8f, 0.3f);
 		}
-		if (edge.id == hoveredEdgeId) {
+		if (edge.id.value == hoveredEdgeId) {
 			color = glm::vec3(1.0f, 1.0f, 1.0f);
 		}
 
@@ -75,7 +75,7 @@ void EdgeRenderer::renderConnectors(const std::vector<Node> &nodes,
 			m_scratchPoints.clear();
 			m_scratchPoints.push_back(connectorWorldPosition(node, connector));
 
-			const glm::vec3 color = connector.id == hoveredConnectorId
+			const glm::vec3 color = connector.id.value == hoveredConnectorId
 				? glm::vec3(1.0f, 1.0f, 1.0f)
 				: glm::vec3(0.9f, 0.9f, 0.95f);
 

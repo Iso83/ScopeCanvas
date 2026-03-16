@@ -43,7 +43,7 @@ void Renderer::render(const GraphDocument &model,
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	glm::vec2 cameraPosition = view.cameraPosition;
-	if (view.focusNode != 0) {
+	if (view.focusNode) {
 		const Node *focusNode = model.findNode(view.focusNode);
 		if (focusNode != nullptr) {
 			cameraPosition = focusNode->position + (focusNode->size * 0.5f);

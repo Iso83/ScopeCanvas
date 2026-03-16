@@ -35,7 +35,7 @@ void CreateNodeCommand::undo() {
 	(void)m_model.removeNode(m_node.id);
 }
 
-DeleteNodeCommand::DeleteNodeCommand(DiagramModel &model, uint32_t nodeId)
+DeleteNodeCommand::DeleteNodeCommand(DiagramModel &model, CanvasNodeId nodeId)
 	: m_model(model), m_nodeId(nodeId) {
 }
 
@@ -115,7 +115,7 @@ void CreateEdgeCommand::undo() {
 	(void)m_model.removeEdge(m_edge.id);
 }
 
-DeleteEdgeCommand::DeleteEdgeCommand(DiagramModel &model, uint32_t edgeId) : m_model(model) {
+DeleteEdgeCommand::DeleteEdgeCommand(DiagramModel &model, CanvasEdgeId edgeId) : m_model(model) {
 	const Edge *edge = m_model.findEdge(edgeId);
 	if (edge != nullptr) {
 		m_deletedEdge = *edge;

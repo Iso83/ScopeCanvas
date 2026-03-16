@@ -9,6 +9,13 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(FetchContent)
 
+option(SCOPECANVAS_BUILD_STUDIO "Build ScopeCanvasStudio (GLFW/ImGui app)" ON)
+option(SCOPECANVAS_BUILD_ENGINE_TESTS "Build engine core tests" ON)
+
+if(SCOPECANVAS_BUILD_ENGINE_TESTS)
+    enable_testing()
+endif()
+
 # ---------- GLFW configuration ----------
 
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -18,31 +25,33 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 # ---------- Download dependencies ----------
 
-FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.3.9
-)
+if(SCOPECANVAS_BUILD_STUDIO)
+    FetchContent_Declare(
+        glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.3.9
+    )
 
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.1
-)
+    FetchContent_Declare(
+        glm
+        GIT_REPOSITORY https://github.com/g-truc/glm.git
+        GIT_TAG 1.0.1
+    )
 
-FetchContent_Declare(
-    nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-)
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.3
+    )
 
-FetchContent_Declare(
-    imgui
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG docking
-)
+    FetchContent_Declare(
+        imgui
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        GIT_TAG docking
+    )
 
-FetchContent_MakeAvailable(glfw glm nlohmann_json imgui)
+    FetchContent_MakeAvailable(glfw glm nlohmann_json imgui)
+endif()
 
 # ---------- Organize third party targets ----------
 
@@ -64,18 +73,21 @@ endif()
 
 # ---------- GLAD (local loader) ----------
 
-add_library(glad STATIC
-    third_party/glad/src/glad.c
-)
+if(SCOPECANVAS_BUILD_STUDIO)
+    add_library(glad STATIC
+        third_party/glad/src/glad.c
+    )
 
-target_include_directories(glad PUBLIC
-    third_party/glad/include
-)
+    target_include_directories(glad PUBLIC
+        third_party/glad/include
+    )
 
-set_property(TARGET glad PROPERTY FOLDER "third_party/glad")
+    set_property(TARGET glad PROPERTY FOLDER "third_party/glad")
+endif()
 
 # ---------- IMGUI ----------
 
+if(SCOPECANVAS_BUILD_STUDIO)
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -98,9 +110,12 @@ target_link_libraries(imgui
 )
 
 set_property(TARGET imgui PROPERTY FOLDER "third_party/imgui")
+endif()
 
 
 
 
 add_subdirectory(src/engine)
-add_subdirectory(src/studio)
+if(SCOPECANVAS_BUILD_STUDIO)
+    add_subdirectory(src/studio)
+endif()

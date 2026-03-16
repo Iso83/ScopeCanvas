@@ -8,17 +8,24 @@ int main() {
 
     Node *container = model.createNodeWithConnectors({0,0}, {300,200}, createConnectorTemplatesForType(1,1), "Container", "Container");
     assert(container != nullptr);
+    const CanvasNodeId containerId = container->id;
     container->allowChildren = true;
 
     Node *child = model.createNode({20,20}, {100,60});
     assert(child != nullptr);
-    assert(model.addChildNode(container->id, child->id));
-    assert(child->parentId == container->id);
-    assert(model.isNodeHiddenByCollapsedAncestor(child->id) == false);
+    const CanvasNodeId childId = child->id;
+    assert(model.addChildNode(containerId, childId));
+    child = model.findNode(childId);
+    assert(child != nullptr);
+    assert(child->parentId == containerId);
+    assert(model.isNodeHiddenByCollapsedAncestor(childId) == false);
 
-    model.setNodeCollapsed(container->id, true);
-    assert(model.isNodeHiddenByCollapsedAncestor(child->id) == true);
-    model.setNodeCollapsed(container->id, false);
+    model.setNodeCollapsed(containerId, true);
+    assert(model.isNodeHiddenByCollapsedAncestor(childId) == true);
+    model.setNodeCollapsed(containerId, false);
+
+    container = model.findNode(containerId);
+    assert(container != nullptr);
 
     Connector *containerOut = nullptr;
     Connector *childIn = nullptr;
@@ -30,8 +37,8 @@ int main() {
     }
     assert(containerOut != nullptr && childIn != nullptr);
 
-    assert(model.createEdge(container->id, containerOut->id, child->id, childIn->id));
-    assert(!model.createEdge(container->id, containerOut->id, child->id, childIn->id)); // duplicate
+    assert(model.createEdge(containerId, containerOut->id, childId, childIn->id));
+    assert(!model.createEdge(containerId, containerOut->id, childId, childIn->id)); // duplicate
 
     Node *n2 = model.createNode({260,30}, {120,80});
     assert(n2 != nullptr);
@@ -44,11 +51,11 @@ int main() {
     assert(n2in != nullptr && n2out != nullptr);
 
     std::string reason;
-    assert(!model.isValidConnection(n2->id, n2out->id, child->id, childIn->id, &reason));
-    assert(!model.createEdge(n2->id, n2out->id, child->id, childIn->id)); // child input maxConnections=1
+    assert(!model.isValidConnection(n2->id, n2out->id, childId, childIn->id, &reason));
+    assert(!model.createEdge(n2->id, n2out->id, childId, childIn->id)); // child input maxConnections=1
 
     GraphView v1{CanvasViewId{1}, {0,0}, 1.0f, CanvasNodeId{}};
-    GraphView v2{CanvasViewId{2}, {20,10}, 2.0f, container->id};
+    GraphView v2{CanvasViewId{2}, {20,10}, 2.0f, containerId};
     assert(v1.id != v2.id);
     assert(v1.zoom != v2.zoom);
 

@@ -26,7 +26,7 @@ void LayoutEngine::applyLayout(DiagramModel &graph) {
 		}
 	}
 
-	std::queue<uint32_t> traversalQueue;
+	std::queue<CanvasNodeId> traversalQueue;
 	for (const Node &node : graph.nodes()) {
 		auto incomingIt = incomingCounts.find(node.id);
 		if (incomingIt != incomingCounts.end() && incomingIt->second == 0) {
@@ -36,7 +36,7 @@ void LayoutEngine::applyLayout(DiagramModel &graph) {
 	}
 
 	while (!traversalQueue.empty()) {
-		const uint32_t nodeId = traversalQueue.front();
+		const CanvasNodeId nodeId = traversalQueue.front();
 		traversalQueue.pop();
 
 		const int currentLevel = nodeLevels[nodeId];

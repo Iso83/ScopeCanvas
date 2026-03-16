@@ -52,7 +52,9 @@ Planned:
 ## Project Structure
 
 ```
-src/engine/     ScopeCanvasEngine reusable canvas/node engine
+src/engine/core ScopeCanvasEngineCore (model/rules/persistence)
+src/engine/render ScopeCanvasEngineRender (GL rendering/interaction)
+src/engine/tests CTest-based engine tests
 src/studio/     ScopeCanvasStudio demo host app
 include/        public headers
 assets/         shaders and runtime resources
@@ -72,7 +74,7 @@ Scope split:
 Core model checks are available through CTest:
 
 ```
-cmake -S . -B build
+cmake -S . -B build -DSCOPECANVAS_BUILD_STUDIO=OFF
 cmake --build build --target ScopeCanvasEngineTests
 ctest --test-dir build --output-on-failure
 ```
