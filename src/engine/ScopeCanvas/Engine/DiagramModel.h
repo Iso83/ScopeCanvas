@@ -9,9 +9,11 @@
 #include <vector>
 
 #include "Engine/ConnectorDirection.h"
+#include "Engine/CanvasIds.h"
 
 struct NodeType;
 class NodeTypeRegistry;
+class DiagramModel;
 
 enum class ConnectorSide {
 	Top,
@@ -21,25 +23,14 @@ enum class ConnectorSide {
 };
 
 struct Connector {
-	uint32_t id;
-	uint32_t nodeId;
+	CanvasConnectorId id;
+	CanvasNodeId nodeId;
 	ConnectorSide side;
 	float offset;
 	ConnectorDirection direction = ConnectorDirection::Input;
 	int maxConnections = 1;
-};
-
-struct ConnectorDefinition {
-	std::string name;
-	ConnectorDirection direction;
-	int maxConnections = 1;
-};
-
-struct NodeDefinition {
-	std::string type;
-	std::string title;
-	std::vector<ConnectorDefinition> inputs;
-	std::vector<ConnectorDefinition> outputs;
+	int semanticSlot = 0;
+	std::string dataKind;
 };
 
 struct ConnectorTemplate {
@@ -54,41 +45,48 @@ struct EdgeRoute {
 };
 
 struct Edge {
-	uint32_t id;
-	uint32_t fromNode;
-	uint32_t fromConnector;
-	uint32_t toNode;
-	uint32_t toConnector;
+	CanvasEdgeId id;
+	CanvasNodeId fromNode;
+	CanvasConnectorId fromConnector;
+	CanvasNodeId toNode;
+	CanvasConnectorId toConnector;
 	bool selected = false;
 	EdgeRoute route;
 };
 
 struct Node {
-	uint32_t id;
+	CanvasNodeId id;
 	std::string nodeTypeId;
 	std::string title;
 	glm::vec2 position;
 	glm::vec2 size;
-	bool selected;
-	uint32_t groupId = 0;
+	bool selected = false;
+	bool collapsed = false;
+	bool allowChildren = false;
+	CanvasNodeId parentId{};
+	std::vector<CanvasNodeId> children;
+	uint64_t externalRef = 0;
 	std::vector<Connector> connectors;
 };
 
-struct Group {
-	uint32_t id;
-	bool collapsed = false;
-	std::vector<uint32_t> children;
-};
-
 struct GraphView {
-	uint32_t id;
+	CanvasViewId id;
 	glm::vec2 cameraPosition;
 	float zoom = 1.0f;
-	uint32_t focusNode = 0;
+	CanvasNodeId focusNode{};
 };
 
 glm::vec2 connectorWorldPosition(const Node &node, const Connector &connector);
-std::vector<Connector> createDefaultConnectors(uint32_t nodeId, uint32_t &nextConnectorId);
+std::vector<Connector> createDefaultConnectors(CanvasNodeId nodeId, uint32_t &nextConnectorId);
+
+class IConnectionRule {
+public:
+	virtual ~IConnectionRule() = default;
+	virtual bool canConnect(const DiagramModel &model,
+		const Connector &from,
+		const Connector &to,
+		std::string *reason) const = 0;
+};
 
 class DiagramModel {
 public:
@@ -106,9 +104,6 @@ public:
 	std::vector<Edge> &edges() { return m_edges; }
 	const std::vector<Edge> &edges() const { return m_edges; }
 
-	std::vector<Group> &groups() { return m_groups; }
-	const std::vector<Group> &groups() const { return m_groups; }
-
 	Node *createNode(const glm::vec2 &position, const glm::vec2 &size = { 200.0f, 120.0f });
 	Node *createNodeOfType(const std::string &nodeTypeId,
 		const glm::vec2 &position,
@@ -119,48 +114,50 @@ public:
 		const std::string &nodeTypeId = "Custom",
 		const std::string &title = "Node");
 	Node *addNode(const Node &node);
-	Node *duplicateNode(uint32_t nodeId, const glm::vec2 &offset = { 40.0f, 40.0f });
-	bool removeNode(uint32_t nodeId);
+	Node *duplicateNode(CanvasNodeId nodeId, const glm::vec2 &offset = { 40.0f, 40.0f });
+	bool removeNode(CanvasNodeId nodeId);
 	size_t removeSelectedNodes();
 
 	void clear();
 	void clearNodeSelection();
-	bool isValidConnection(uint32_t fromNode,
-		uint32_t fromConnector,
-		uint32_t toNode,
-		uint32_t toConnector) const;
+	bool isValidConnection(CanvasNodeId fromNode,
+		CanvasConnectorId fromConnector,
+		CanvasNodeId toNode,
+		CanvasConnectorId toConnector,
+		std::string *reason = nullptr) const;
 	bool addEdge(const Edge &edge);
-	bool createEdge(uint32_t fromNode, uint32_t fromConnector, uint32_t toNode, uint32_t toConnector);
-	bool removeEdge(uint32_t edgeId);
-	void recomputeRoutesForNode(uint32_t nodeId);
+	bool createEdge(CanvasNodeId fromNode, CanvasConnectorId fromConnector, CanvasNodeId toNode, CanvasConnectorId toConnector);
+	bool removeEdge(CanvasEdgeId edgeId);
+	void recomputeRoutesForNode(CanvasNodeId nodeId);
 
-	Group *createGroup();
-	bool addNodeToGroup(uint32_t nodeId, uint32_t groupId);
-	void collapseGroup(uint32_t groupId);
-	void expandGroup(uint32_t groupId);
+	bool addChildNode(CanvasNodeId parentId, CanvasNodeId childId);
+	bool detachFromParent(CanvasNodeId nodeId);
+	void setNodeCollapsed(CanvasNodeId nodeId, bool collapsed);
+	bool isNodeHiddenByCollapsedAncestor(CanvasNodeId nodeId) const;
 
 	void syncIdCounters();
 
-	Node *findNode(uint32_t nodeId);
-	const Node *findNode(uint32_t nodeId) const;
+	Node *findNode(CanvasNodeId nodeId);
+	const Node *findNode(CanvasNodeId nodeId) const;
 
-	Connector *findConnector(uint32_t nodeId, uint32_t connectorId);
-	const Connector *findConnector(uint32_t nodeId, uint32_t connectorId) const;
+	Connector *findConnector(CanvasNodeId nodeId, CanvasConnectorId connectorId);
+	const Connector *findConnector(CanvasNodeId nodeId, CanvasConnectorId connectorId) const;
 
-	Edge *findEdge(uint32_t edgeId);
-	const Edge *findEdge(uint32_t edgeId) const;
+	Edge *findEdge(CanvasEdgeId edgeId);
+	const Edge *findEdge(CanvasEdgeId edgeId) const;
+
+	void setConnectionRule(std::shared_ptr<IConnectionRule> rule);
 
 	const NodeTypeRegistry &nodeTypeRegistry() const;
 
 private:
-	bool removeEdgesForNode(uint32_t nodeId);
+	bool removeEdgesForNode(CanvasNodeId nodeId);
 
 	uint32_t m_nextNodeId = 1;
 	uint32_t m_nextConnectorId = 1;
 	uint32_t m_nextEdgeId = 1;
-	uint32_t m_nextGroupId = 1;
 	std::vector<Node> m_nodes;
 	std::vector<Edge> m_edges;
-	std::vector<Group> m_groups;
 	std::unique_ptr<NodeTypeRegistry> m_nodeTypeRegistry;
+	std::shared_ptr<IConnectionRule> m_connectionRule;
 };

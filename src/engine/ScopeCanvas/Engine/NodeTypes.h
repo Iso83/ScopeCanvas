@@ -9,6 +9,8 @@
 struct NodeType {
 	std::string typeId;
 	std::string name;
+	bool allowChildren = false;
+	bool resizable = true;
 	std::vector<ConnectorTemplate> inputs;
 	std::vector<ConnectorTemplate> outputs;
 };

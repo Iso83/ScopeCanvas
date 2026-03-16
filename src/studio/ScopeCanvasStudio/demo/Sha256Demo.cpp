@@ -54,6 +54,9 @@ void Sha256Demo::Build(DiagramModel &graph) {
     graph.clear();
 
     Node *dataBlock = createCustomNode(graph, "Bits Container W[t]", { -920.0f, -240.0f }, { 320.0f, 520.0f }, 8, 8);
+    if (dataBlock != nullptr) {
+        dataBlock->allowChildren = true;
+    }
 
     std::vector<Node *> bits;
     bits.reserve(8);
@@ -74,6 +77,9 @@ void Sha256Demo::Build(DiagramModel &graph) {
     Node *loopA = createCustomNode(graph, "Loop#1 Σ/Ch", { -560.0f, -120.0f }, { 260.0f, 180.0f }, 4, 2);
     Node *loopB = createCustomNode(graph, "Loop#2 Mix/Add", { -220.0f, -120.0f }, { 260.0f, 180.0f }, 4, 2);
     Node *loopC = createCustomNode(graph, "Loop#3 Rotate/Finalize", { 120.0f, -120.0f }, { 300.0f, 180.0f }, 4, 2);
+    if (loopA != nullptr) {
+        loopA->allowChildren = true;
+    }
 
     Node *bitShift = createCustomNode(graph, "BitShift >>> / ROTR", { 120.0f, 120.0f }, { 300.0f, 100.0f }, 2, 1);
     Node *outputHash = createCustomNode(graph, "Hash Out H[t]", { 500.0f, -20.0f }, { 220.0f, 120.0f }, 2, 1);
@@ -106,23 +112,18 @@ void Sha256Demo::Build(DiagramModel &graph) {
     connectIfPossible(graph, loopC, 0, outputHash, 0);
     connectIfPossible(graph, bitShift, 0, outputHash, 1);
 
-    Group *dataGroup = graph.createGroup();
-    if (dataGroup != nullptr) {
-        if (dataBlock != nullptr) {
-            graph.addNodeToGroup(dataBlock->id, dataGroup->id);
-        }
+    if (dataBlock != nullptr) {
         for (Node *bitNode : bits) {
             if (bitNode != nullptr) {
-                graph.addNodeToGroup(bitNode->id, dataGroup->id);
+                graph.addChildNode(dataBlock->id, bitNode->id);
             }
         }
+        graph.setNodeCollapsed(dataBlock->id, true);
     }
 
-    Group *opsGroup = graph.createGroup();
-    if (opsGroup != nullptr && loopA != nullptr && loopB != nullptr && loopC != nullptr) {
-        graph.addNodeToGroup(loopA->id, opsGroup->id);
-        graph.addNodeToGroup(loopB->id, opsGroup->id);
-        graph.addNodeToGroup(loopC->id, opsGroup->id);
+    if (loopA != nullptr && loopB != nullptr && loopC != nullptr) {
+        graph.addChildNode(loopA->id, loopB->id);
+        graph.addChildNode(loopA->id, loopC->id);
     }
 
     graph.syncIdCounters();

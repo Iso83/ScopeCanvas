@@ -142,28 +142,15 @@ void DiagramBasics::deleteSelected() {
             continue;
         }
 
-        const bool isContainer = selected->title.find("Container") != std::string::npos;
-        if (isContainer && selected->groupId != 0) {
-            for (Group &group : m_engine.graph().groups()) {
-                if (group.id != selected->groupId) {
-                    continue;
+        if (selected->allowChildren) {
+            for (CanvasNodeId childId : selected->children) {
+                Node *child = m_engine.graph().findNode(childId);
+                if (child != nullptr) {
+                    child->position += glm::vec2(80.0f, 20.0f);
+                    child->parentId = CanvasNodeId{};
                 }
-
-                for (uint32_t childId : group.children) {
-                    if (childId == selected->id) {
-                        continue;
-                    }
-
-                    Node *child = m_engine.graph().findNode(childId);
-                    if (child != nullptr) {
-                        child->position += glm::vec2(80.0f, 20.0f);
-                        child->groupId = 0;
-                    }
-                }
-
-                group.children.clear();
-                break;
             }
+            selected->children.clear();
         }
 
         auto deleteCmd = std::make_unique<DeleteNodeCommand>(m_engine.graph(), id);
@@ -192,77 +179,69 @@ size_t DiagramBasics::selectedNodeCount() const {
 }
 
 void DiagramBasics::createGroupFromSelection(bool collapsed) {
-    Group *group = m_engine.graph().createGroup();
-    if (group == nullptr) {
-        return;
-    }
-
-    for (const Node &node : m_engine.graph().nodes()) {
+    std::vector<Node *> selected;
+    for (Node &node : m_engine.graph().nodes()) {
         if (node.selected) {
-            m_engine.graph().addNodeToGroup(node.id, group->id);
+            selected.push_back(&node);
         }
     }
 
+    if (selected.empty()) {
+        return;
+    }
+
+    float minX = selected.front()->position.x;
+    float minY = selected.front()->position.y;
+    float maxX = selected.front()->position.x + selected.front()->size.x;
+    float maxY = selected.front()->position.y + selected.front()->size.y;
+
+    for (const Node *node : selected) {
+        minX = std::min(minX, node->position.x);
+        minY = std::min(minY, node->position.y);
+        maxX = std::max(maxX, node->position.x + node->size.x);
+        maxY = std::max(maxY, node->position.y + node->size.y);
+    }
+
+    Node *container = m_engine.graph().createNodeWithConnectors(
+        { minX - 24.0f, minY - 24.0f },
+        { (maxX - minX) + 48.0f, (maxY - minY) + 48.0f },
+        createConnectorTemplatesForType(1, 1),
+        "Container",
+        "Container");
+    if (container == nullptr) {
+        return;
+    }
+    container->allowChildren = true;
+
+    for (Node *node : selected) {
+        m_engine.graph().addChildNode(container->id, node->id);
+    }
+
     if (collapsed) {
-        m_engine.graph().collapseGroup(group->id);
+        m_engine.graph().setNodeCollapsed(container->id, true);
     }
 }
 
 void DiagramBasics::toggleSelectedGroupsCollapsed() {
-    std::unordered_set<uint32_t> groupIds;
+    std::unordered_set<uint32_t> containerIds;
     for (const Node &node : m_engine.graph().nodes()) {
-        if (node.selected && node.groupId != 0) {
-            groupIds.insert(node.groupId);
+        if (node.selected && node.allowChildren) {
+            containerIds.insert(node.id.value);
         }
     }
 
-    for (uint32_t groupId : groupIds) {
-        for (const Group &group : m_engine.graph().groups()) {
-            if (group.id != groupId) {
-                continue;
-            }
-
-            if (group.collapsed) {
-                m_engine.graph().expandGroup(group.id);
-            }
-            else {
-                m_engine.graph().collapseGroup(group.id);
-            }
-            break;
+    for (uint32_t nodeId : containerIds) {
+        Node *container = m_engine.graph().findNode(nodeId);
+        if (container != nullptr) {
+            m_engine.graph().setNodeCollapsed(container->id, !container->collapsed);
         }
     }
 }
 
 void DiagramBasics::toggleBitContainersCollapsed() {
-    std::unordered_set<uint32_t> bitGroupIds;
-
-    for (const Group &group : m_engine.graph().groups()) {
-        for (uint32_t nodeId : group.children) {
-            const Node *node = m_engine.graph().findNode(nodeId);
-            if (node == nullptr) {
-                continue;
-            }
-
-            if (node->title.find("Bits Container") != std::string::npos ||
-                node->title.find("Bit[") != std::string::npos) {
-                bitGroupIds.insert(group.id);
-                break;
-            }
-        }
-    }
-
-    for (uint32_t groupId : bitGroupIds) {
-        for (const Group &group : m_engine.graph().groups()) {
-            if (group.id != groupId) {
-                continue;
-            }
-            if (group.collapsed) {
-                m_engine.graph().expandGroup(group.id);
-            }
-            else {
-                m_engine.graph().collapseGroup(group.id);
-            }
-            break;
+    for (Node &node : m_engine.graph().nodes()) {
+        if (node.allowChildren) {
+            node.collapsed = !node.collapsed;
         }
     }
 }
@@ -371,19 +350,14 @@ void DiagramBasics::createContainerFromSelection() {
         return;
     }
 
-    Group *group = m_engine.graph().createGroup();
-    if (group == nullptr) {
-        return;
-    }
-
-    m_engine.graph().addNodeToGroup(container->id, group->id);
+    container->allowChildren = true;
     for (Node *node : selected) {
         if (node != nullptr) {
-            m_engine.graph().addNodeToGroup(node->id, group->id);
+            m_engine.graph().addChildNode(container->id, node->id);
         }
     }
 
-    m_engine.graph().collapseGroup(group->id);
+    m_engine.graph().setNodeCollapsed(container->id, true);
 }
 
 void DiagramBasics::resizeSelectedNodes(const glm::vec2 &deltaSize) {
@@ -464,7 +438,6 @@ void DiagramBasics::applyParentLayouts() {
                 child->position.y = targetY;
                 child->size.x = parent->size.x - 80.0f;
                 child->size.y = layout.slotHeight;
-                child->groupId = parent->groupId;
                 m_engine.graph().recomputeRoutesForNode(child->id);
             }
         }

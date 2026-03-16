@@ -44,20 +44,9 @@ bool EdgeRenderer::init() {
 void EdgeRenderer::renderEdges(const DiagramModel &model,
 	const glm::mat4 &viewProjection,
 	uint32_t hoveredEdgeId) {
-	std::unordered_set<uint32_t> hiddenNodeIds;
-	for (const Group &group : model.groups()) {
-		if (!group.collapsed) {
-			continue;
-		}
-
-		for (uint32_t childNodeId : group.children) {
-			hiddenNodeIds.insert(childNodeId);
-		}
-	}
-
 	for (const Edge &edge : model.edges()) {
-		if (hiddenNodeIds.find(edge.fromNode) != hiddenNodeIds.end() ||
-			hiddenNodeIds.find(edge.toNode) != hiddenNodeIds.end()) {
+		if (model.isNodeHiddenByCollapsedAncestor(edge.fromNode) ||
+			model.isNodeHiddenByCollapsedAncestor(edge.toNode)) {
 			continue;
 		}
 		if (edge.route.points.size() < 2) {
@@ -120,14 +109,8 @@ void EdgeRenderer::renderPreviewEdge(const DiagramModel &model,
 	uint32_t startConnectorId,
 	const glm::vec2 &previewPosition,
 	const glm::mat4 &viewProjection) {
-	for (const Group &group : model.groups()) {
-		if (!group.collapsed) {
-			continue;
-		}
-
-		if (std::find(group.children.begin(), group.children.end(), startNodeId) != group.children.end()) {
-			return;
-		}
+	if (model.isNodeHiddenByCollapsedAncestor(startNodeId)) {
+		return;
 	}
 
 	const Node *fromNode = model.findNode(startNodeId);

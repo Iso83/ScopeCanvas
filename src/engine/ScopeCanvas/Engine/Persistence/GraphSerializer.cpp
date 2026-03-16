@@ -4,6 +4,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <fstream>
 #include <unordered_set>
 
@@ -43,16 +44,19 @@ bool GraphSerializer::save(const DiagramModel &model, const std::string &filepat
 
 	for (const Node &node : model.nodes()) {
 		json serializedNode;
-		serializedNode["id"] = node.id;
+		serializedNode["id"] = node.id.value;
 		serializedNode["type"] = node.nodeTypeId;
 		serializedNode["title"] = node.title;
 		serializedNode["position"] = { node.position.x, node.position.y };
 		serializedNode["size"] = { node.size.x, node.size.y };
+		serializedNode["collapsed"] = node.collapsed;
+		serializedNode["allowChildren"] = node.allowChildren;
+		serializedNode["parentId"] = node.parentId.value;
 		serializedNode["connectors"] = json::array();
 
 		for (const Connector &connector : node.connectors) {
 			serializedNode["connectors"].push_back({
-				{"id", connector.id},
+				{"id", connector.id.value},
 				{"offset", connector.offset},
 				{"direction", connectorDirectionToString(connector.direction)},
 				});
@@ -63,11 +67,11 @@ bool GraphSerializer::save(const DiagramModel &model, const std::string &filepat
 
 	for (const Edge &edge : model.edges()) {
 		root["edges"].push_back({
-			{"id", edge.id},
-			{"fromNode", edge.fromNode},
-			{"fromConnector", edge.fromConnector},
-			{"toNode", edge.toNode},
-			{"toConnector", edge.toConnector},
+			{"id", edge.id.value},
+			{"fromNode", edge.fromNode.value},
+			{"fromConnector", edge.fromConnector.value},
+			{"toNode", edge.toNode.value},
+			{"toConnector", edge.toConnector.value},
 			});
 	}
 
@@ -127,6 +131,9 @@ bool GraphSerializer::load(DiagramModel &model, const std::string &filepath) {
 		node.size.x = serializedNode["size"][0].get<float>();
 		node.size.y = serializedNode["size"][1].get<float>();
 		node.selected = false;
+		node.collapsed = serializedNode.value("collapsed", false);
+		node.allowChildren = serializedNode.value("allowChildren", false);
+		node.parentId = serializedNode.value("parentId", 0u);
 
 		if (loadedNodeIds.find(node.id) != loadedNodeIds.end()) {
 			continue;
@@ -217,6 +224,23 @@ bool GraphSerializer::load(DiagramModel &model, const std::string &filepath) {
 		}
 
 		model.addEdge(edge);
+	}
+
+	for (Node &node : model.nodes()) {
+		node.children.clear();
+	}
+	for (Node &node : model.nodes()) {
+		if (!node.parentId) {
+			continue;
+		}
+		Node *parent = model.findNode(node.parentId);
+		if (parent == nullptr) {
+			node.parentId = CanvasNodeId{};
+			continue;
+		}
+		if (std::find(parent->children.begin(), parent->children.end(), node.id) == parent->children.end()) {
+			parent->children.push_back(node.id);
+		}
 	}
 
 	model.syncIdCounters();

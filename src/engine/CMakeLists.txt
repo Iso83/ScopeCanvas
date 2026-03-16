@@ -58,3 +58,21 @@ set_property(TARGET ScopeCanvas PROPERTY FOLDER "engine")
 set_target_properties(ScopeCanvas PROPERTIES
     VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:ScopeCanvas>"
 )
+
+enable_testing()
+
+add_executable(ScopeCanvasEngineTests
+    tests/DiagramModelTests.cpp
+    ScopeCanvas/Engine/DiagramModel.cpp
+    ScopeCanvas/Engine/NodeTypes.cpp
+)
+
+target_include_directories(ScopeCanvasEngineTests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/ScopeCanvas
+)
+
+target_link_libraries(ScopeCanvasEngineTests
+    glm
+)
+
+add_test(NAME ScopeCanvasEngineTests COMMAND ScopeCanvasEngineTests)

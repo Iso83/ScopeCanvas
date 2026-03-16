@@ -52,10 +52,29 @@ Planned:
 ## Project Structure
 
 ```
-src/            engine implementation
+src/engine/     ScopeCanvasEngine reusable canvas/node engine
+src/studio/     ScopeCanvasStudio demo host app
 include/        public headers
 assets/         shaders and runtime resources
 third_party/    external libraries
+```
+
+Scope split:
+
+* **ScopeCanvasEngine** = generic model, rendering, interaction-safe graph operations.
+* **ScopeCanvasStudio** = demo/sample host (menus, sample node styles, demo layouts).
+* Future apps can bind engine node ids to external domain ids without adding domain logic into the engine.
+
+---
+
+## Testing (CTest)
+
+Core model checks are available through CTest:
+
+```
+cmake -S . -B build
+cmake --build build --target ScopeCanvasEngineTests
+ctest --test-dir build --output-on-failure
 ```
 
 ---

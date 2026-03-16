@@ -14,27 +14,11 @@
 #include <vector>
 
 namespace {
-bool contains(const std::string &text, const std::string &token) {
-    return text.find(token) != std::string::npos;
-}
-
 ImU32 styleColorForNode(const Node &node) {
-    if (contains(node.title, "Bits Container")) {
-        return IM_COL32(70, 74, 82, 170);
-    }
-    if (contains(node.title, "Bit[")) {
-        return IM_COL32(200, 200, 120, 120);
-    }
-    if (contains(node.title, "Loop#")) {
+    if (node.allowChildren) {
         return IM_COL32(80, 120, 190, 120);
     }
-    if (contains(node.title, "Const True")) {
-        return IM_COL32(70, 180, 90, 140);
-    }
-    if (contains(node.title, "Const False")) {
-        return IM_COL32(180, 80, 80, 140);
-    }
-    if (contains(node.title, "BitShift")) {
+    if (node.nodeTypeId == "Number") {
         return IM_COL32(170, 120, 70, 130);
     }
 
@@ -46,13 +30,7 @@ ImU32 connectorStateColor(const Node &node, const Connector &connector) {
         return IM_COL32(215, 215, 230, 255);
     }
 
-    if (contains(node.title, "Const True")) {
-        return IM_COL32(70, 240, 90, 255);
-    }
-    if (contains(node.title, "Const False")) {
-        return IM_COL32(255, 90, 90, 255);
-    }
-    if (contains(node.title, "BitShift")) {
+    if (node.nodeTypeId == "Number") {
         return IM_COL32(255, 180, 90, 255);
     }
 
@@ -549,49 +527,19 @@ void NodeDiagramWindow::Draw() {
             drawList->AddRect(minPt, maxPt, IM_COL32(235, 235, 240, 180), 4.0f, 0, 1.0f);
             drawList->AddRectFilled(minPt, ImVec2(maxPt.x, minPt.y + 22.0f), IM_COL32(30, 34, 44, 185), 4.0f);
 
-            const bool bitIndexMode = contains(node.title, "Bit[");
-            const char *label = node.title.c_str();
-            std::string tmp;
-            if (bitIndexMode) {
-                const size_t endIx = node.title.find(']');
-                if (endIx != std::string::npos) {
-                    tmp = node.title.substr(0, endIx + 1);
-                    label = tmp.c_str();
-                }
-            }
-            drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 4.0f), IM_COL32(245, 245, 245, 255), label);
+            drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 4.0f), IM_COL32(245, 245, 245, 255), node.title.c_str());
 
-            const bool containerNode = contains(node.title, "Container") || contains(node.title, "Loop#") || contains(node.title, "op#");
+            const bool containerNode = node.allowChildren;
             if (containerNode && hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                 const ImVec2 m = ImGui::GetMousePos();
                 const ImVec2 arrowCenter(maxPt.x - 12.0f, minPt.y + 11.0f);
                 if (std::abs(m.x - arrowCenter.x) < 10.0f && std::abs(m.y - arrowCenter.y) < 10.0f) {
-                    for (const Group &group : graph.groups()) {
-                        for (uint32_t child : group.children) {
-                            if (child == node.id) {
-                                if (group.collapsed) {
-                                    m_basics->engine().graph().expandGroup(group.id);
-                                }
-                                else {
-                                    m_basics->engine().graph().collapseGroup(group.id);
-                                }
-                            }
-                        }
-                    }
+                    m_basics->engine().graph().setNodeCollapsed(node.id, !node.collapsed);
                 }
             }
 
             if (containerNode) {
-                const bool collapsed = [&]() {
-                    for (const Group &group : graph.groups()) {
-                        for (uint32_t child : group.children) {
-                            if (child == node.id) {
-                                return group.collapsed;
-                            }
-                        }
-                    }
-                    return false;
-                }();
+                const bool collapsed = node.collapsed;
                 const ImVec2 arrowCenter(maxPt.x - 12.0f, minPt.y + 11.0f);
                 if (collapsed) {
                     drawList->AddTriangleFilled(ImVec2(arrowCenter.x - 3.0f, arrowCenter.y - 4.0f),
@@ -666,18 +614,6 @@ void NodeDiagramWindow::Draw() {
                 drawList->AddLine(s0, s1, IM_COL32(140, 170, 220, 190), 1.5f);
             }
         }
-    }
-
-    // sticky notes demo style
-    for (const Node &node : graph.nodes()) {
-        if (!contains(node.title, "Const ")) {
-            continue;
-        }
-
-        const ImVec2 a = worldToCanvasScreen(m_renderer->camera(), node.position + glm::vec2(node.size.x + 8.0f, -6.0f), canvasPos, canvasSize);
-        const ImVec2 b(a.x + 140.0f, a.y + 34.0f);
-        drawList->AddRectFilled(a, b, IM_COL32(235, 205, 90, 210), 4.0f);
-        drawList->AddText(ImVec2(a.x + 6.0f, a.y + 8.0f), IM_COL32(40, 35, 20, 255), "fixed behavior");
     }
 
     ImGui::End();

@@ -54,59 +54,26 @@ void Renderer::render(const GraphDocument &model,
 	m_camera.setZoom(view.zoom);
 	const glm::mat4 viewProjection = m_camera.viewProjection();
 
-	std::unordered_set<uint32_t> hiddenNodeIds;
-	std::vector<Node> groupNodes;
-
-	for (const Group &group : model.groups()) {
-		if (!group.collapsed) {
-			continue;
-		}
-
-		float minX = std::numeric_limits<float>::max();
-		float minY = std::numeric_limits<float>::max();
-		float maxX = std::numeric_limits<float>::lowest();
-		float maxY = std::numeric_limits<float>::lowest();
-		bool hasChildNodes = false;
-
-		for (uint32_t childNodeId : group.children) {
-			const Node *childNode = model.findNode(childNodeId);
-			if (childNode == nullptr) {
-				continue;
-			}
-
-			hiddenNodeIds.insert(childNodeId);
-			minX = std::min(minX, childNode->position.x);
-			minY = std::min(minY, childNode->position.y);
-			maxX = std::max(maxX, childNode->position.x + childNode->size.x);
-			maxY = std::max(maxY, childNode->position.y + childNode->size.y);
-			hasChildNodes = true;
-		}
-
-		if (!hasChildNodes) {
-			continue;
-		}
-
-		constexpr float kPadding = 24.0f;
-		Node groupNode{};
-		groupNode.id = group.id;
-		groupNode.nodeTypeId = "Group";
-		groupNode.title = "Group";
-		groupNode.position = { minX - kPadding, minY - kPadding };
-		groupNode.size = { (maxX - minX) + 2.0f * kPadding, (maxY - minY) + 2.0f * kPadding };
-		groupNode.selected = false;
-		groupNode.groupId = 0;
-		groupNodes.push_back(groupNode);
-	}
-
 	std::vector<Node> visibleNodes;
-	visibleNodes.reserve(model.nodes().size() + groupNodes.size());
+	visibleNodes.reserve(model.nodes().size());
+	const glm::vec2 halfVisible(
+		static_cast<float>(m_viewportWidth) / (2.0f * std::max(0.0001f, view.zoom)),
+		static_cast<float>(m_viewportHeight) / (2.0f * std::max(0.0001f, view.zoom)));
+	const glm::vec2 visibleMin = cameraPosition - halfVisible;
+	const glm::vec2 visibleMax = cameraPosition + halfVisible;
+
+	auto intersectsVisible = [&](const Node &node) {
+		const glm::vec2 nodeMin = node.position;
+		const glm::vec2 nodeMax = node.position + node.size;
+		return !(nodeMax.x < visibleMin.x || nodeMin.x > visibleMax.x ||
+			nodeMax.y < visibleMin.y || nodeMin.y > visibleMax.y);
+	};
+
 	for (const Node &node : model.nodes()) {
-		if (hiddenNodeIds.find(node.id) == hiddenNodeIds.end()) {
+		if (!model.isNodeHiddenByCollapsedAncestor(node.id) && intersectsVisible(node)) {
 			visibleNodes.push_back(node);
 		}
 	}
-
-	visibleNodes.insert(visibleNodes.end(), groupNodes.begin(), groupNodes.end());
 
 	if (gridEnabled) {
 		m_gridRenderer.render(viewProjection, m_viewportWidth, m_viewportHeight, gridCellSize);
