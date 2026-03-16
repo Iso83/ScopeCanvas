@@ -2,7 +2,7 @@
 
 #include <unordered_set>
 
-namespace ScopeCanvas::RenderGL::Scene
+namespace ScopeCanvas::Render::Scene
 {
 namespace
 {
@@ -99,4 +99,4 @@ RenderScene SceneBuilder::build(const Engine::Core::DiagramModel& model,
 
     return scene;
 }
-} // namespace ScopeCanvas::RenderGL::Scene
+} // namespace ScopeCanvas::Render::Scene

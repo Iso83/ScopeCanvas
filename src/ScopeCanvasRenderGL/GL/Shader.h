@@ -1,16 +1,35 @@
 #pragma once
 
-#include <string>
+#include <glad/glad.h>
 
-namespace ScopeCanvas::RenderGL::GL
+namespace ScopeCanvas::Render::GL
 {
 class Shader
 {
 public:
-    bool compile(const std::string& vertexSource, const std::string& fragmentSource);
-    [[nodiscard]] bool isCompiled() const;
+    Shader();
+    ~Shader();
+
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+
+    Shader(Shader&& other) noexcept;
+    Shader& operator=(Shader&& other) noexcept;
+
+    bool load(const char* vertexSrc, const char* fragmentSrc);
+    void use() const;
+
+    GLuint id() const;
 
 private:
-    bool m_compiled{false};
+    bool compileShader(GLuint shaderId, const char* source) const;
+    void destroy();
+
+    GLuint m_programId;
 };
-} // namespace ScopeCanvas::RenderGL::GL
+
+extern const char GridVertex[];
+extern const char GridFragment[];
+extern const char EdgeVertex[];
+extern const char EdgeFragment[];
+} // namespace ScopeCanvas::Render::GL

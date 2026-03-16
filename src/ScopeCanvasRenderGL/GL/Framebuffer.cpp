@@ -1,6 +1,6 @@
 #include "GL/Framebuffer.h"
 
-namespace ScopeCanvas::RenderGL::GL
+namespace ScopeCanvas::Render::GL
 {
 void Framebuffer::attachColor(const Texture& texture)
 {
@@ -11,4 +11,4 @@ bool Framebuffer::isComplete() const
 {
     return m_complete;
 }
-} // namespace ScopeCanvas::RenderGL::GL
+} // namespace ScopeCanvas::Render::GL

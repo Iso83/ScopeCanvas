@@ -2,7 +2,7 @@
 
 #include "GL/Texture.h"
 
-namespace ScopeCanvas::RenderGL::GL
+namespace ScopeCanvas::Render::GL
 {
 class Framebuffer
 {
@@ -13,4 +13,4 @@ public:
 private:
     bool m_complete{false};
 };
-} // namespace ScopeCanvas::RenderGL::GL
+} // namespace ScopeCanvas::Render::GL

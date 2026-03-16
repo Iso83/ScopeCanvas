@@ -77,9 +77,6 @@ int RunStudioApp() {
 				if (ImGui::MenuItem("Load Basic Demo")) {
 					basics.seedDefaultDemo();
 				}
-				if (ImGui::MenuItem("Load SHA256 Demo")) {
-					basics.seedSha256Demo();
-				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Exit")) {
 					glfwSetWindowShouldClose(window, true);
@@ -154,7 +151,6 @@ int RunStudioApp() {
 				ImGui::MenuItem("Show Grid", "G", &basics.gridSettings().enabled);
 				ImGui::MenuItem("Snap to Grid", "Shift+G", &basics.gridSettings().snapEnabled);
 				ImGui::MenuItem("Curved Edge Overlay", nullptr, &basics.viewSettings().curvedEdgeOverlay);
-				ImGui::MenuItem("SHA Node Styling", nullptr, &basics.viewSettings().shaNodeStyling);
 				ImGui::MenuItem("Connector State Colors", nullptr, &basics.viewSettings().connectorStateColors);
 
 				if (ImGui::BeginMenu("Grid Size")) {

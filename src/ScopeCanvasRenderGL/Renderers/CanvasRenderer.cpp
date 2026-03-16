@@ -1,14 +1,10 @@
 #include "Renderers/CanvasRenderer.h"
 
-namespace ScopeCanvas::RenderGL::Renderers
+namespace ScopeCanvas::Render::Renderers
 {
-CanvasFrameData CanvasRenderer::buildFrame(const Scene::RenderScene& scene,
-                                           const Camera::Camera2D& camera,
-                                           float gridSpacing,
-                                           int gridHalfExtent) const
+CanvasFrameData CanvasRenderer::buildFrame(const Scene::RenderScene& scene) const
 {
     CanvasFrameData frame{};
-    frame.gridVertices = m_gridRenderer.buildGridVertices(camera, gridSpacing, gridHalfExtent);
     frame.nodes = m_nodeRenderer.collect(scene);
 
     frame.edges.reserve(scene.edges.size());
@@ -27,4 +23,4 @@ CanvasFrameData CanvasRenderer::buildFrame(const Scene::RenderScene& scene,
 
     return frame;
 }
-} // namespace ScopeCanvas::RenderGL::Renderers
+} // namespace ScopeCanvas::Render::Renderers

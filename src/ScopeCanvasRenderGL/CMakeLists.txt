@@ -18,6 +18,9 @@ target_include_directories(ScopeCanvasRenderGL PUBLIC
 target_link_libraries(ScopeCanvasRenderGL PUBLIC
     ScopeCanvasEngineCore
     ScopeCanvasRouting
+    glad
+    glm
+    opengl32
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${RENDERGL_SRC} ${RENDERGL_HEADERS})

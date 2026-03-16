@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ScopeCanvas::RenderGL::GL
+namespace ScopeCanvas::Render::GL
 {
 class Texture
 {
@@ -17,4 +17,4 @@ private:
     int m_height{0};
     std::uint32_t m_id{0};
 };
-} // namespace ScopeCanvas::RenderGL::GL
+} // namespace ScopeCanvas::Render::GL

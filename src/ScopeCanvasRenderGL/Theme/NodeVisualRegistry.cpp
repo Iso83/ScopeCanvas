@@ -1,6 +1,6 @@
 #include "Theme/NodeVisualRegistry.h"
 
-namespace ScopeCanvas::RenderGL::Theme
+namespace ScopeCanvas::Render::Theme
 {
 void NodeVisualRegistry::registerVisual(Engine::Core::NodeTypeId typeId, const NodeVisual& visual)
 {
@@ -12,4 +12,4 @@ const NodeVisual& NodeVisualRegistry::getVisual(Engine::Core::NodeTypeId typeId)
     const auto it = m_visuals.find(typeId.value());
     return it == m_visuals.end() ? m_defaultVisual : it->second;
 }
-} // namespace ScopeCanvas::RenderGL::Theme
+} // namespace ScopeCanvas::Render::Theme

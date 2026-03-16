@@ -5,7 +5,7 @@
 
 #include "ScopeCanvasEngineCore/Ids/TypeIds.h"
 
-namespace ScopeCanvas::RenderGL::Theme
+namespace ScopeCanvas::Render::Theme
 {
 struct NodeVisual
 {
@@ -23,4 +23,4 @@ private:
     std::unordered_map<std::uint32_t, NodeVisual> m_visuals{};
     NodeVisual m_defaultVisual{};
 };
-} // namespace ScopeCanvas::RenderGL::Theme
+} // namespace ScopeCanvas::Render::Theme

@@ -1,6 +1,6 @@
 #include "GL/Texture.h"
 
-namespace ScopeCanvas::RenderGL::GL
+namespace ScopeCanvas::Render::GL
 {
 void Texture::resize(int width, int height)
 {
@@ -26,4 +26,4 @@ std::uint32_t Texture::id() const
 {
     return m_id;
 }
-} // namespace ScopeCanvas::RenderGL::GL
+} // namespace ScopeCanvas::Render::GL

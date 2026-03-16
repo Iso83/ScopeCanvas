@@ -1,15 +1,148 @@
 #include "GL/Shader.h"
 
-namespace ScopeCanvas::RenderGL::GL
+#include <iostream>
+
+namespace ScopeCanvas::Render::GL
 {
-bool Shader::compile(const std::string& vertexSource, const std::string& fragmentSource)
+Shader::Shader() : m_programId(0) {}
+
+Shader::~Shader()
 {
-    m_compiled = !vertexSource.empty() && !fragmentSource.empty();
-    return m_compiled;
+    destroy();
 }
 
-bool Shader::isCompiled() const
+Shader::Shader(Shader&& other) noexcept : m_programId(other.m_programId)
 {
-    return m_compiled;
+    other.m_programId = 0;
 }
-} // namespace ScopeCanvas::RenderGL::GL
+
+Shader& Shader::operator=(Shader&& other) noexcept
+{
+    if (this != &other)
+    {
+        destroy();
+        m_programId = other.m_programId;
+        other.m_programId = 0;
+    }
+    return *this;
+}
+
+bool Shader::load(const char* vertexSrc, const char* fragmentSrc)
+{
+    const GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    const GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    if (!compileShader(vertexShader, vertexSrc) || !compileShader(fragmentShader, fragmentSrc))
+    {
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return false;
+    }
+
+    destroy();
+    m_programId = glCreateProgram();
+    glAttachShader(m_programId, vertexShader);
+    glAttachShader(m_programId, fragmentShader);
+    glLinkProgram(m_programId);
+
+    GLint success = 0;
+    glGetProgramiv(m_programId, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        char infoLog[512]{};
+        glGetProgramInfoLog(m_programId, sizeof(infoLog), nullptr, infoLog);
+        std::cerr << "Shader program link failed: " << infoLog << '\n';
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        destroy();
+        return false;
+    }
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    return true;
+}
+
+void Shader::use() const
+{
+    glUseProgram(m_programId);
+}
+
+GLuint Shader::id() const
+{
+    return m_programId;
+}
+
+bool Shader::compileShader(GLuint shaderId, const char* source) const
+{
+    glShaderSource(shaderId, 1, &source, nullptr);
+    glCompileShader(shaderId);
+
+    GLint success = 0;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        char infoLog[512]{};
+        glGetShaderInfoLog(shaderId, sizeof(infoLog), nullptr, infoLog);
+        std::cerr << "Shader compile failed: " << infoLog << '\n';
+        return false;
+    }
+
+    return true;
+}
+
+void Shader::destroy()
+{
+    if (m_programId != 0)
+    {
+        glDeleteProgram(m_programId);
+        m_programId = 0;
+    }
+}
+
+const char GridVertex[] = R"(
+    #version 330 core
+    layout(location = 0) in vec2 aWorldPos;
+
+    uniform mat4 uViewProjection;
+
+    void main()
+    {
+        gl_Position = uViewProjection * vec4(aWorldPos, 0.0, 1.0);
+    }
+)";
+
+const char GridFragment[] = R"(
+    #version 330 core
+    out vec4 FragColor;
+
+    uniform vec3 uColor;
+
+    void main()
+    {
+        FragColor = vec4(uColor, 1.0);
+    }
+)";
+
+const char EdgeVertex[] = R"(
+    #version 330 core
+    layout(location = 0) in vec2 aPosition;
+
+    uniform mat4 uViewProjection;
+
+    void main() {
+        gl_Position = uViewProjection * vec4(aPosition, 0.0, 1.0);
+    }
+)";
+
+const char EdgeFragment[] = R"(
+    #version 330 core
+    out vec4 FragColor;
+
+    uniform vec3 uColor;
+
+    void main() {
+        FragColor = vec4(uColor, 1.0);
+    }
+)";
+} // namespace ScopeCanvas::Render::GL

@@ -1,7 +1,6 @@
 #include "diagram/DiagramBasics.h"
 
 #include "Interaction/Commands/GraphCommands.h"
-#include "demo/Sha256Demo.h"
 #include "Engine/NodeTypes.h"
 
 #include <algorithm>
@@ -78,29 +77,6 @@ void DiagramBasics::seedDefaultDemo() {
     }
 
     m_engine.graph().syncIdCounters();
-    m_engine.commands().clear();
-}
-
-void DiagramBasics::seedSha256Demo() {
-    Sha256Demo::Build(m_engine.graph());
-
-    m_parentLayouts.clear();
-    Node *parent = nullptr;
-    for (Node &node : m_engine.graph().nodes()) {
-        if (node.title.find("Bits Container") != std::string::npos) {
-            parent = &node;
-            break;
-        }
-    }
-    if (parent != nullptr) {
-        registerParentLayout(parent->id, 8);
-    }
-
-    applyParentLayouts();
-
-    // first impression at macro level; bit-level visible on scope/collapse toggle
-    toggleBitContainersCollapsed();
-
     m_engine.commands().clear();
 }
 

@@ -44,7 +44,6 @@ public:
     const StudioViewSettings &viewSettings() const { return m_viewSettings; }
 
     void seedDefaultDemo();
-    void seedSha256Demo();
 
     void createNode(const std::string &typeId, const glm::vec2 &position);
     void duplicateSelected(const glm::vec2 &offset = { 60.0f, 40.0f });

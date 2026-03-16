@@ -1,23 +1,34 @@
 #pragma once
 
-#include "ScopeCanvasEngineCore/Core/Vec2.h"
+#include <glm/mat4x4.hpp>
+#include <glm/vec2.hpp>
 
-namespace ScopeCanvas::RenderGL::Camera
+namespace ScopeCanvas::Render::Camera
 {
 class Camera2D
 {
 public:
+    Camera2D();
+
+    void setViewportSize(int width, int height);
+    void setPosition(const glm::vec2& position);
+    const glm::vec2& position() const;
+    void move(const glm::vec2& delta);
     void setZoom(float zoom);
-    void setPosition(const Engine::Core::Vec2& position);
+    float zoom() const;
 
-    [[nodiscard]] float zoom() const;
-    [[nodiscard]] const Engine::Core::Vec2& position() const;
-
-    [[nodiscard]] Engine::Core::Vec2 worldToScreen(const Engine::Core::Vec2& worldPoint) const;
-    [[nodiscard]] Engine::Core::Vec2 screenToWorld(const Engine::Core::Vec2& screenPoint) const;
+    const glm::mat4& projection() const;
+    glm::mat4 view() const;
+    glm::mat4 viewProjection() const;
+    glm::mat4 invViewProjection() const;
 
 private:
-    float m_zoom{1.0F};
-    Engine::Core::Vec2 m_position{};
+    void updateProjection();
+
+    glm::vec2 m_position;
+    float m_zoom;
+    int m_viewportWidth;
+    int m_viewportHeight;
+    glm::mat4 m_projection;
 };
-} // namespace ScopeCanvas::RenderGL::Camera
+} // namespace ScopeCanvas::Render::Camera

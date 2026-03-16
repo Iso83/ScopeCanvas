@@ -5,7 +5,7 @@
 #include "ScopeCanvasEngineCore/Core/Vec2.h"
 #include "ScopeCanvasEngineCore/Ids/CanvasIds.h"
 
-namespace ScopeCanvas::RenderGL::Scene
+namespace ScopeCanvas::Render::Scene
 {
 struct NodeRenderData
 {
@@ -33,4 +33,4 @@ struct RenderScene
     std::vector<ConnectorAnchorRenderData> connectorAnchors{};
     std::vector<EdgeRenderData> edges{};
 };
-} // namespace ScopeCanvas::RenderGL::Scene
+} // namespace ScopeCanvas::Render::Scene
