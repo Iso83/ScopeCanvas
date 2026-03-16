@@ -6,12 +6,18 @@
 
 #include "Interaction/Commands/GraphCommands.h"
 
+#include "ScopeCanvasEngineCore/Core/DiagramModel.h"
+#include "ScopeCanvasRouting/Routing/EdgeRouter.h"
+#include "Renderers/CanvasRenderer.h"
+#include "Scene/SceneBuilder.h"
+
 #include <glm/vec4.hpp>
 
 #include <algorithm>
 #include <cmath>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 namespace {
 bool contains(const std::string &text, const std::string &token) {
@@ -86,6 +92,67 @@ Node *hitTestNodeByWorld(DiagramModel &graph, const glm::vec2 &mouseWorld) {
     return nullptr;
 }
 
+
+
+ScopeCanvas::Render::Renderers::CanvasFrameData buildRenderFrameFromCore(const DiagramModel& graph)
+{
+    ScopeCanvas::Engine::Core::DiagramModel coreModel;
+
+    std::unordered_map<uint32_t, ScopeCanvas::Engine::Core::CanvasNodeId> nodeIdMap;
+    std::unordered_map<uint32_t, ScopeCanvas::Engine::Core::CanvasConnectorId> connectorIdMap;
+
+    for (const Node& node : graph.nodes())
+    {
+        const auto coreNodeId = coreModel.createNode(ScopeCanvas::Engine::Core::NodeTypeId{1});
+        if (ScopeCanvas::Engine::Core::Node* coreNode = coreModel.getNode(coreNodeId); coreNode != nullptr)
+        {
+            coreNode->setPosition({node.position.x, node.position.y});
+            coreNode->setSize({node.size.x, node.size.y});
+
+            for (std::size_t i = 0; i < node.connectors.size() && i < coreNode->connectors.size(); ++i)
+            {
+                connectorIdMap[node.connectors[i].id] = coreNode->connectors[i];
+            }
+        }
+
+        nodeIdMap[node.id] = coreNodeId;
+    }
+
+    for (const Edge& edge : graph.edges())
+    {
+        const auto fromIt = connectorIdMap.find(edge.fromConnector);
+        const auto toIt = connectorIdMap.find(edge.toConnector);
+        if (fromIt == connectorIdMap.end() || toIt == connectorIdMap.end())
+        {
+            continue;
+        }
+        (void)coreModel.connect(fromIt->second, toIt->second);
+    }
+
+    ScopeCanvas::Engine::Routing::EdgeRouter edgeRouter;
+    std::vector<ScopeCanvas::Engine::Routing::EdgeRoute> routes = edgeRouter.routeAll(coreModel);
+
+    if (routes.empty())
+    {
+        routes.reserve(graph.edges().size());
+        for (const Edge& edge : graph.edges())
+        {
+            ScopeCanvas::Engine::Routing::EdgeRoute route{};
+            route.edgeId = ScopeCanvas::Engine::Core::CanvasEdgeId{edge.id};
+            for (const glm::vec2& p : edge.route.points)
+            {
+                route.points.push_back({p.x, p.y});
+            }
+            routes.push_back(route);
+        }
+    }
+
+    ScopeCanvas::Render::Scene::SceneBuilder sceneBuilder;
+    const ScopeCanvas::Render::Scene::RenderScene scene = sceneBuilder.build(coreModel, routes);
+
+    ScopeCanvas::Render::Renderers::CanvasRenderer canvasRenderer;
+    return canvasRenderer.buildFrame(scene);
+}
 
 const ParentLayout *findParentLayoutForChild(const DiagramBasics &basics, uint32_t childNodeId) {
     for (const auto &entry : basics.parentLayouts()) {
@@ -509,33 +576,25 @@ void NodeDiagramWindow::Draw() {
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
-    for (const Edge &edge : graph.edges()) {
-        const Node *fromNode = graph.findNode(edge.fromNode);
-        const Node *toNode = graph.findNode(edge.toNode);
-        const Connector *fromConnector = graph.findConnector(edge.fromNode, edge.fromConnector);
-        const Connector *toConnector = graph.findConnector(edge.toNode, edge.toConnector);
-        if (fromNode == nullptr || toNode == nullptr || fromConnector == nullptr || toConnector == nullptr) {
+    const ScopeCanvas::Render::Renderers::CanvasFrameData renderFrame = buildRenderFrameFromCore(graph);
+    for (const ScopeCanvas::Render::Scene::EdgeRenderData& edge : renderFrame.edges) {
+        if (edge.points.size() < 2) {
             continue;
         }
 
-        const glm::vec2 p0w = effectiveConnectorWorld(*m_basics, graph, *fromNode, *fromConnector);
-        const glm::vec2 p3w = effectiveConnectorWorld(*m_basics, graph, *toNode, *toConnector);
-        const ImVec2 p0 = worldToCanvasScreen(m_renderer->camera(), p0w, canvasPos, canvasSize);
-        const ImVec2 p3 = worldToCanvasScreen(m_renderer->camera(), p3w, canvasPos, canvasSize);
-
-        const ImU32 edgeColor = edge.selected ? IM_COL32(255, 210, 120, 220) : IM_COL32(220, 220, 235, 200);
-        if (m_basics->viewSettings().curvedEdgeOverlay) {
-            const float dx = std::abs(p3.x - p0.x);
-            const float c = std::max(80.0f, dx * 0.45f);
-            const ImVec2 p1(p0.x + c, p0.y);
-            const ImVec2 p2(p3.x - c, p3.y);
-            drawList->AddBezierCubic(p0, p1, p2, p3, edgeColor, 2.0f, 20);
-        }
-        else {
-            const float midX = (p0.x + p3.x) * 0.5f;
-            drawList->AddLine(p0, ImVec2(midX, p0.y), edgeColor, 2.0f);
-            drawList->AddLine(ImVec2(midX, p0.y), ImVec2(midX, p3.y), edgeColor, 2.0f);
-            drawList->AddLine(ImVec2(midX, p3.y), p3, edgeColor, 2.0f);
+        const ImU32 edgeColor = IM_COL32(220, 220, 235, 200);
+        for (std::size_t i = 0; i + 1 < edge.points.size(); ++i) {
+            const ImVec2 p0 = worldToCanvasScreen(
+                m_renderer->camera(),
+                {edge.points[i].x, edge.points[i].y},
+                canvasPos,
+                canvasSize);
+            const ImVec2 p1 = worldToCanvasScreen(
+                m_renderer->camera(),
+                {edge.points[i + 1].x, edge.points[i + 1].y},
+                canvasPos,
+                canvasSize);
+            drawList->AddLine(p0, p1, edgeColor, m_basics->viewSettings().curvedEdgeOverlay ? 2.0f : 1.5f);
         }
     }
     if (m_basics->viewSettings().shaNodeStyling) {
