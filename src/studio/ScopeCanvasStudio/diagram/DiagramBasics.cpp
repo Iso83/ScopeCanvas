@@ -14,7 +14,7 @@ uint32_t nextConnectorId(const DiagramModel &graph) {
     uint32_t maxId = 0;
     for (const Node &node : graph.nodes()) {
         for (const Connector &connector : node.connectors) {
-            maxId = std::max(maxId, connector.id);
+            maxId = std::max(maxId, connector.id.value);
         }
     }
 

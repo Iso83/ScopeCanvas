@@ -367,11 +367,11 @@ void NodeDiagramWindow::Draw() {
 
     if (hovered) {
         const Edge *hoveredEdge = EdgeInteractionController::hitTestEdge(graph, mouseWorld, zoom);
-        m_hoveredEdgeId = hoveredEdge != nullptr ? hoveredEdge->id : 0;
+        m_hoveredEdgeId = hoveredEdge != nullptr ? hoveredEdge->id.value : 0;
 
         const Connector *hoveredConnector =
             EdgeInteractionController::hitTestConnector(graph, mouseWorld, zoom, nullptr);
-        m_hoveredConnectorId = hoveredConnector != nullptr ? hoveredConnector->id : 0;
+        m_hoveredConnectorId = hoveredConnector != nullptr ? hoveredConnector->id.value : 0;
     }
 
     if (!m_input.leftDown && leftDownNow) {
