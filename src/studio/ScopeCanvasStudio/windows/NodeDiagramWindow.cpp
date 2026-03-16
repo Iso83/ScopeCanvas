@@ -10,6 +10,7 @@
 #include "ScopeCanvasRouting/Routing/EdgeRouter.h"
 #include "Renderers/CanvasRenderer.h"
 #include "Scene/SceneBuilder.h"
+#include "Theme/NodeVisualRegistry.h"
 
 #include <glm/vec4.hpp>
 
@@ -24,45 +25,32 @@ bool contains(const std::string &text, const std::string &token) {
     return text.find(token) != std::string::npos;
 }
 
-ImU32 styleColorForNode(const Node &node) {
-    if (contains(node.title, "Bits Container")) {
-        return IM_COL32(70, 74, 82, 170);
-    }
-    if (contains(node.title, "Bit[")) {
-        return IM_COL32(200, 200, 120, 120);
-    }
-    if (contains(node.title, "Loop#")) {
-        return IM_COL32(80, 120, 190, 120);
-    }
-    if (contains(node.title, "Const True")) {
-        return IM_COL32(70, 180, 90, 140);
-    }
-    if (contains(node.title, "Const False")) {
-        return IM_COL32(180, 80, 80, 140);
-    }
-    if (contains(node.title, "BitShift")) {
-        return IM_COL32(170, 120, 70, 130);
-    }
+ScopeCanvas::Engine::Core::NodeTypeId toCoreNodeTypeId(const Node& node)
+{
+    if (contains(node.title, "Bits Container")) return ScopeCanvas::Engine::Core::NodeTypeId{10};
+    if (contains(node.title, "Bit[")) return ScopeCanvas::Engine::Core::NodeTypeId{11};
+    if (contains(node.title, "Loop#")) return ScopeCanvas::Engine::Core::NodeTypeId{12};
+    if (contains(node.title, "Const True")) return ScopeCanvas::Engine::Core::NodeTypeId{13};
+    if (contains(node.title, "Const False")) return ScopeCanvas::Engine::Core::NodeTypeId{14};
+    if (contains(node.title, "BitShift")) return ScopeCanvas::Engine::Core::NodeTypeId{15};
 
-    return IM_COL32(130, 130, 130, 95);
+    if (node.nodeTypeId == "Number") return ScopeCanvas::Engine::Core::NodeTypeId{1};
+    if (node.nodeTypeId == "Add") return ScopeCanvas::Engine::Core::NodeTypeId{2};
+    if (node.nodeTypeId == "Multiply") return ScopeCanvas::Engine::Core::NodeTypeId{3};
+    if (node.nodeTypeId == "Output") return ScopeCanvas::Engine::Core::NodeTypeId{4};
+    return ScopeCanvas::Engine::Core::NodeTypeId{1};
 }
 
-ImU32 connectorStateColor(const Node &node, const Connector &connector) {
-    if (connector.direction == ConnectorDirection::Input) {
-        return IM_COL32(215, 215, 230, 255);
-    }
+ImU32 toImColor(const ScopeCanvas::Render::Theme::ColorRgba8& c)
+{
+    return IM_COL32(c.r, c.g, c.b, c.a);
+}
 
-    if (contains(node.title, "Const True")) {
-        return IM_COL32(70, 240, 90, 255);
-    }
-    if (contains(node.title, "Const False")) {
-        return IM_COL32(255, 90, 90, 255);
-    }
-    if (contains(node.title, "BitShift")) {
-        return IM_COL32(255, 180, 90, 255);
-    }
-
-    return IM_COL32(225, 225, 240, 255);
+const ScopeCanvas::Render::Theme::NodeVisual& resolveNodeVisual(
+    const ScopeCanvas::Render::Theme::NodeVisualRegistry& registry,
+    const Node& node)
+{
+    return registry.getVisual(toCoreNodeTypeId(node));
 }
 
 ImVec2 worldToCanvasScreen(const Camera2D &camera, const glm::vec2 &world, const ImVec2 &canvasPos, const ImVec2 &canvasSize) {
@@ -597,6 +585,8 @@ void NodeDiagramWindow::Draw() {
             drawList->AddLine(p0, p1, edgeColor, m_basics->viewSettings().curvedEdgeOverlay ? 2.0f : 1.5f);
         }
     }
+    ScopeCanvas::Render::Theme::NodeVisualRegistry visualRegistry;
+
     if (m_basics->viewSettings().shaNodeStyling) {
         for (const Node &node : graph.nodes()) {
             const ImVec2 a = worldToCanvasScreen(m_renderer->camera(), node.position, canvasPos, canvasSize);
@@ -604,9 +594,13 @@ void NodeDiagramWindow::Draw() {
 
             const ImVec2 minPt(std::min(a.x, b.x), std::min(a.y, b.y));
             const ImVec2 maxPt(std::max(a.x, b.x), std::max(a.y, b.y));
-            drawList->AddRectFilled(minPt, maxPt, styleColorForNode(node), 4.0f);
-            drawList->AddRect(minPt, maxPt, IM_COL32(235, 235, 240, 180), 4.0f, 0, 1.0f);
-            drawList->AddRectFilled(minPt, ImVec2(maxPt.x, minPt.y + 22.0f), IM_COL32(30, 34, 44, 185), 4.0f);
+            const ScopeCanvas::Render::Theme::NodeVisual& visual = resolveNodeVisual(visualRegistry, node);
+            drawList->AddRectFilled(minPt, maxPt, toImColor(visual.bodyColor), visual.cornerRadius);
+            drawList->AddRect(minPt, maxPt, toImColor(visual.borderColor), visual.cornerRadius, 0, visual.borderThickness);
+            if (node.selected) {
+                drawList->AddRect(minPt, maxPt, toImColor(visual.selectionColor), visual.cornerRadius, 0, 2.0f);
+            }
+            drawList->AddRectFilled(minPt, ImVec2(maxPt.x, minPt.y + visual.titleBarHeight), toImColor(visual.titleBarColor), visual.cornerRadius);
 
             const bool bitIndexMode = contains(node.title, "Bit[");
             const char *label = node.title.c_str();
@@ -618,7 +612,9 @@ void NodeDiagramWindow::Draw() {
                     label = tmp.c_str();
                 }
             }
-            drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 4.0f), IM_COL32(245, 245, 245, 255), label);
+            const std::string displayTitle = visual.title.empty() ? std::string(label) : visual.title;
+            const std::string caption = visual.icon.empty() ? displayTitle : (visual.icon + std::string(" ") + displayTitle);
+            drawList->AddText(ImVec2(minPt.x + 6.0f, minPt.y + 4.0f), toImColor(visual.titleTextColor), caption.c_str());
 
             const bool containerNode = contains(node.title, "Container") || contains(node.title, "Loop#") || contains(node.title, "op#");
             if (containerNode && hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -668,7 +664,10 @@ void NodeDiagramWindow::Draw() {
                 for (const Connector &connector : node.connectors) {
                     const glm::vec2 world = effectiveConnectorWorld(*m_basics, graph, node, connector);
                     const ImVec2 s = worldToCanvasScreen(m_renderer->camera(), world, canvasPos, canvasSize);
-                    drawList->AddCircleFilled(s, 4.0f, connectorStateColor(node, connector));
+                    const ImU32 connectorColor = connector.direction == ConnectorDirection::Input
+                        ? toImColor(visual.connectorInputColor)
+                        : toImColor(visual.connectorOutputColor);
+                    drawList->AddCircleFilled(s, 4.0f, connectorColor);
                 }
             }
         }
