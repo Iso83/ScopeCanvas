@@ -13,6 +13,7 @@ add_executable(ScopeCanvasStudio
 
 target_include_directories(ScopeCanvasStudio PRIVATE
     ${CMAKE_SOURCE_DIR}/src/engine/ScopeCanvas
+    ${CMAKE_SOURCE_DIR}/src/studio/ScopeCanvasStudio
     ${CMAKE_SOURCE_DIR}/include
 )
 
