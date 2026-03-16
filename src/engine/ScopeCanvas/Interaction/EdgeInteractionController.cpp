@@ -61,7 +61,7 @@ const Edge *EdgeInteractionController::hitTestEdge(const DiagramModel &model,
 const Connector *EdgeInteractionController::hitTestConnector(const DiagramModel &model,
 	const glm::vec2 &mouseWorld,
 	float zoom,
-	uint32_t *outNodeId) {
+	CanvasNodeId *outNodeId) {
 	const float threshold = kHitThresholdPixels / glm::max(zoom, 0.001f);
 
 	for (auto nodeIt = model.nodes().rbegin(); nodeIt != model.nodes().rend(); ++nodeIt) {

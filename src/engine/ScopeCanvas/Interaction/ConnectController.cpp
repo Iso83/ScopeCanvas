@@ -7,14 +7,14 @@
 
 namespace {
 	bool tryBuildDirectedConnection(const DiagramModel &model,
-		uint32_t startNodeId,
-		uint32_t startConnectorId,
-		uint32_t endNodeId,
-		uint32_t endConnectorId,
-		uint32_t &outFromNode,
-		uint32_t &outFromConnector,
-		uint32_t &outToNode,
-		uint32_t &outToConnector) {
+		CanvasNodeId startNodeId,
+		CanvasConnectorId startConnectorId,
+		CanvasNodeId endNodeId,
+		CanvasConnectorId endConnectorId,
+		CanvasNodeId &outFromNode,
+		CanvasConnectorId &outFromConnector,
+		CanvasNodeId &outToNode,
+		CanvasConnectorId &outToConnector) {
 		const Connector *startConnector = model.findConnector(startNodeId, startConnectorId);
 		const Connector *endConnector = model.findConnector(endNodeId, endConnectorId);
 		if (startConnector == nullptr || endConnector == nullptr) {
@@ -42,7 +42,7 @@ namespace {
 		return false;
 	}
 
-	int connectionCountFor(const DiagramModel &model, uint32_t nodeId, uint32_t connectorId) {
+	int connectionCountFor(const DiagramModel &model, CanvasNodeId nodeId, CanvasConnectorId connectorId) {
 		int currentConnections = 0;
 		for (const Edge &edge : model.edges()) {
 			if ((edge.fromNode == nodeId && edge.fromConnector == connectorId) ||
@@ -54,10 +54,10 @@ namespace {
 		return currentConnections;
 	}
 
-	uint32_t findEdgeToReplace(const DiagramModel &model,
-		uint32_t nodeId,
-		uint32_t connectorId,
-		uint32_t excludedEdgeId) {
+	CanvasEdgeId findEdgeToReplace(const DiagramModel &model,
+		CanvasNodeId nodeId,
+		CanvasConnectorId connectorId,
+		CanvasEdgeId excludedEdgeId) {
 		for (const Edge &edge : model.edges()) {
 			const bool usesConnector =
 				(edge.fromNode == nodeId && edge.fromConnector == connectorId) ||
@@ -67,7 +67,7 @@ namespace {
 			}
 		}
 
-		return 0;
+		return CanvasEdgeId{};
 	}
 }
 
@@ -75,7 +75,7 @@ bool ConnectController::onMouseDown(const DiagramModel &model,
 	const glm::vec2 &mouseWorld,
 	float zoom,
 	bool overrideMode) {
-	uint32_t startNodeId = 0;
+	CanvasNodeId startNodeId{};
 	const Connector *connector = hitTestConnector(model, mouseWorld, zoom, startNodeId);
 	if (connector == nullptr) {
 		return false;
@@ -92,10 +92,10 @@ bool ConnectController::onMouseDown(const DiagramModel &model,
 	return true;
 }
 
-void ConnectController::beginReconnect(uint32_t edgeId,
+void ConnectController::beginReconnect(CanvasEdgeId edgeId,
 	bool startEndpoint,
-	uint32_t fixedNodeId,
-	uint32_t fixedConnectorId,
+	CanvasNodeId fixedNodeId,
+	CanvasConnectorId fixedConnectorId,
 	const glm::vec2 &mouseWorld) {
 	m_connecting = true;
 	m_reconnectActive = true;
@@ -123,7 +123,7 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
 
 	m_previewPosition = mouseWorld;
 
-	uint32_t endNodeId = 0;
+	CanvasNodeId endNodeId{};
 	const Connector *endConnector = hitTestConnector(model, mouseWorld, zoom, endNodeId);
 	if (endConnector == nullptr) {
 		std::cout << "Connection cancelled\n";
@@ -160,10 +160,10 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
 		return { .handled = true };
 	}
 
-	uint32_t fromNode = 0;
-	uint32_t fromConnector = 0;
-	uint32_t toNode = 0;
-	uint32_t toConnector = 0;
+	CanvasNodeId fromNode{};
+	CanvasConnectorId fromConnector{};
+	CanvasNodeId toNode{};
+	CanvasConnectorId toConnector{};
 
 	if (!tryBuildDirectedConnection(model,
 		m_startNodeId,
@@ -219,8 +219,8 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
 			return { .handled = true };
 		}
 
-		const uint32_t edgeToReplace = findEdgeToReplace(model, toNode, toConnector, m_reconnectEdgeId);
-		if (edgeToReplace == 0) {
+		const CanvasEdgeId edgeToReplace = findEdgeToReplace(model, toNode, toConnector, m_reconnectEdgeId);
+		if (!edgeToReplace) {
 			std::cout << "Connection cancelled\n";
 			reset();
 			return { .handled = true };
@@ -240,12 +240,12 @@ ConnectController::ConnectionResult ConnectController::onMouseUp(const DiagramMo
 const Connector *ConnectController::hitTestConnector(const DiagramModel &model,
 	const glm::vec2 &mouseWorld,
 	float zoom,
-	uint32_t &nodeId) const {
-	nodeId = 0;
+	CanvasNodeId &nodeId) const {
+	nodeId = CanvasNodeId{};
 	return EdgeInteractionController::hitTestConnector(model, mouseWorld, zoom, &nodeId);
 }
 
-bool ConnectController::connectorHasEdge(const DiagramModel &model, uint32_t nodeId, uint32_t connectorId) {
+bool ConnectController::connectorHasEdge(const DiagramModel &model, CanvasNodeId nodeId, CanvasConnectorId connectorId) {
 	for (const Edge &edge : model.edges()) {
 		if ((edge.fromNode == nodeId && edge.fromConnector == connectorId) ||
 			(edge.toNode == nodeId && edge.toConnector == connectorId)) {
@@ -256,22 +256,22 @@ bool ConnectController::connectorHasEdge(const DiagramModel &model, uint32_t nod
 	return false;
 }
 
-uint32_t ConnectController::allocateEdgeId(const DiagramModel &model) {
+CanvasEdgeId ConnectController::allocateEdgeId(const DiagramModel &model) {
 	uint32_t maxId = 0;
 	for (const Edge &edge : model.edges()) {
-		if (edge.id > maxId) {
-			maxId = edge.id;
+		if (edge.id.value > maxId) {
+			maxId = edge.id.value;
 		}
 	}
 
-	return maxId + 1;
+	return CanvasEdgeId{ maxId + 1 };
 }
 
 void ConnectController::reset() {
 	m_connecting = false;
-	m_startNodeId = 0;
-	m_startConnectorId = 0;
-	m_reconnectEdgeId = 0;
+	m_startNodeId = CanvasNodeId{};
+	m_startConnectorId = CanvasConnectorId{};
+	m_reconnectEdgeId = CanvasEdgeId{};
 	m_reconnectActive = false;
 	m_reconnectStartEndpoint = false;
 	m_previewPosition = glm::vec2(0.0f);

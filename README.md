@@ -52,13 +52,11 @@ Planned:
 ## Project Structure
 
 ```
-src/engine/core ScopeCanvasEngineCore (model/rules/persistence)
-src/engine/render ScopeCanvasEngineRender (GL rendering/interaction)
-src/engine/tests CTest-based engine tests
-src/studio/     ScopeCanvasStudio demo host app
-include/        public headers
-assets/         shaders and runtime resources
-third_party/    external libraries
+ScopeCanvas
+├─ src/engine/core   -> target: ScopeCanvasCore   (geen externe libs voor core tests)
+├─ src/engine/render -> target: ScopeCanvasRender (GL / ImGui)
+├─ src/engine/tests  -> CTest voor core
+└─ src/studio        -> target: ScopeCanvasStudio (demo host)
 ```
 
 Scope split:

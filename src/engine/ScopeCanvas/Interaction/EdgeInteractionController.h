@@ -8,7 +8,7 @@
 #include <vector>
 
 struct EdgeEndpointHit {
-	uint32_t edgeId = 0;
+	CanvasEdgeId edgeId{};
 	bool hit = false;
 	bool startEndpoint = false;
 };
@@ -21,7 +21,7 @@ public:
 	static const Connector *hitTestConnector(const DiagramModel &model,
 		const glm::vec2 &mouseWorld,
 		float zoom,
-		uint32_t *outNodeId = nullptr);
+		CanvasNodeId *outNodeId = nullptr);
 
 	static EdgeEndpointHit hitTestEdgeEndpoint(const DiagramModel &model,
 		const glm::vec2 &mouseWorld,

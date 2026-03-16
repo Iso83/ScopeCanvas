@@ -19,19 +19,22 @@ set(ENGINE_RENDER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/../ScopeCanvas/Interaction/CameraController.cpp
 )
 
-add_library(ScopeCanvasEngineRender ${ENGINE_RENDER_SRC})
+add_library(ScopeCanvasRender ${ENGINE_RENDER_SRC})
 
-target_include_directories(ScopeCanvasEngineRender PUBLIC
+target_include_directories(ScopeCanvasRender PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../ScopeCanvas
     ${CMAKE_SOURCE_DIR}/include
 )
 
-target_link_libraries(ScopeCanvasEngineRender
-    PUBLIC ScopeCanvasEngineCore
+target_link_libraries(ScopeCanvasRender
+    PUBLIC ScopeCanvasCore
     PUBLIC glfw glad
 )
 if(TARGET glm)
-    target_link_libraries(ScopeCanvasEngineRender PUBLIC glm)
+    target_link_libraries(ScopeCanvasRender PUBLIC glm)
 endif()
 
-set_property(TARGET ScopeCanvasEngineRender PROPERTY FOLDER "engine/render")
+set_property(TARGET ScopeCanvasRender PROPERTY FOLDER "engine/render")
+
+# backwards compatibility alias
+add_library(ScopeCanvasEngineRender ALIAS ScopeCanvasRender)

@@ -26,27 +26,30 @@ if(TARGET nlohmann_json::nlohmann_json)
     )
 endif()
 
-add_library(ScopeCanvasEngineCore
+add_library(ScopeCanvasCore
     ${ENGINE_CORE_SRC}
     ${ENGINE_CORE_HEADERS}
 )
 
-target_include_directories(ScopeCanvasEngineCore PUBLIC
+target_include_directories(ScopeCanvasCore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../ScopeCanvas
     ${CMAKE_SOURCE_DIR}/include
 )
 
 if(NOT TARGET glm)
-    target_include_directories(ScopeCanvasEngineCore PUBLIC
+    target_include_directories(ScopeCanvasCore PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/fallback
     )
 endif()
 
 if(TARGET glm)
-    target_link_libraries(ScopeCanvasEngineCore PUBLIC glm)
+    target_link_libraries(ScopeCanvasCore PUBLIC glm)
 endif()
 if(TARGET nlohmann_json::nlohmann_json)
-    target_link_libraries(ScopeCanvasEngineCore PUBLIC nlohmann_json::nlohmann_json)
+    target_link_libraries(ScopeCanvasCore PUBLIC nlohmann_json::nlohmann_json)
 endif()
 
-set_property(TARGET ScopeCanvasEngineCore PROPERTY FOLDER "engine/core")
+set_property(TARGET ScopeCanvasCore PROPERTY FOLDER "engine/core")
+
+# backwards compatibility alias
+add_library(ScopeCanvasEngineCore ALIAS ScopeCanvasCore)

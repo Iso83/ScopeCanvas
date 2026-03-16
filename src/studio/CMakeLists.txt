@@ -17,7 +17,8 @@ target_include_directories(ScopeCanvasStudio PRIVATE
 )
 
 target_link_libraries(ScopeCanvasStudio
-    ScopeCanvasEngine
+    ScopeCanvasCore
+    ScopeCanvasRender
 	imgui
 )
 
