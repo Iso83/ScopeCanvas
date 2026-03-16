@@ -22,7 +22,7 @@ add_library(ScopeCanvasEngineCore
 )
 
 target_include_directories(ScopeCanvasEngineCore PUBLIC
-    ${CMAKE_SOURCE_DIR}/src/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
 )
 
 file(GLOB_RECURSE ROUTING_SRC CONFIGURE_DEPENDS
@@ -39,7 +39,7 @@ add_library(ScopeCanvasRouting
 )
 
 target_include_directories(ScopeCanvasRouting PUBLIC
-    ${CMAKE_SOURCE_DIR}/src/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine
 )
 
 target_link_libraries(ScopeCanvasRouting PUBLIC

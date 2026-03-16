@@ -9,6 +9,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(FetchContent)
 
+# ---------- Core graph/routing modules ----------
+
+add_subdirectory(engine/ScopeCanvasCore)
+
 # ---------- GLFW configuration ----------
 
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
