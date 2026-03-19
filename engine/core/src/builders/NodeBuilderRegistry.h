@@ -1,23 +1,19 @@
 #pragma once
 
+#include <ScopeCanvas/core/ids/TypeIds.h>
 #include <functional>
 #include <vector>
 
-#include <ScopeCanvas/core/ids/TypeIds.h>
-
-namespace ScopeCanvas::Core
-{
-class NodeBuilderRegistry
-{
-public:
+namespace ScopeCanvas::Core {
+class NodeBuilderRegistry {
+  public:
     using BuilderCallback = std::function<void()>;
 
     void registerBuilder(NodeTypeId typeId, BuilderCallback builder);
     const BuilderCallback* getBuilder(NodeTypeId typeId) const;
 
-private:
-    struct Entry
-    {
+  private:
+    struct Entry {
         NodeTypeId typeId{};
         BuilderCallback builder{};
     };

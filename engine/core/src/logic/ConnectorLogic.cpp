@@ -3,41 +3,32 @@
 #include <ScopeCanvas/core/Connector.h>
 #include <ScopeCanvas/core/DiagramModel.h>
 
-namespace ScopeCanvas::Core
-{
-bool ConnectorLogic::canConnect(const DiagramModel& model, CanvasConnectorId a, CanvasConnectorId b)
-{
-    if (a == b)
-    {
+namespace ScopeCanvas::Core {
+bool ConnectorLogic::canConnect(const DiagramModel& model, CanvasConnectorId a, CanvasConnectorId b) {
+    if (a == b) {
         return false;
     }
 
-    if (model.getConnector(a) == nullptr || model.getConnector(b) == nullptr)
-    {
+    if (model.getConnector(a) == nullptr || model.getConnector(b) == nullptr) {
         return false;
     }
 
-    if (edgeExists(model, a, b))
-    {
+    if (edgeExists(model, a, b)) {
         return false;
     }
 
     return true;
 }
 
-bool ConnectorLogic::edgeExists(const DiagramModel& model, CanvasConnectorId a, CanvasConnectorId b)
-{
+bool ConnectorLogic::edgeExists(const DiagramModel& model, CanvasConnectorId a, CanvasConnectorId b) {
     const Connector* connector = model.getConnector(a);
-    if (connector == nullptr)
-    {
+    if (connector == nullptr) {
         return false;
     }
 
-    for (const CanvasEdgeId edgeId : connector->edges)
-    {
+    for (const CanvasEdgeId edgeId : connector->edges) {
         const Edge* edge = model.getEdge(edgeId);
-        if (edge != nullptr && edge->fromConnector == a && edge->toConnector == b)
-        {
+        if (edge != nullptr && edge->fromConnector == a && edge->toConnector == b) {
             return true;
         }
     }
@@ -45,12 +36,10 @@ bool ConnectorLogic::edgeExists(const DiagramModel& model, CanvasConnectorId a, 
     return false;
 }
 
-bool ConnectorLogic::sameNode(const DiagramModel& model, CanvasConnectorId a, CanvasConnectorId b)
-{
+bool ConnectorLogic::sameNode(const DiagramModel& model, CanvasConnectorId a, CanvasConnectorId b) {
     const Connector* connectorA = model.getConnector(a);
     const Connector* connectorB = model.getConnector(b);
-    if (connectorA == nullptr || connectorB == nullptr)
-    {
+    if (connectorA == nullptr || connectorB == nullptr) {
         return false;
     }
 

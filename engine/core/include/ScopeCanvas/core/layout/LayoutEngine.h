@@ -1,16 +1,13 @@
 #pragma once
 
+#include <ScopeCanvas/core/ids/CanvasIds.h>
 #include <vector>
 
-#include <ScopeCanvas/core/ids/CanvasIds.h>
-
-namespace ScopeCanvas::Core
-{
+namespace ScopeCanvas::Core {
 class DiagramModel;
 
-class LayoutEngine
-{
-public:
+class LayoutEngine {
+  public:
     virtual ~LayoutEngine() = default;
 
     virtual void layout(DiagramModel& model) = 0;

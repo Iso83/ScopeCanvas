@@ -1,29 +1,22 @@
 #pragma once
 
 #define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-
-#include <ScopeCanvas/render/camera/Camera2D.h>
 #include "diagram/DiagramBasics.h"
 
+#include <GLFW/glfw3.h>
 #include <ScopeCanvas/core/ids/CanvasIds.h>
-
+#include <ScopeCanvas/render/camera/Camera2D.h>
 #include <string>
 
-namespace ScopeCanvas::Studio
-{
-class NodeDiagramWindow
-{
-public:
-    NodeDiagramWindow(GLFWwindow* window,
-                      DiagramBasics* basics,
-                      ViewState* viewState,
-                      std::string title);
+namespace ScopeCanvas::Studio {
+class NodeDiagramWindow {
+  public:
+    NodeDiagramWindow(GLFWwindow* window, DiagramBasics* basics, ViewState* viewState, std::string title);
     ~NodeDiagramWindow();
 
     void draw();
 
-private:
+  private:
     void ensureRenderTarget(int width, int height);
     void releaseRenderTarget();
     Core::Vec2 screenToWorld(float sx, float sy, float w, float h) const;

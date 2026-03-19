@@ -2,24 +2,19 @@
 
 #include <iostream>
 
-namespace ScopeCanvas::Render::GL
-{
+namespace ScopeCanvas::Render::GL {
 Shader::Shader() : m_programId(0) {}
 
-Shader::~Shader()
-{
+Shader::~Shader() {
     destroy();
 }
 
-Shader::Shader(Shader&& other) noexcept : m_programId(other.m_programId)
-{
+Shader::Shader(Shader&& other) noexcept : m_programId(other.m_programId) {
     other.m_programId = 0;
 }
 
-Shader& Shader::operator=(Shader&& other) noexcept
-{
-    if (this != &other)
-    {
+Shader& Shader::operator=(Shader&& other) noexcept {
+    if (this != &other) {
         destroy();
         m_programId = other.m_programId;
         other.m_programId = 0;
@@ -27,13 +22,11 @@ Shader& Shader::operator=(Shader&& other) noexcept
     return *this;
 }
 
-bool Shader::load(const char* vertexSrc, const char* fragmentSrc)
-{
+bool Shader::load(const char* vertexSrc, const char* fragmentSrc) {
     const GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     const GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    if (!compileShader(vertexShader, vertexSrc) || !compileShader(fragmentShader, fragmentSrc))
-    {
+    if (!compileShader(vertexShader, vertexSrc) || !compileShader(fragmentShader, fragmentSrc)) {
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
         return false;
@@ -47,8 +40,7 @@ bool Shader::load(const char* vertexSrc, const char* fragmentSrc)
 
     GLint success = 0;
     glGetProgramiv(m_programId, GL_LINK_STATUS, &success);
-    if (!success)
-    {
+    if (!success) {
         char infoLog[512]{};
         glGetProgramInfoLog(m_programId, sizeof(infoLog), nullptr, infoLog);
         std::cerr << "Shader program link failed: " << infoLog << '\n';
@@ -63,25 +55,21 @@ bool Shader::load(const char* vertexSrc, const char* fragmentSrc)
     return true;
 }
 
-void Shader::use() const
-{
+void Shader::use() const {
     glUseProgram(m_programId);
 }
 
-GLuint Shader::id() const
-{
+GLuint Shader::id() const {
     return m_programId;
 }
 
-bool Shader::compileShader(GLuint shaderId, const char* source) const
-{
+bool Shader::compileShader(GLuint shaderId, const char* source) const {
     glShaderSource(shaderId, 1, &source, nullptr);
     glCompileShader(shaderId);
 
     GLint success = 0;
     glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
+    if (!success) {
         char infoLog[512]{};
         glGetShaderInfoLog(shaderId, sizeof(infoLog), nullptr, infoLog);
         std::cerr << "Shader compile failed: " << infoLog << '\n';
@@ -91,10 +79,8 @@ bool Shader::compileShader(GLuint shaderId, const char* source) const
     return true;
 }
 
-void Shader::destroy()
-{
-    if (m_programId != 0)
-    {
+void Shader::destroy() {
+    if (m_programId != 0) {
         glDeleteProgram(m_programId);
         m_programId = 0;
     }

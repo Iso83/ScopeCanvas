@@ -1,28 +1,23 @@
 #include "renderers/GridRenderer.h"
 
+#include <algorithm>
+#include <cmath>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
-#include <algorithm>
-#include <cmath>
 #include <limits>
 #include <vector>
 
-namespace ScopeCanvas::Render::Renderers
-{
+namespace ScopeCanvas::Render::Renderers {
 GridRenderer::GridRenderer() : m_vao(0), m_vbo(0) {}
 
-GridRenderer::~GridRenderer()
-{
+GridRenderer::~GridRenderer() {
     destroy();
 }
 
-bool GridRenderer::init()
-{
-    if (!m_shader.load(GL::GridVertex, GL::GridFragment))
-    {
+bool GridRenderer::init() {
+    if (!m_shader.load(GL::GridVertex, GL::GridFragment)) {
         return false;
     }
 
@@ -39,26 +34,22 @@ bool GridRenderer::init()
     return true;
 }
 
-void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, int viewportHeight, float cellSize)
-{
+void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, int viewportHeight, float cellSize) {
     (void)viewportWidth;
     (void)viewportHeight;
 
     const float spacing = std::max(cellSize, 1.0F);
     const glm::mat4 invViewProjection = glm::inverse(viewProjection);
 
-    const glm::vec4 cornersNdc[] = {{-1.0F, -1.0F, 0.0F, 1.0F},
-                                    {1.0F, -1.0F, 0.0F, 1.0F},
-                                    {-1.0F, 1.0F, 0.0F, 1.0F},
-                                    {1.0F, 1.0F, 0.0F, 1.0F}};
+    const glm::vec4 cornersNdc[] = {
+        {-1.0F, -1.0F, 0.0F, 1.0F}, {1.0F, -1.0F, 0.0F, 1.0F}, {-1.0F, 1.0F, 0.0F, 1.0F}, {1.0F, 1.0F, 0.0F, 1.0F}};
 
     float minX = std::numeric_limits<float>::max();
     float maxX = std::numeric_limits<float>::lowest();
     float minY = std::numeric_limits<float>::max();
     float maxY = std::numeric_limits<float>::lowest();
 
-    for (const glm::vec4& cornerNdc : cornersNdc)
-    {
+    for (const glm::vec4& cornerNdc : cornersNdc) {
         const glm::vec4 world = invViewProjection * cornerNdc;
         const glm::vec2 worldPos = glm::vec2(world) / world.w;
         minX = std::min(minX, worldPos.x);
@@ -82,8 +73,7 @@ void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, in
 
     const float epsilon = spacing * 0.1F;
 
-    for (float x = startX; x <= endX + epsilon; x += spacing)
-    {
+    for (float x = startX; x <= endX + epsilon; x += spacing) {
         const int index = static_cast<int>(std::llround(x / spacing));
         const bool major = (index % 5 == 0);
         std::vector<glm::vec2>& lines = major ? majorLines : minorLines;
@@ -91,8 +81,7 @@ void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, in
         lines.push_back({x, paddedMaxY});
     }
 
-    for (float y = startY; y <= endY + epsilon; y += spacing)
-    {
+    for (float y = startY; y <= endY + epsilon; y += spacing) {
         const int index = static_cast<int>(std::llround(y / spacing));
         const bool major = (index % 5 == 0);
         std::vector<glm::vec2>& lines = major ? majorLines : minorLines;
@@ -104,12 +93,9 @@ void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, in
     uploadAndDrawLines(majorLines, viewProjection, {0.32F, 0.35F, 0.38F});
 }
 
-void GridRenderer::uploadAndDrawLines(const std::vector<glm::vec2>& vertices,
-                                      const glm::mat4& viewProjection,
-                                      const glm::vec3& color)
-{
-    if (vertices.empty())
-    {
+void GridRenderer::uploadAndDrawLines(const std::vector<glm::vec2>& vertices, const glm::mat4& viewProjection,
+                                      const glm::vec3& color) {
+    if (vertices.empty()) {
         return;
     }
 
@@ -124,24 +110,19 @@ void GridRenderer::uploadAndDrawLines(const std::vector<glm::vec2>& vertices,
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 static_cast<GLsizeiptr>(vertices.size() * sizeof(glm::vec2)),
-                 vertices.data(),
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.size() * sizeof(glm::vec2)), vertices.data(),
                  GL_DYNAMIC_DRAW);
     glDrawArrays(GL_LINES, 0, static_cast<GLsizei>(vertices.size()));
     glBindVertexArray(0);
 }
 
-void GridRenderer::destroy()
-{
-    if (m_vbo != 0)
-    {
+void GridRenderer::destroy() {
+    if (m_vbo != 0) {
         glDeleteBuffers(1, &m_vbo);
         m_vbo = 0;
     }
 
-    if (m_vao != 0)
-    {
+    if (m_vao != 0) {
         glDeleteVertexArrays(1, &m_vao);
         m_vao = 0;
     }

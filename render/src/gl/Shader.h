@@ -2,11 +2,9 @@
 
 #include <glad/glad.h>
 
-namespace ScopeCanvas::Render::GL
-{
-class Shader
-{
-public:
+namespace ScopeCanvas::Render::GL {
+class Shader {
+  public:
     Shader();
     ~Shader();
 
@@ -21,7 +19,7 @@ public:
 
     GLuint id() const;
 
-private:
+  private:
     bool compileShader(GLuint shaderId, const char* source) const;
     void destroy();
 

@@ -1,9 +1,8 @@
 #include "diagram/DiagramBasics.h"
-#include "windows/NodeDiagramWindow.h"
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "windows/NodeDiagramWindow.h"
 
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
@@ -11,26 +10,23 @@
 
 using namespace ScopeCanvas::Studio;
 
-namespace
-{
-int RunStudioApp()
-{
-    if (!glfwInit()) return -1;
+namespace {
+int RunStudioApp() {
+    if (!glfwInit())
+        return -1;
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(1400, 900, "ScopeCanvas Studio", nullptr, nullptr);
-    if (window == nullptr)
-    {
+    if (window == nullptr) {
         glfwTerminate();
         return -1;
     }
 
     glfwMakeContextCurrent(window);
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         glfwDestroyWindow(window);
         glfwTerminate();
         return -1;
@@ -54,8 +50,7 @@ int RunStudioApp()
     NodeDiagramWindow canvasA(window, &basics, &viewA, "Canvas A");
     NodeDiagramWindow canvasB(window, &basics, &viewB, "Canvas B");
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -63,18 +58,19 @@ int RunStudioApp()
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport();
 
-        if (ImGui::BeginMainMenuBar())
-        {
-            if (ImGui::BeginMenu("Create"))
-            {
-                if (ImGui::MenuItem("Number")) basics.createNode(ScopeCanvas::Core::NodeTypeId{1}, {-120.0F, 0.0F});
-                if (ImGui::MenuItem("Add")) basics.createNode(ScopeCanvas::Core::NodeTypeId{2}, {80.0F, 0.0F});
-                if (ImGui::MenuItem("Multiply")) basics.createNode(ScopeCanvas::Core::NodeTypeId{3}, {280.0F, 0.0F});
-                if (ImGui::MenuItem("Output")) basics.createNode(ScopeCanvas::Core::NodeTypeId{4}, {480.0F, 0.0F});
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("Create")) {
+                if (ImGui::MenuItem("Number"))
+                    basics.createNode(ScopeCanvas::Core::NodeTypeId{1}, {-120.0F, 0.0F});
+                if (ImGui::MenuItem("Add"))
+                    basics.createNode(ScopeCanvas::Core::NodeTypeId{2}, {80.0F, 0.0F});
+                if (ImGui::MenuItem("Multiply"))
+                    basics.createNode(ScopeCanvas::Core::NodeTypeId{3}, {280.0F, 0.0F});
+                if (ImGui::MenuItem("Output"))
+                    basics.createNode(ScopeCanvas::Core::NodeTypeId{4}, {480.0F, 0.0F});
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("View"))
-            {
+            if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Show Grid", nullptr, &basics.gridSettings().enabled);
                 ImGui::MenuItem("Snap to Grid", nullptr, &basics.gridSettings().snapEnabled);
                 ImGui::EndMenu();
@@ -94,8 +90,7 @@ int RunStudioApp()
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             GLFWwindow* backup = glfwGetCurrentContext();
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
@@ -117,7 +112,11 @@ int RunStudioApp()
 
 #ifdef _WIN32
 #include <windows.h>
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return RunStudioApp(); }
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+    return RunStudioApp();
+}
 #else
-int main() { return RunStudioApp(); }
+int main() {
+    return RunStudioApp();
+}
 #endif

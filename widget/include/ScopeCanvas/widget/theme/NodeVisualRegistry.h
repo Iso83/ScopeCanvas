@@ -1,23 +1,19 @@
 #pragma once
 
+#include <ScopeCanvas/core/ids/TypeIds.h>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
 
-#include <ScopeCanvas/core/ids/TypeIds.h>
-
-namespace ScopeCanvas::Render::Theme
-{
-struct ColorRgba8
-{
+namespace ScopeCanvas::Render::Theme {
+struct ColorRgba8 {
     std::uint8_t r{0};
     std::uint8_t g{0};
     std::uint8_t b{0};
     std::uint8_t a{255};
 };
 
-struct NodeVisual
-{
+struct NodeVisual {
     std::string title{};
     std::string icon{};
 
@@ -34,15 +30,14 @@ struct NodeVisual
     float titleBarHeight{22.0F};
 };
 
-class NodeVisualRegistry
-{
-public:
+class NodeVisualRegistry {
+  public:
     NodeVisualRegistry();
 
     void registerVisual(Core::NodeTypeId typeId, const NodeVisual& visual);
     [[nodiscard]] const NodeVisual& getVisual(Core::NodeTypeId typeId) const;
 
-private:
+  private:
     std::unordered_map<std::uint32_t, NodeVisual> m_visuals{};
     NodeVisual m_defaultVisual{};
 };

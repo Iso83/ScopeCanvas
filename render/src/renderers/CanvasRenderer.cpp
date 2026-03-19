@@ -1,15 +1,12 @@
 #include <ScopeCanvas/render/renderers/CanvasRenderer.h>
 
-namespace ScopeCanvas::Render::Renderers
-{
-CanvasFrameData CanvasRenderer::buildFrame(const Scene::RenderScene& scene) const
-{
+namespace ScopeCanvas::Render::Renderers {
+CanvasFrameData CanvasRenderer::buildFrame(const Scene::RenderScene& scene) const {
     CanvasFrameData frame{};
     frame.nodes = m_nodeRenderer.collect(scene);
 
     frame.edges.reserve(scene.edges.size());
-    for (const Scene::EdgeRenderData& edge : scene.edges)
-    {
+    for (const Scene::EdgeRenderData& edge : scene.edges) {
         Scene::EdgeRenderData drawEdge{};
         drawEdge.edgeId = edge.edgeId;
 

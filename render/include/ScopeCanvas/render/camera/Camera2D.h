@@ -3,11 +3,9 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 
-namespace ScopeCanvas::Render::Camera
-{
-class Camera2D
-{
-public:
+namespace ScopeCanvas::Render::Camera {
+class Camera2D {
+  public:
     Camera2D();
 
     void setViewportSize(int width, int height);
@@ -22,7 +20,7 @@ public:
     glm::mat4 viewProjection() const;
     glm::mat4 invViewProjection() const;
 
-private:
+  private:
     void updateProjection();
 
     glm::vec2 m_position;

@@ -1,29 +1,23 @@
 #include "gl/Texture.h"
 
-namespace ScopeCanvas::Render::GL
-{
-void Texture::resize(int width, int height)
-{
+namespace ScopeCanvas::Render::GL {
+void Texture::resize(int width, int height) {
     m_width = width;
     m_height = height;
-    if (m_id == 0)
-    {
+    if (m_id == 0) {
         m_id = 1;
     }
 }
 
-int Texture::width() const
-{
+int Texture::width() const {
     return m_width;
 }
 
-int Texture::height() const
-{
+int Texture::height() const {
     return m_height;
 }
 
-std::uint32_t Texture::id() const
-{
+std::uint32_t Texture::id() const {
     return m_id;
 }
 } // namespace ScopeCanvas::Render::GL

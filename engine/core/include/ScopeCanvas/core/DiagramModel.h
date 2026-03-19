@@ -1,19 +1,17 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include "layout/LayoutEngine.h"
+#include "layout/LayoutGroup.h"
 
 #include <ScopeCanvas/core/Connector.h>
 #include <ScopeCanvas/core/Edge.h>
 #include <ScopeCanvas/core/Node.h>
-#include "layout/LayoutEngine.h"
-#include "layout/LayoutGroup.h"
+#include <cstdint>
+#include <vector>
 
-namespace ScopeCanvas::Core
-{
-class DiagramModel
-{
-public:
+namespace ScopeCanvas::Core {
+class DiagramModel {
+  public:
     DiagramModel() = default;
 
     CanvasNodeId createNode(NodeTypeId typeId);
@@ -38,7 +36,7 @@ public:
     LayoutGroup* getLayoutGroup(LayoutGroupId groupId);
     const LayoutGroup* getLayoutGroup(LayoutGroupId groupId) const;
 
-private:
+  private:
     static bool contains(const std::vector<CanvasNodeId>& values, CanvasNodeId value);
     static bool contains(const std::vector<CanvasConnectorId>& values, CanvasConnectorId value);
     static bool contains(const std::vector<CanvasEdgeId>& values, CanvasEdgeId value);

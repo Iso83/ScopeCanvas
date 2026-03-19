@@ -3,45 +3,39 @@
 #include <ScopeCanvas/render/renderers/CanvasRenderer.h>
 #include <ScopeCanvas/render/scene/SceneBuilder.h>
 #include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
-
+#include <algorithm>
 #include <glad/glad.h>
 #include <imgui.h>
 
-#include <algorithm>
+namespace ScopeCanvas::Studio {
+namespace {
+ImU32 color(const Render::Theme::ColorRgba8& c) {
+    return IM_COL32(c.r, c.g, c.b, c.a);
+}
 
-namespace ScopeCanvas::Studio
-{
-namespace
-{
-ImU32 color(const Render::Theme::ColorRgba8& c) { return IM_COL32(c.r, c.g, c.b, c.a); }
-
-Core::Vec2 connectorWorld(const Core::Node& node, std::size_t index)
-{
+Core::Vec2 connectorWorld(const Core::Node& node, std::size_t index) {
     const float count = static_cast<float>(node.connectors.size() + 1U);
     const float y = node.position.y + (node.size.y / count) * static_cast<float>(index + 1U);
     const bool right = index % 2U == 1U;
     return {right ? node.position.x + node.size.x : node.position.x, y};
 }
 
-Core::NodeTypeId mapType(const Core::Node& node)
-{
+Core::NodeTypeId mapType(const Core::Node& node) {
     return node.typeId.isValid() ? node.typeId : Core::NodeTypeId{1};
 }
 } // namespace
 
 NodeDiagramWindow::NodeDiagramWindow(GLFWwindow* window, DiagramBasics* basics, ViewState* viewState, std::string title)
-    : m_window(window), m_basics(basics), m_viewState(viewState), m_title(std::move(title))
-{
+    : m_window(window), m_basics(basics), m_viewState(viewState), m_title(std::move(title)) {}
+
+NodeDiagramWindow::~NodeDiagramWindow() {
+    releaseRenderTarget();
 }
 
-NodeDiagramWindow::~NodeDiagramWindow() { releaseRenderTarget(); }
-
-void NodeDiagramWindow::ensureRenderTarget(int width, int height)
-{
+void NodeDiagramWindow::ensureRenderTarget(int width, int height) {
     width = std::max(width, 1);
     height = std::max(height, 1);
-    if (m_framebuffer != 0 && m_renderWidth == width && m_renderHeight == height)
-    {
+    if (m_framebuffer != 0 && m_renderWidth == width && m_renderHeight == height) {
         return;
     }
 
@@ -67,18 +61,19 @@ void NodeDiagramWindow::ensureRenderTarget(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void NodeDiagramWindow::releaseRenderTarget()
-{
-    if (m_depthStencilRenderbuffer != 0) glDeleteRenderbuffers(1, &m_depthStencilRenderbuffer);
-    if (m_colorTexture != 0) glDeleteTextures(1, &m_colorTexture);
-    if (m_framebuffer != 0) glDeleteFramebuffers(1, &m_framebuffer);
+void NodeDiagramWindow::releaseRenderTarget() {
+    if (m_depthStencilRenderbuffer != 0)
+        glDeleteRenderbuffers(1, &m_depthStencilRenderbuffer);
+    if (m_colorTexture != 0)
+        glDeleteTextures(1, &m_colorTexture);
+    if (m_framebuffer != 0)
+        glDeleteFramebuffers(1, &m_framebuffer);
     m_depthStencilRenderbuffer = 0;
     m_colorTexture = 0;
     m_framebuffer = 0;
 }
 
-Core::Vec2 NodeDiagramWindow::screenToWorld(float sx, float sy, float w, float h) const
-{
+Core::Vec2 NodeDiagramWindow::screenToWorld(float sx, float sy, float w, float h) const {
     const float nx = (sx / w) * 2.0F - 1.0F;
     const float ny = 1.0F - (sy / h) * 2.0F;
     const glm::mat4 inv = m_camera.invViewProjection();
@@ -86,9 +81,9 @@ Core::Vec2 NodeDiagramWindow::screenToWorld(float sx, float sy, float w, float h
     return {v.x / v.w, v.y / v.w};
 }
 
-void NodeDiagramWindow::draw()
-{
-    if (m_basics == nullptr || m_viewState == nullptr) return;
+void NodeDiagramWindow::draw() {
+    if (m_basics == nullptr || m_viewState == nullptr)
+        return;
 
     ImGui::Begin(m_title.c_str());
     const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
@@ -121,13 +116,11 @@ void NodeDiagramWindow::draw()
     const ImVec2 mouse = ImGui::GetIO().MousePos;
     Core::Vec2 mouseWorld = screenToWorld(mouse.x - canvasPos.x, mouse.y - canvasPos.y, canvasSize.x, canvasSize.y);
 
-    if (hovered && ImGui::GetIO().MouseWheel != 0.0F)
-    {
+    if (hovered && ImGui::GetIO().MouseWheel != 0.0F) {
         m_viewState->zoom = std::max(0.05F, m_viewState->zoom + ImGui::GetIO().MouseWheel * 0.1F);
     }
 
-    if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle))
-    {
+    if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
         const ImVec2 d = ImGui::GetIO().MouseDelta;
         m_viewState->cameraX -= d.x / m_viewState->zoom;
         m_viewState->cameraY += d.y / m_viewState->zoom;
@@ -141,54 +134,55 @@ void NodeDiagramWindow::draw()
 
     ImDrawList* dl = ImGui::GetWindowDrawList();
 
-    if (m_basics->gridSettings().enabled)
-    {
+    if (m_basics->gridSettings().enabled) {
         const float s = m_basics->gridSettings().cellSize;
-        for (float x = -4096.0F; x <= 4096.0F; x += s)
-        {
+        for (float x = -4096.0F; x <= 4096.0F; x += s) {
             const glm::vec4 a = m_camera.viewProjection() * glm::vec4(x, -4096.0F, 0.0F, 1.0F);
             const glm::vec4 b = m_camera.viewProjection() * glm::vec4(x, 4096.0F, 0.0F, 1.0F);
-            ImVec2 p0(canvasPos.x + (a.x / a.w + 1.0F) * 0.5F * canvasSize.x, canvasPos.y + (1.0F - (a.y / a.w + 1.0F) * 0.5F) * canvasSize.y);
-            ImVec2 p1(canvasPos.x + (b.x / b.w + 1.0F) * 0.5F * canvasSize.x, canvasPos.y + (1.0F - (b.y / b.w + 1.0F) * 0.5F) * canvasSize.y);
+            ImVec2 p0(canvasPos.x + (a.x / a.w + 1.0F) * 0.5F * canvasSize.x,
+                      canvasPos.y + (1.0F - (a.y / a.w + 1.0F) * 0.5F) * canvasSize.y);
+            ImVec2 p1(canvasPos.x + (b.x / b.w + 1.0F) * 0.5F * canvasSize.x,
+                      canvasPos.y + (1.0F - (b.y / b.w + 1.0F) * 0.5F) * canvasSize.y);
             dl->AddLine(p0, p1, IM_COL32(40, 44, 48, 180), 1.0F);
         }
     }
 
     Render::Theme::NodeVisualRegistry visuals;
 
-    for (Core::CanvasNodeId nodeId : m_basics->nodeIds())
-    {
+    for (Core::CanvasNodeId nodeId : m_basics->nodeIds()) {
         const Core::Node* node = m_basics->model().getNode(nodeId);
-        if (node == nullptr) continue;
+        if (node == nullptr)
+            continue;
         const auto& v = visuals.getVisual(mapType(*node));
 
         const glm::vec4 a = m_camera.viewProjection() * glm::vec4(node->position.x, node->position.y, 0.0F, 1.0F);
-        const glm::vec4 b = m_camera.viewProjection() * glm::vec4(node->position.x + node->size.x, node->position.y + node->size.y, 0.0F, 1.0F);
-        ImVec2 p0(canvasPos.x + (a.x / a.w + 1.0F) * 0.5F * canvasSize.x, canvasPos.y + (1.0F - (a.y / a.w + 1.0F) * 0.5F) * canvasSize.y);
-        ImVec2 p1(canvasPos.x + (b.x / b.w + 1.0F) * 0.5F * canvasSize.x, canvasPos.y + (1.0F - (b.y / b.w + 1.0F) * 0.5F) * canvasSize.y);
+        const glm::vec4 b = m_camera.viewProjection() *
+                            glm::vec4(node->position.x + node->size.x, node->position.y + node->size.y, 0.0F, 1.0F);
+        ImVec2 p0(canvasPos.x + (a.x / a.w + 1.0F) * 0.5F * canvasSize.x,
+                  canvasPos.y + (1.0F - (a.y / a.w + 1.0F) * 0.5F) * canvasSize.y);
+        ImVec2 p1(canvasPos.x + (b.x / b.w + 1.0F) * 0.5F * canvasSize.x,
+                  canvasPos.y + (1.0F - (b.y / b.w + 1.0F) * 0.5F) * canvasSize.y);
         ImVec2 mn(std::min(p0.x, p1.x), std::min(p0.y, p1.y));
         ImVec2 mx(std::max(p0.x, p1.x), std::max(p0.y, p1.y));
 
         dl->AddRectFilled(mn, mx, color(v.bodyColor), v.cornerRadius);
         dl->AddRectFilled(mn, ImVec2(mx.x, mn.y + v.titleBarHeight), color(v.titleBarColor), v.cornerRadius);
         dl->AddRect(mn, mx, color(v.borderColor), v.cornerRadius, 0, v.borderThickness);
-        if (nodeId == m_dragNode) dl->AddRect(mn, mx, color(v.selectionColor), v.cornerRadius, 0, 2.0F);
+        if (nodeId == m_dragNode)
+            dl->AddRect(mn, mx, color(v.selectionColor), v.cornerRadius, 0, 2.0F);
 
         const std::string label = v.icon.empty() ? v.title : (v.icon + std::string(" ") + v.title);
         dl->AddText(ImVec2(mn.x + 6.0F, mn.y + 4.0F), color(v.titleTextColor), label.c_str());
 
-        if (clicked)
-        {
+        if (clicked) {
             if (mouseWorld.x >= node->position.x && mouseWorld.x <= node->position.x + node->size.x &&
-                mouseWorld.y >= node->position.y && mouseWorld.y <= node->position.y + node->size.y)
-            {
+                mouseWorld.y >= node->position.y && mouseWorld.y <= node->position.y + node->size.y) {
                 m_dragNode = nodeId;
                 m_dragOffset = {mouseWorld.x - node->position.x, mouseWorld.y - node->position.y};
             }
         }
 
-        for (std::size_t i = 0; i < node->connectors.size(); ++i)
-        {
+        for (std::size_t i = 0; i < node->connectors.size(); ++i) {
             const Core::Vec2 cw = connectorWorld(*node, i);
             const glm::vec4 cp = m_camera.viewProjection() * glm::vec4(cw.x, cw.y, 0.0F, 1.0F);
             ImVec2 sp(canvasPos.x + (cp.x / cp.w + 1.0F) * 0.5F * canvasSize.x,
@@ -196,19 +190,14 @@ void NodeDiagramWindow::draw()
             const ImU32 cc = (i % 2U == 0U) ? color(v.connectorInputColor) : color(v.connectorOutputColor);
             dl->AddCircleFilled(sp, 4.0F, cc);
 
-            if (clicked)
-            {
+            if (clicked) {
                 const float dx = mouse.x - sp.x;
                 const float dy = mouse.y - sp.y;
-                if (dx * dx + dy * dy < 64.0F)
-                {
+                if (dx * dx + dy * dy < 64.0F) {
                     const Core::CanvasConnectorId picked = node->connectors[i];
-                    if (!m_pendingConnector.isValid())
-                    {
+                    if (!m_pendingConnector.isValid()) {
                         m_pendingConnector = picked;
-                    }
-                    else if (m_pendingConnector != picked)
-                    {
+                    } else if (m_pendingConnector != picked) {
                         (void)m_basics->connect(m_pendingConnector, picked);
                         m_pendingConnector = {};
                     }
@@ -217,25 +206,23 @@ void NodeDiagramWindow::draw()
         }
     }
 
-    for (const auto& edge : frame.edges)
-    {
-        for (std::size_t i = 0; i + 1 < edge.points.size(); ++i)
-        {
+    for (const auto& edge : frame.edges) {
+        for (std::size_t i = 0; i + 1 < edge.points.size(); ++i) {
             const glm::vec4 p0 = m_camera.viewProjection() * glm::vec4(edge.points[i].x, edge.points[i].y, 0.0F, 1.0F);
-            const glm::vec4 p1 = m_camera.viewProjection() * glm::vec4(edge.points[i + 1].x, edge.points[i + 1].y, 0.0F, 1.0F);
-            ImVec2 a(canvasPos.x + (p0.x / p0.w + 1.0F) * 0.5F * canvasSize.x, canvasPos.y + (1.0F - (p0.y / p0.w + 1.0F) * 0.5F) * canvasSize.y);
-            ImVec2 b(canvasPos.x + (p1.x / p1.w + 1.0F) * 0.5F * canvasSize.x, canvasPos.y + (1.0F - (p1.y / p1.w + 1.0F) * 0.5F) * canvasSize.y);
+            const glm::vec4 p1 =
+                m_camera.viewProjection() * glm::vec4(edge.points[i + 1].x, edge.points[i + 1].y, 0.0F, 1.0F);
+            ImVec2 a(canvasPos.x + (p0.x / p0.w + 1.0F) * 0.5F * canvasSize.x,
+                     canvasPos.y + (1.0F - (p0.y / p0.w + 1.0F) * 0.5F) * canvasSize.y);
+            ImVec2 b(canvasPos.x + (p1.x / p1.w + 1.0F) * 0.5F * canvasSize.x,
+                     canvasPos.y + (1.0F - (p1.y / p1.w + 1.0F) * 0.5F) * canvasSize.y);
             dl->AddLine(a, b, IM_COL32(220, 220, 235, 210), 2.0F);
         }
     }
 
-    if (dragging && m_dragNode.isValid())
-    {
-        if (Core::Node* node = m_basics->model().getNode(m_dragNode); node != nullptr)
-        {
+    if (dragging && m_dragNode.isValid()) {
+        if (Core::Node* node = m_basics->model().getNode(m_dragNode); node != nullptr) {
             Core::Vec2 p{mouseWorld.x - m_dragOffset.x, mouseWorld.y - m_dragOffset.y};
-            if (m_basics->gridSettings().snapEnabled)
-            {
+            if (m_basics->gridSettings().snapEnabled) {
                 const float s = m_basics->gridSettings().cellSize;
                 p.x = std::round(p.x / s) * s;
                 p.y = std::round(p.y / s) * s;
@@ -243,13 +230,11 @@ void NodeDiagramWindow::draw()
             node->setPosition(p);
         }
     }
-    if (released)
-    {
+    if (released) {
         m_dragNode = {};
     }
 
-    if (hovered && ImGui::IsKeyPressed(ImGuiKey_Delete) && m_dragNode.isValid())
-    {
+    if (hovered && ImGui::IsKeyPressed(ImGuiKey_Delete) && m_dragNode.isValid()) {
         m_basics->deleteNode(m_dragNode);
         m_dragNode = {};
     }

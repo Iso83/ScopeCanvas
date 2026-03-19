@@ -2,8 +2,7 @@
 
 #include <ScopeCanvas/core/ids/StrongId.h>
 
-namespace ScopeCanvas::Core
-{
+namespace ScopeCanvas::Core {
 struct CanvasNodeIdTag;
 struct CanvasConnectorIdTag;
 struct CanvasEdgeIdTag;

@@ -2,10 +2,8 @@
 
 #include "ids/CanvasIds.h"
 
-namespace ScopeCanvas::Core
-{
-struct Edge
-{
+namespace ScopeCanvas::Core {
+struct Edge {
     CanvasEdgeId id{};
     CanvasConnectorId fromConnector{};
     CanvasConnectorId toConnector{};
