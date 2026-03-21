@@ -105,11 +105,9 @@ target_include_directories(SC_ImGui  PUBLIC
     ${sc_imgui_SOURCE_DIR}/backends
 )
 
-#target_link_libraries(SC_ImGui  glfw glad opengl32)
 target_link_libraries(SC_ImGui PUBLIC glfw)
 
 set_property(TARGET SC_ImGui PROPERTY FOLDER "third_party/imgui")
-
 
 # =========================================================
 # PROJECT COMPONENTS
@@ -117,6 +115,7 @@ set_property(TARGET SC_ImGui PROPERTY FOLDER "third_party/imgui")
 
 add_subdirectory(engine/core)
 add_subdirectory(engine/routing)
-add_subdirectory(render)
+add_subdirectory(render/core)
 add_subdirectory(widget)
-add_subdirectory(studio)
+add_subdirectory(demo/gl)
+add_subdirectory(demo/imgui)

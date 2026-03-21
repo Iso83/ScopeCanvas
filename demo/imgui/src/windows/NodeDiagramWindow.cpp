@@ -13,7 +13,7 @@ ImU32 color(const Render::Theme::ColorRgba8& c) {
     return IM_COL32(c.r, c.g, c.b, c.a);
 }
 
-Core::Vec2 connectorWorld(const Core::Node& node, std::size_t index) {
+glm::vec2 connectorWorld(const Core::Node& node, std::size_t index) {
     const float count = static_cast<float>(node.connectors.size() + 1U);
     const float y = node.position.y + (node.size.y / count) * static_cast<float>(index + 1U);
     const bool right = index % 2U == 1U;
@@ -73,7 +73,7 @@ void NodeDiagramWindow::releaseRenderTarget() {
     m_framebuffer = 0;
 }
 
-Core::Vec2 NodeDiagramWindow::screenToWorld(float sx, float sy, float w, float h) const {
+glm::vec2 NodeDiagramWindow::screenToWorld(float sx, float sy, float w, float h) const {
     const float nx = (sx / w) * 2.0F - 1.0F;
     const float ny = 1.0F - (sy / h) * 2.0F;
     const glm::mat4 inv = m_camera.invViewProjection();
@@ -114,7 +114,7 @@ void NodeDiagramWindow::draw() {
     const bool released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
 
     const ImVec2 mouse = ImGui::GetIO().MousePos;
-    Core::Vec2 mouseWorld = screenToWorld(mouse.x - canvasPos.x, mouse.y - canvasPos.y, canvasSize.x, canvasSize.y);
+    glm::vec2 mouseWorld = screenToWorld(mouse.x - canvasPos.x, mouse.y - canvasPos.y, canvasSize.x, canvasSize.y);
 
     if (hovered && ImGui::GetIO().MouseWheel != 0.0F) {
         m_viewState->zoom = std::max(0.05F, m_viewState->zoom + ImGui::GetIO().MouseWheel * 0.1F);
@@ -183,7 +183,7 @@ void NodeDiagramWindow::draw() {
         }
 
         for (std::size_t i = 0; i < node->connectors.size(); ++i) {
-            const Core::Vec2 cw = connectorWorld(*node, i);
+            const glm::vec2 cw = connectorWorld(*node, i);
             const glm::vec4 cp = m_camera.viewProjection() * glm::vec4(cw.x, cw.y, 0.0F, 1.0F);
             ImVec2 sp(canvasPos.x + (cp.x / cp.w + 1.0F) * 0.5F * canvasSize.x,
                       canvasPos.y + (1.0F - (cp.y / cp.w + 1.0F) * 0.5F) * canvasSize.y);
@@ -221,7 +221,7 @@ void NodeDiagramWindow::draw() {
 
     if (dragging && m_dragNode.isValid()) {
         if (Core::Node* node = m_basics->model().getNode(m_dragNode); node != nullptr) {
-            Core::Vec2 p{mouseWorld.x - m_dragOffset.x, mouseWorld.y - m_dragOffset.y};
+            glm::vec2 p{mouseWorld.x - m_dragOffset.x, mouseWorld.y - m_dragOffset.y};
             if (m_basics->gridSettings().snapEnabled) {
                 const float s = m_basics->gridSettings().cellSize;
                 p.x = std::round(p.x / s) * s;

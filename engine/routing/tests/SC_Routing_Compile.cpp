@@ -9,11 +9,11 @@ int main() {
 
     Routing::EdgeRoute route{};
     route.edgeId = Core::CanvasEdgeId{1};
-    route.points.push_back(Core::Vec2{1.0f, 2.0f});
+    route.points.push_back(glm::vec2{1.0f, 2.0f});
 
     Routing::EdgeBundle bundle{};
     bundle.id = Routing::EdgeBundleId{1};
-    bundle.position = Core::Vec2{3.0f, 4.0f};
+    bundle.position = glm::vec2{3.0f, 4.0f};
     bundle.edges.push_back(route.edgeId);
 
     SC_TEST(!bundle.edges.empty());

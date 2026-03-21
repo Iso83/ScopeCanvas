@@ -18,6 +18,7 @@ add_library(ScopeCanvasCore
 
 target_include_directories(ScopeCanvasCore PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${sc_glm_SOURCE_DIR}
 )
 
 target_include_directories(ScopeCanvasCore PRIVATE
@@ -37,7 +38,6 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 if(SC_BUILD_TESTS)
-    sc_add_module_test(ScopeCanvasCore core SC_Core_Vec2)
     sc_add_module_test(ScopeCanvasCore core SC_Core_Node)
     sc_add_module_test(ScopeCanvasCore core SC_Core_Connector)
     sc_add_module_test(ScopeCanvasCore core SC_Core_ConnectorLogic)

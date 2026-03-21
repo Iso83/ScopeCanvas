@@ -35,7 +35,7 @@ const std::vector<Core::CanvasEdgeId>& DiagramBasics::edgeIds() const {
     return m_edgeIds;
 }
 
-Core::CanvasNodeId DiagramBasics::createNode(Core::NodeTypeId typeId, Core::Vec2 position) {
+Core::CanvasNodeId DiagramBasics::createNode(Core::NodeTypeId typeId, glm::vec2 position) {
     const Core::CanvasNodeId id = m_model.createNode(typeId);
     if (Core::Node* node = m_model.getNode(id); node != nullptr) {
         if (m_grid.snapEnabled) {

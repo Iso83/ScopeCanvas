@@ -19,7 +19,7 @@ class NodeDiagramWindow {
   private:
     void ensureRenderTarget(int width, int height);
     void releaseRenderTarget();
-    Core::Vec2 screenToWorld(float sx, float sy, float w, float h) const;
+    glm::vec2 screenToWorld(float sx, float sy, float w, float h) const;
 
     GLFWwindow* m_window{};
     DiagramBasics* m_basics{};
@@ -35,7 +35,7 @@ class NodeDiagramWindow {
     int m_renderHeight{0};
 
     Core::CanvasNodeId m_dragNode{};
-    Core::Vec2 m_dragOffset{};
+    glm::vec2 m_dragOffset{};
     Core::CanvasConnectorId m_pendingConnector{};
 };
 } // namespace ScopeCanvas::Studio

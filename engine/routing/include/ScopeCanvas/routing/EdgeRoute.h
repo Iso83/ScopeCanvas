@@ -1,12 +1,12 @@
 #pragma once
 
-#include <ScopeCanvas/core/Vec2.h>
 #include <ScopeCanvas/core/ids/CanvasIds.h>
+#include <glm/vec2.hpp>
 #include <vector>
 
 namespace ScopeCanvas::Routing {
 struct EdgeRoute {
     Core::CanvasEdgeId edgeId{};
-    std::vector<Core::Vec2> points{};
+    std::vector<glm::vec2> points{};
 };
 } // namespace ScopeCanvas::Routing

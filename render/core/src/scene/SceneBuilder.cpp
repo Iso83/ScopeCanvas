@@ -43,7 +43,7 @@ std::vector<Core::CanvasNodeId> collectNodeIds(const Core::DiagramModel& model,
     return result;
 }
 
-Core::Vec2 computeConnectorAnchor(const Core::Node& node, std::size_t connectorIndex) {
+glm::vec2 computeConnectorAnchor(const Core::Node& node, std::size_t connectorIndex) {
     const float count = static_cast<float>(node.connectors.size() + 1U);
     const float step = node.size.y / count;
     const float y = node.position.y + step * static_cast<float>(connectorIndex + 1U);

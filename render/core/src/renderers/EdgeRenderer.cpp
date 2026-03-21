@@ -3,21 +3,21 @@
 #include <cmath>
 
 namespace ScopeCanvas::Render::Renderers {
-std::vector<Core::Vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute& route, int segmentsPerCurve) const {
+std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute& route, int segmentsPerCurve) const {
     if (route.points.size() < 2) {
         return route.points;
     }
 
     const int segments = std::max(segmentsPerCurve, 1);
-    std::vector<Core::Vec2> geometry;
+    std::vector<glm::vec2> geometry;
     geometry.reserve(route.points.size() * static_cast<std::size_t>(segments));
 
     for (std::size_t i = 0; i + 1 < route.points.size(); ++i) {
-        const Core::Vec2 p0 = route.points[i];
-        const Core::Vec2 p3 = route.points[i + 1];
+        const glm::vec2 p0 = route.points[i];
+        const glm::vec2 p3 = route.points[i + 1];
 
-        Core::Vec2 p1{};
-        Core::Vec2 p2{};
+        glm::vec2 p1{};
+        glm::vec2 p2{};
         computeBezierControls(p0, p3, p1, p2);
 
         appendBezierSamples(geometry, p0, p1, p2, p3, segments);
@@ -26,15 +26,15 @@ std::vector<Core::Vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute
     return geometry;
 }
 
-void EdgeRenderer::computeBezierControls(const Core::Vec2& p0, const Core::Vec2& p3, Core::Vec2& p1, Core::Vec2& p2) {
+void EdgeRenderer::computeBezierControls(const glm::vec2& p0, const glm::vec2& p3, glm::vec2& p1, glm::vec2& p2) {
     const float dx = std::abs(p3.x - p0.x);
     const float controlDistance = std::max(80.0F, dx * 0.5F);
     p1 = {p0.x + controlDistance, p0.y};
     p2 = {p3.x - controlDistance, p3.y};
 }
 
-void EdgeRenderer::appendBezierSamples(std::vector<Core::Vec2>& points, const Core::Vec2& p0, const Core::Vec2& p1,
-                                       const Core::Vec2& p2, const Core::Vec2& p3, int segments) {
+void EdgeRenderer::appendBezierSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
+                                       const glm::vec2& p2, const glm::vec2& p3, int segments) {
     if (!points.empty()) {
         points.pop_back();
     }

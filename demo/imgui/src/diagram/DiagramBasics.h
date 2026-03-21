@@ -33,7 +33,7 @@ class DiagramBasics {
     std::vector<Core::CanvasEdgeId>& edgeIds();
     const std::vector<Core::CanvasEdgeId>& edgeIds() const;
 
-    Core::CanvasNodeId createNode(Core::NodeTypeId typeId, Core::Vec2 position);
+    Core::CanvasNodeId createNode(Core::NodeTypeId typeId, glm::vec2 position);
     Core::CanvasEdgeId connect(Core::CanvasConnectorId a, Core::CanvasConnectorId b);
     void deleteNode(Core::CanvasNodeId nodeId);
 

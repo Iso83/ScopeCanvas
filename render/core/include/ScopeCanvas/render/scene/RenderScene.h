@@ -1,25 +1,25 @@
 #pragma once
 
-#include <ScopeCanvas/core/Vec2.h>
+#include <glm/vec2.hpp>
 #include <ScopeCanvas/core/ids/CanvasIds.h>
 #include <vector>
 
 namespace ScopeCanvas::Render::Scene {
 struct NodeRenderData {
     Core::CanvasNodeId id{};
-    Core::Vec2 position{};
-    Core::Vec2 size{};
+    glm::vec2 position{};
+    glm::vec2 size{};
 };
 
 struct ConnectorAnchorRenderData {
     Core::CanvasConnectorId connectorId{};
     Core::CanvasNodeId nodeId{};
-    Core::Vec2 anchor{};
+    glm::vec2 anchor{};
 };
 
 struct EdgeRenderData {
     Core::CanvasEdgeId edgeId{};
-    std::vector<Core::Vec2> points{};
+    std::vector<glm::vec2> points{};
 };
 
 struct RenderScene {

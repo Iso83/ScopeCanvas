@@ -17,7 +17,7 @@ add_library(ScopeCanvasWidget
 )
 
 target_link_libraries(ScopeCanvasWidget PUBLIC
-    ScopeCanvasRenderGL
+    ScopeCanvasRender
 )
 
 target_include_directories(ScopeCanvasWidget PUBLIC

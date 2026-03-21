@@ -34,7 +34,7 @@ int main() {
     grid.enabled = true;
     grid.cellSize = 10.0f;
 
-    SC_TEST((grid.snap(Vec2{12.0f, 26.0f}) == Vec2{10.0f, 30.0f}));
+    SC_TEST((grid.snap(glm::vec2{12.0f, 26.0f}) == glm::vec2{10.0f, 30.0f}));
 
     DiagramModel model{};
     TestLayoutEngine engine{};
