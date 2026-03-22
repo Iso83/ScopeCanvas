@@ -71,11 +71,14 @@ ScopeCanvas::Render::Renderers::NodeRenderStyle toRenderStyle(const ScopeCanvas:
     ScopeCanvas::Render::Renderers::NodeRenderStyle style{};
     style.bodyColor = rgba(visual.bodyColor);
     style.headerColor = rgba(visual.titleBarColor);
+    style.headerAccentColor = rgba(visual.titleBarAccentColor);
     style.borderColor = rgba(visual.borderColor);
     style.selectionColor = rgba(visual.selectionColor);
     style.textColor = rgba(visual.titleTextColor);
+    style.iconColor = rgba(visual.iconColor);
     style.borderThickness = visual.borderThickness;
     style.headerHeight = visual.titleBarHeight;
+    style.cornerRadius = visual.cornerRadius;
     return style;
 }
 } // namespace
@@ -118,6 +121,10 @@ bool App::init() {
     m_renderOptions.nodeTitleResolver = [](ScopeCanvas::Core::NodeTypeId typeId) {
         static const ScopeCanvas::Render::Theme::NodeVisualRegistry registry{};
         return registry.getVisual(typeId).title;
+    };
+    m_renderOptions.nodeIconResolver = [](ScopeCanvas::Core::NodeTypeId typeId) {
+        static const ScopeCanvas::Render::Theme::NodeVisualRegistry registry{};
+        return registry.getVisual(typeId).icon;
     };
     m_renderOptions.gridSize = 32.0F;
 

@@ -55,11 +55,14 @@ Render::Renderers::NodeRenderStyle toRenderStyle(const Render::Theme::NodeVisual
     Render::Renderers::NodeRenderStyle style{};
     style.bodyColor = rgba(visual.bodyColor);
     style.headerColor = rgba(visual.titleBarColor);
+    style.headerAccentColor = rgba(visual.titleBarAccentColor);
     style.borderColor = rgba(visual.borderColor);
     style.selectionColor = rgba(visual.selectionColor);
     style.textColor = rgba(visual.titleTextColor);
+    style.iconColor = rgba(visual.iconColor);
     style.borderThickness = visual.borderThickness;
     style.headerHeight = visual.titleBarHeight;
+    style.cornerRadius = visual.cornerRadius;
     return style;
 }
 } // namespace
@@ -275,6 +278,10 @@ void NodeDiagramWindow::draw() {
     options.nodeTitleResolver = [](Core::NodeTypeId typeId) {
         static const Render::Theme::NodeVisualRegistry registry{};
         return registry.getVisual(typeId).title;
+    };
+    options.nodeIconResolver = [](Core::NodeTypeId typeId) {
+        static const Render::Theme::NodeVisualRegistry registry{};
+        return registry.getVisual(typeId).icon;
     };
     const float edgePickThresholdSquared = 100.0F / (m_viewState->zoom * m_viewState->zoom);
     for (const auto& route : routes) {

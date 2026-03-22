@@ -46,6 +46,7 @@ struct CanvasRenderOptions {
 
     Renderers::NodeRenderer::StyleResolver nodeStyleResolver{};
     Renderers::NodeRenderer::TitleResolver nodeTitleResolver{};
+    Renderers::NodeRenderer::IconResolver nodeIconResolver{};
 };
 
 class CanvasRenderer {
