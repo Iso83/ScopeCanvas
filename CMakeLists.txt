@@ -28,13 +28,11 @@ FetchContent_Declare(
     GIT_TAG 1.0.1
 )
 
-#[[ 
 FetchContent_Declare(
     sc_nlohmann_json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
     GIT_TAG v3.11.3
 )
-]]
 
 FetchContent_Declare(
     sc_imgui
@@ -43,7 +41,7 @@ FetchContent_Declare(
     GIT_TAG 60d7fb207eeb46d6363dd4bde10b35991bae0ce7 # ImGui docking (pinned) 2026-03
 )
 
-FetchContent_MakeAvailable(sc_glfw sc_glm sc_imgui)
+FetchContent_MakeAvailable(sc_glfw sc_glm sc_imgui sc_nlohmann_json)
 
 # ---------- Organize third party targets ----------
 
@@ -59,11 +57,9 @@ if(TARGET glm)
     set_property(TARGET glm PROPERTY FOLDER "third_party/glm")
 endif()
 
-#[[
 if(TARGET nlohmann_json)
     set_property(TARGET nlohmann_json PROPERTY FOLDER "third_party/json")
 endif()
-]]
 
 # =========================================================
 # GLFW
@@ -119,3 +115,7 @@ add_subdirectory(render/core)
 add_subdirectory(widget)
 add_subdirectory(demo/gl)
 add_subdirectory(demo/imgui)
+
+
+## Refactor
+add_subdirectory(refactor/remove\ imgui\ draw/OldScopeCanvas)

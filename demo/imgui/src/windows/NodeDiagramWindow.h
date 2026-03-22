@@ -5,6 +5,7 @@
 
 #include <GLFW/glfw3.h>
 #include <ScopeCanvas/core/ids/CanvasIds.h>
+#include <ScopeCanvas/render/CanvasRenderer.h>
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <string>
 
@@ -27,6 +28,8 @@ class NodeDiagramWindow {
     std::string m_title{};
 
     Render::Camera::Camera2D m_camera{};
+    Render::CanvasRenderer m_renderer{};
+    bool m_rendererInitialized{false};
 
     unsigned int m_framebuffer{0};
     unsigned int m_colorTexture{0};
@@ -35,7 +38,11 @@ class NodeDiagramWindow {
     int m_renderHeight{0};
 
     Core::CanvasNodeId m_dragNode{};
+    Core::CanvasNodeId m_selectedNode{};
     glm::vec2 m_dragOffset{};
     Core::CanvasConnectorId m_pendingConnector{};
+    bool m_selectionRectActive{false};
+    glm::vec2 m_selectionRectStart{};
+    glm::vec2 m_selectionRectEnd{};
 };
 } // namespace ScopeCanvas::Studio

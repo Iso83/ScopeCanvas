@@ -1,0 +1,9 @@
+@startuml
+package Routing {
+  class EdgeRouter
+  class EdgeRoute
+  class EdgeBundle
+}
+EdgeRouter --> EdgeRoute
+EdgeRouter --> EdgeBundle
+@enduml

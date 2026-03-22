@@ -1,5 +1,4 @@
-#include "gl/Shader.h"
-
+#include <ScopeCanvas/render/gl/Shader.h>
 #include <iostream>
 
 namespace ScopeCanvas::Render::GL {
@@ -130,5 +129,30 @@ const char EdgeFragment[] = R"(
     void main() {
         FragColor = vec4(uColor, 1.0);
     }
+)";
+
+const char SelectionRectVertex[] = R"(
+	#version 330 core
+	layout (location = 0) in vec2 aLocalPos;
+
+	uniform mat4 uViewProjection;
+	uniform vec2 uRectPosition;
+	uniform vec2 uRectSize;
+
+	void main() {
+		vec2 worldPos = uRectPosition + (aLocalPos * uRectSize);
+		gl_Position = uViewProjection * vec4(worldPos, 0.0, 1.0);
+	}
+)";
+
+const char SelectionRectFragment[] = R"(
+	#version 330 core
+	out vec4 FragColor;
+
+	uniform vec4 uColor;
+
+	void main() {
+		FragColor = uColor;
+	}
 )";
 } // namespace ScopeCanvas::Render::GL

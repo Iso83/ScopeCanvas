@@ -1,0 +1,20 @@
+@startuml
+package Core {
+  class DiagramModel
+}
+package Routing {
+  class EdgeRouter
+}
+package Render {
+  class CanvasRenderer
+  class SceneBuilder
+}
+package Studio {
+  class ImGuiLayer
+}
+
+SceneBuilder --> DiagramModel
+SceneBuilder --> EdgeRouter
+CanvasRenderer --> SceneBuilder
+ImGuiLayer --> CanvasRenderer
+@enduml

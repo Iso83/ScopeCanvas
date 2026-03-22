@@ -1,8 +1,8 @@
-#include <ScopeCanvas/core/DiagramModel.h>
+#include <ScopeCanvas/core/GraphDocument.h>
 #include <algorithm>
 
 namespace ScopeCanvas::Core {
-CanvasNodeId DiagramModel::createNode(NodeTypeId typeId) {
+CanvasNodeId GraphDocument::createNode(NodeTypeId typeId) {
     const CanvasNodeId newNodeId{m_nextNodeId++};
     const CanvasConnectorId firstConnectorId{m_nextConnectorId++};
     const CanvasConnectorId secondConnectorId{m_nextConnectorId++};
@@ -27,7 +27,7 @@ CanvasNodeId DiagramModel::createNode(NodeTypeId typeId) {
     return newNodeId;
 }
 
-void DiagramModel::removeNode(CanvasNodeId nodeId) {
+void GraphDocument::removeNode(CanvasNodeId nodeId) {
     Node* node = getNode(nodeId);
     if (node == nullptr) {
         return;
@@ -61,7 +61,7 @@ void DiagramModel::removeNode(CanvasNodeId nodeId) {
         m_nodes.end());
 }
 
-CanvasEdgeId DiagramModel::connect(CanvasConnectorId a, CanvasConnectorId b) {
+CanvasEdgeId GraphDocument::connect(CanvasConnectorId a, CanvasConnectorId b) {
     Connector* fromConnector = getConnector(a);
     Connector* toConnector = getConnector(b);
     if (fromConnector == nullptr || toConnector == nullptr) {
@@ -82,7 +82,7 @@ CanvasEdgeId DiagramModel::connect(CanvasConnectorId a, CanvasConnectorId b) {
     return edgeId;
 }
 
-void DiagramModel::disconnect(CanvasEdgeId edgeId) {
+void GraphDocument::disconnect(CanvasEdgeId edgeId) {
     Edge* edge = getEdge(edgeId);
     if (edge == nullptr) {
         return;
@@ -104,7 +104,7 @@ void DiagramModel::disconnect(CanvasEdgeId edgeId) {
         m_edges.end());
 }
 
-void DiagramModel::addNodeToGroup(CanvasNodeId nodeId, LayoutGroupId groupId) {
+void GraphDocument::addNodeToGroup(CanvasNodeId nodeId, LayoutGroupId groupId) {
     Node* node = getNode(nodeId);
     if (node == nullptr) {
         return;
@@ -126,7 +126,7 @@ void DiagramModel::addNodeToGroup(CanvasNodeId nodeId, LayoutGroupId groupId) {
     }
 }
 
-void DiagramModel::removeNodeFromGroup(CanvasNodeId nodeId, LayoutGroupId groupId) {
+void GraphDocument::removeNodeFromGroup(CanvasNodeId nodeId, LayoutGroupId groupId) {
     Node* node = getNode(nodeId);
     LayoutGroup* group = getLayoutGroup(groupId);
     if (node == nullptr || group == nullptr) {
@@ -137,99 +137,99 @@ void DiagramModel::removeNodeFromGroup(CanvasNodeId nodeId, LayoutGroupId groupI
     eraseValue(group->nodes, nodeId);
 }
 
-void DiagramModel::setLayoutEngine(LayoutEngine& engine) {
+void GraphDocument::setLayoutEngine(LayoutEngine& engine) {
     m_layoutEngine = &engine;
 }
 
-void DiagramModel::layoutAll() {
+void GraphDocument::layoutAll() {
     if (m_layoutEngine != nullptr) {
         m_layoutEngine->layout(*this);
     }
 }
 
-void DiagramModel::layoutNodes(const std::vector<CanvasNodeId>& nodes) {
+void GraphDocument::layoutNodes(const std::vector<CanvasNodeId>& nodes) {
     if (m_layoutEngine != nullptr) {
         m_layoutEngine->layoutNodes(*this, nodes);
     }
 }
 
-Node* DiagramModel::getNode(CanvasNodeId nodeId) {
+Node* GraphDocument::getNode(CanvasNodeId nodeId) {
     const auto it =
         std::find_if(m_nodes.begin(), m_nodes.end(), [nodeId](const Node& node) { return node.id == nodeId; });
     return it == m_nodes.end() ? nullptr : &(*it);
 }
 
-const Node* DiagramModel::getNode(CanvasNodeId nodeId) const {
+const Node* GraphDocument::getNode(CanvasNodeId nodeId) const {
     const auto it =
         std::find_if(m_nodes.begin(), m_nodes.end(), [nodeId](const Node& node) { return node.id == nodeId; });
     return it == m_nodes.end() ? nullptr : &(*it);
 }
 
-Connector* DiagramModel::getConnector(CanvasConnectorId connectorId) {
+Connector* GraphDocument::getConnector(CanvasConnectorId connectorId) {
     const auto it = std::find_if(m_connectors.begin(), m_connectors.end(),
                                  [connectorId](const Connector& connector) { return connector.id == connectorId; });
     return it == m_connectors.end() ? nullptr : &(*it);
 }
 
-const Connector* DiagramModel::getConnector(CanvasConnectorId connectorId) const {
+const Connector* GraphDocument::getConnector(CanvasConnectorId connectorId) const {
     const auto it = std::find_if(m_connectors.begin(), m_connectors.end(),
                                  [connectorId](const Connector& connector) { return connector.id == connectorId; });
     return it == m_connectors.end() ? nullptr : &(*it);
 }
 
-Edge* DiagramModel::getEdge(CanvasEdgeId edgeId) {
+Edge* GraphDocument::getEdge(CanvasEdgeId edgeId) {
     const auto it =
         std::find_if(m_edges.begin(), m_edges.end(), [edgeId](const Edge& edge) { return edge.id == edgeId; });
     return it == m_edges.end() ? nullptr : &(*it);
 }
 
-const Edge* DiagramModel::getEdge(CanvasEdgeId edgeId) const {
+const Edge* GraphDocument::getEdge(CanvasEdgeId edgeId) const {
     const auto it =
         std::find_if(m_edges.begin(), m_edges.end(), [edgeId](const Edge& edge) { return edge.id == edgeId; });
     return it == m_edges.end() ? nullptr : &(*it);
 }
 
-LayoutGroup* DiagramModel::getLayoutGroup(LayoutGroupId groupId) {
+LayoutGroup* GraphDocument::getLayoutGroup(LayoutGroupId groupId) {
     const auto it = std::find_if(m_layoutGroups.begin(), m_layoutGroups.end(),
                                  [groupId](const LayoutGroup& group) { return group.id == groupId; });
     return it == m_layoutGroups.end() ? nullptr : &(*it);
 }
 
-const LayoutGroup* DiagramModel::getLayoutGroup(LayoutGroupId groupId) const {
+const LayoutGroup* GraphDocument::getLayoutGroup(LayoutGroupId groupId) const {
     const auto it = std::find_if(m_layoutGroups.begin(), m_layoutGroups.end(),
                                  [groupId](const LayoutGroup& group) { return group.id == groupId; });
     return it == m_layoutGroups.end() ? nullptr : &(*it);
 }
 
-bool DiagramModel::contains(const std::vector<CanvasNodeId>& values, CanvasNodeId value) {
+bool GraphDocument::contains(const std::vector<CanvasNodeId>& values, CanvasNodeId value) {
     return std::find(values.begin(), values.end(), value) != values.end();
 }
 
-bool DiagramModel::contains(const std::vector<CanvasConnectorId>& values, CanvasConnectorId value) {
+bool GraphDocument::contains(const std::vector<CanvasConnectorId>& values, CanvasConnectorId value) {
     return std::find(values.begin(), values.end(), value) != values.end();
 }
 
-bool DiagramModel::contains(const std::vector<CanvasEdgeId>& values, CanvasEdgeId value) {
+bool GraphDocument::contains(const std::vector<CanvasEdgeId>& values, CanvasEdgeId value) {
     return std::find(values.begin(), values.end(), value) != values.end();
 }
 
-bool DiagramModel::contains(const std::vector<LayoutGroupId>& values, LayoutGroupId value) {
+bool GraphDocument::contains(const std::vector<LayoutGroupId>& values, LayoutGroupId value) {
     return std::find(values.begin(), values.end(), value) != values.end();
 }
 
-void DiagramModel::eraseValue(std::vector<CanvasNodeId>& values, CanvasNodeId value) {
+void GraphDocument::eraseValue(std::vector<CanvasNodeId>& values, CanvasNodeId value) {
     values.erase(std::remove(values.begin(), values.end(), value), values.end());
 }
 
-void DiagramModel::eraseValue(std::vector<CanvasConnectorId>& values, CanvasConnectorId value) {
+void GraphDocument::eraseValue(std::vector<CanvasConnectorId>& values, CanvasConnectorId value) {
     values.erase(std::remove(values.begin(), values.end(), value), values.end());
 }
 
-void DiagramModel::eraseValue(std::vector<CanvasEdgeId>& values, CanvasEdgeId value) {
+void GraphDocument::eraseValue(std::vector<CanvasEdgeId>& values, CanvasEdgeId value) {
     values.erase(std::remove(values.begin(), values.end(), value), values.end());
 }
 
-void DiagramModel::eraseValue(std::vector<LayoutGroupId>& values, LayoutGroupId value) {
+void GraphDocument::eraseValue(std::vector<LayoutGroupId>& values, LayoutGroupId value) {
     values.erase(std::remove(values.begin(), values.end(), value), values.end());
 }
 } // namespace ScopeCanvas::Core

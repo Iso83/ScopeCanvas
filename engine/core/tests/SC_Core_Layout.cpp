@@ -1,6 +1,6 @@
 #include "layout/GridSettings.h"
 
-#include <ScopeCanvas/core/DiagramModel.h>
+#include <ScopeCanvas/core/GraphDocument.h>
 #include <ScopeCanvas/core/layout/LayoutEngine.h>
 #include <ScopeCanvas/core/layout/LayoutGroup.h>
 #include <TestAssert.h>
@@ -9,11 +9,11 @@
 namespace ScopeCanvas::Core {
 class TestLayoutEngine final : public LayoutEngine {
   public:
-    void layout(DiagramModel&) override {
+    void layout(GraphDocument&) override {
         didLayout = true;
     }
 
-    void layoutNodes(DiagramModel&, const std::vector<CanvasNodeId>& nodes) override {
+    void layoutNodes(GraphDocument&, const std::vector<CanvasNodeId>& nodes) override {
         didLayoutNodes = !nodes.empty();
     }
 
@@ -36,7 +36,7 @@ int main() {
 
     SC_TEST((grid.snap(glm::vec2{12.0f, 26.0f}) == glm::vec2{10.0f, 30.0f}));
 
-    DiagramModel model{};
+    GraphDocument model{};
     TestLayoutEngine engine{};
 
     engine.layout(model);

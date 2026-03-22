@@ -10,10 +10,10 @@ DiagramBasics::DiagramBasics() {
     (void)createNode(Core::NodeTypeId{4}, {280.0F, -80.0F});
 }
 
-Core::DiagramModel& DiagramBasics::model() {
+Core::GraphDocument& DiagramBasics::model() {
     return m_model;
 }
-const Core::DiagramModel& DiagramBasics::model() const {
+const Core::GraphDocument& DiagramBasics::model() const {
     return m_model;
 }
 GridSettings& DiagramBasics::gridSettings() {

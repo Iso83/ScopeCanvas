@@ -4,13 +4,13 @@
 #include <vector>
 
 namespace ScopeCanvas::Core {
-class DiagramModel;
+class GraphDocument;
 
 class LayoutEngine {
   public:
     virtual ~LayoutEngine() = default;
 
-    virtual void layout(DiagramModel& model) = 0;
-    virtual void layoutNodes(DiagramModel& model, const std::vector<CanvasNodeId>& nodes) = 0;
+    virtual void layout(GraphDocument& model) = 0;
+    virtual void layoutNodes(GraphDocument& model, const std::vector<CanvasNodeId>& nodes) = 0;
 };
 } // namespace ScopeCanvas::Core

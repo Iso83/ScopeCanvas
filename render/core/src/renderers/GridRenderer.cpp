@@ -1,5 +1,5 @@
-#include "renderers/GridRenderer.h"
-
+#include <ScopeCanvas/render/camera/Camera2D.h>
+#include <ScopeCanvas/render/renderers/GridRenderer.h>
 #include <algorithm>
 #include <cmath>
 #include <glm/gtc/type_ptr.hpp>
@@ -34,12 +34,14 @@ bool GridRenderer::init() {
     return true;
 }
 
-void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, int viewportHeight, float cellSize) {
-    (void)viewportWidth;
-    (void)viewportHeight;
+void GridRenderer::shutdown() {
+    destroy();
+}
 
+void GridRenderer::render(const Camera::Camera2D& camera, float cellSize) const {
+    const glm::mat4 viewProjection = camera.viewProjection();
     const float spacing = std::max(cellSize, 1.0F);
-    const glm::mat4 invViewProjection = glm::inverse(viewProjection);
+    const glm::mat4 invViewProjection = camera.invViewProjection();
 
     const glm::vec4 cornersNdc[] = {
         {-1.0F, -1.0F, 0.0F, 1.0F}, {1.0F, -1.0F, 0.0F, 1.0F}, {-1.0F, 1.0F, 0.0F, 1.0F}, {1.0F, 1.0F, 0.0F, 1.0F}};
@@ -94,7 +96,7 @@ void GridRenderer::render(const glm::mat4& viewProjection, int viewportWidth, in
 }
 
 void GridRenderer::uploadAndDrawLines(const std::vector<glm::vec2>& vertices, const glm::mat4& viewProjection,
-                                      const glm::vec3& color) {
+                                      const glm::vec3& color) const {
     if (vertices.empty()) {
         return;
     }

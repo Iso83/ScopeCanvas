@@ -1,12 +1,12 @@
 #include "logic/ConnectorLogic.h"
 
-#include <ScopeCanvas/core/DiagramModel.h>
+#include <ScopeCanvas/core/GraphDocument.h>
 #include <TestAssert.h>
 
 int main() {
     using namespace ScopeCanvas::Core;
 
-    DiagramModel model{};
+    GraphDocument model{};
 
     const auto n1 = model.createNode(NodeTypeId{1});
     const auto n2 = model.createNode(NodeTypeId{2});

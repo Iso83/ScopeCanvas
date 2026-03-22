@@ -1,27 +1,23 @@
 #include "windows/NodeDiagramWindow.h"
 
-#include <ScopeCanvas/render/renderers/CanvasRenderer.h>
-#include <ScopeCanvas/render/scene/SceneBuilder.h>
-#include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
 #include <algorithm>
+#include <cmath>
 #include <glad/glad.h>
+#include <glm/geometric.hpp>
 #include <imgui.h>
 
 namespace ScopeCanvas::Studio {
 namespace {
-ImU32 color(const Render::Theme::ColorRgba8& c) {
-    return IM_COL32(c.r, c.g, c.b, c.a);
-}
-
 glm::vec2 connectorWorld(const Core::Node& node, std::size_t index) {
     const float count = static_cast<float>(node.connectors.size() + 1U);
     const float y = node.position.y + (node.size.y / count) * static_cast<float>(index + 1U);
-    const bool right = index % 2U == 1U;
+    const bool right = (index % 2U) == 1U;
     return {right ? node.position.x + node.size.x : node.position.x, y};
 }
 
-Core::NodeTypeId mapType(const Core::Node& node) {
-    return node.typeId.isValid() ? node.typeId : Core::NodeTypeId{1};
+bool pointInNode(const glm::vec2& point, const Core::Node& node) {
+    return point.x >= node.position.x && point.x <= node.position.x + node.size.x && point.y >= node.position.y &&
+           point.y <= node.position.y + node.size.y;
 }
 } // namespace
 
@@ -30,6 +26,9 @@ NodeDiagramWindow::NodeDiagramWindow(GLFWwindow* window, DiagramBasics* basics, 
 
 NodeDiagramWindow::~NodeDiagramWindow() {
     releaseRenderTarget();
+    if (m_rendererInitialized) {
+        m_renderer.shutdown();
+    }
 }
 
 void NodeDiagramWindow::ensureRenderTarget(int width, int height) {
@@ -62,12 +61,15 @@ void NodeDiagramWindow::ensureRenderTarget(int width, int height) {
 }
 
 void NodeDiagramWindow::releaseRenderTarget() {
-    if (m_depthStencilRenderbuffer != 0)
+    if (m_depthStencilRenderbuffer != 0) {
         glDeleteRenderbuffers(1, &m_depthStencilRenderbuffer);
-    if (m_colorTexture != 0)
+    }
+    if (m_colorTexture != 0) {
         glDeleteTextures(1, &m_colorTexture);
-    if (m_framebuffer != 0)
+    }
+    if (m_framebuffer != 0) {
         glDeleteFramebuffers(1, &m_framebuffer);
+    }
     m_depthStencilRenderbuffer = 0;
     m_colorTexture = 0;
     m_framebuffer = 0;
@@ -82,8 +84,12 @@ glm::vec2 NodeDiagramWindow::screenToWorld(float sx, float sy, float w, float h)
 }
 
 void NodeDiagramWindow::draw() {
-    if (m_basics == nullptr || m_viewState == nullptr)
+    if (m_basics == nullptr || m_viewState == nullptr) {
         return;
+    }
+    if (!m_rendererInitialized) {
+        m_rendererInitialized = m_renderer.init();
+    }
 
     ImGui::Begin(m_title.c_str());
     const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
@@ -95,14 +101,22 @@ void NodeDiagramWindow::draw() {
     m_camera.setZoom(m_viewState->zoom);
 
     GLint oldFb = 0;
-    GLint oldVp[4];
+    GLint oldVp[4]{};
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFb);
     glGetIntegerv(GL_VIEWPORT, oldVp);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     glViewport(0, 0, m_renderWidth, m_renderHeight);
-    glClearColor(0.08F, 0.09F, 0.11F, 1.0F);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    Render::CanvasRenderOptions options{};
+    options.showGrid = m_basics->gridSettings().enabled;
+    options.gridSize = m_basics->gridSettings().cellSize;
+    options.selectedNodeId = m_selectedNode;
+    options.selectionRectActive = m_selectionRectActive;
+    options.selectionRectStart = m_selectionRectStart;
+    options.selectionRectEnd = m_selectionRectEnd;
+    m_renderer.render(m_basics->model(), m_basics->routeAllEdges(), m_camera, options);
+
     glBindFramebuffer(GL_FRAMEBUFFER, oldFb);
     glViewport(oldVp[0], oldVp[1], oldVp[2], oldVp[3]);
 
@@ -112,88 +126,34 @@ void NodeDiagramWindow::draw() {
     const bool clicked = hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
     const bool dragging = hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
     const bool released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
-
     const ImVec2 mouse = ImGui::GetIO().MousePos;
-    glm::vec2 mouseWorld = screenToWorld(mouse.x - canvasPos.x, mouse.y - canvasPos.y, canvasSize.x, canvasSize.y);
+    const glm::vec2 mouseWorld =
+        screenToWorld(mouse.x - canvasPos.x, mouse.y - canvasPos.y, canvasSize.x, canvasSize.y);
 
     if (hovered && ImGui::GetIO().MouseWheel != 0.0F) {
         m_viewState->zoom = std::max(0.05F, m_viewState->zoom + ImGui::GetIO().MouseWheel * 0.1F);
     }
-
     if (hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
-        const ImVec2 d = ImGui::GetIO().MouseDelta;
-        m_viewState->cameraX -= d.x / m_viewState->zoom;
-        m_viewState->cameraY += d.y / m_viewState->zoom;
+        const ImVec2 delta = ImGui::GetIO().MouseDelta;
+        m_viewState->cameraX -= delta.x / m_viewState->zoom;
+        m_viewState->cameraY += delta.y / m_viewState->zoom;
     }
 
-    auto routes = m_basics->routeAllEdges();
-    Render::Scene::SceneBuilder sceneBuilder;
-    Render::Scene::RenderScene scene = sceneBuilder.build(m_basics->model(), routes);
-    Render::Renderers::CanvasRenderer renderer;
-    auto frame = renderer.buildFrame(scene);
+    if (clicked) {
+        m_dragNode = {};
+        m_selectedNode = {};
+        m_selectionRectActive = false;
 
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-
-    if (m_basics->gridSettings().enabled) {
-        const float s = m_basics->gridSettings().cellSize;
-        for (float x = -4096.0F; x <= 4096.0F; x += s) {
-            const glm::vec4 a = m_camera.viewProjection() * glm::vec4(x, -4096.0F, 0.0F, 1.0F);
-            const glm::vec4 b = m_camera.viewProjection() * glm::vec4(x, 4096.0F, 0.0F, 1.0F);
-            ImVec2 p0(canvasPos.x + (a.x / a.w + 1.0F) * 0.5F * canvasSize.x,
-                      canvasPos.y + (1.0F - (a.y / a.w + 1.0F) * 0.5F) * canvasSize.y);
-            ImVec2 p1(canvasPos.x + (b.x / b.w + 1.0F) * 0.5F * canvasSize.x,
-                      canvasPos.y + (1.0F - (b.y / b.w + 1.0F) * 0.5F) * canvasSize.y);
-            dl->AddLine(p0, p1, IM_COL32(40, 44, 48, 180), 1.0F);
-        }
-    }
-
-    Render::Theme::NodeVisualRegistry visuals;
-
-    for (Core::CanvasNodeId nodeId : m_basics->nodeIds()) {
-        const Core::Node* node = m_basics->model().getNode(nodeId);
-        if (node == nullptr)
-            continue;
-        const auto& v = visuals.getVisual(mapType(*node));
-
-        const glm::vec4 a = m_camera.viewProjection() * glm::vec4(node->position.x, node->position.y, 0.0F, 1.0F);
-        const glm::vec4 b = m_camera.viewProjection() *
-                            glm::vec4(node->position.x + node->size.x, node->position.y + node->size.y, 0.0F, 1.0F);
-        ImVec2 p0(canvasPos.x + (a.x / a.w + 1.0F) * 0.5F * canvasSize.x,
-                  canvasPos.y + (1.0F - (a.y / a.w + 1.0F) * 0.5F) * canvasSize.y);
-        ImVec2 p1(canvasPos.x + (b.x / b.w + 1.0F) * 0.5F * canvasSize.x,
-                  canvasPos.y + (1.0F - (b.y / b.w + 1.0F) * 0.5F) * canvasSize.y);
-        ImVec2 mn(std::min(p0.x, p1.x), std::min(p0.y, p1.y));
-        ImVec2 mx(std::max(p0.x, p1.x), std::max(p0.y, p1.y));
-
-        dl->AddRectFilled(mn, mx, color(v.bodyColor), v.cornerRadius);
-        dl->AddRectFilled(mn, ImVec2(mx.x, mn.y + v.titleBarHeight), color(v.titleBarColor), v.cornerRadius);
-        dl->AddRect(mn, mx, color(v.borderColor), v.cornerRadius, 0, v.borderThickness);
-        if (nodeId == m_dragNode)
-            dl->AddRect(mn, mx, color(v.selectionColor), v.cornerRadius, 0, 2.0F);
-
-        const std::string label = v.icon.empty() ? v.title : (v.icon + std::string(" ") + v.title);
-        dl->AddText(ImVec2(mn.x + 6.0F, mn.y + 4.0F), color(v.titleTextColor), label.c_str());
-
-        if (clicked) {
-            if (mouseWorld.x >= node->position.x && mouseWorld.x <= node->position.x + node->size.x &&
-                mouseWorld.y >= node->position.y && mouseWorld.y <= node->position.y + node->size.y) {
-                m_dragNode = nodeId;
-                m_dragOffset = {mouseWorld.x - node->position.x, mouseWorld.y - node->position.y};
+        for (Core::CanvasNodeId nodeId : m_basics->nodeIds()) {
+            const Core::Node* node = m_basics->model().getNode(nodeId);
+            if (node == nullptr) {
+                continue;
             }
-        }
 
-        for (std::size_t i = 0; i < node->connectors.size(); ++i) {
-            const glm::vec2 cw = connectorWorld(*node, i);
-            const glm::vec4 cp = m_camera.viewProjection() * glm::vec4(cw.x, cw.y, 0.0F, 1.0F);
-            ImVec2 sp(canvasPos.x + (cp.x / cp.w + 1.0F) * 0.5F * canvasSize.x,
-                      canvasPos.y + (1.0F - (cp.y / cp.w + 1.0F) * 0.5F) * canvasSize.y);
-            const ImU32 cc = (i % 2U == 0U) ? color(v.connectorInputColor) : color(v.connectorOutputColor);
-            dl->AddCircleFilled(sp, 4.0F, cc);
-
-            if (clicked) {
-                const float dx = mouse.x - sp.x;
-                const float dy = mouse.y - sp.y;
-                if (dx * dx + dy * dy < 64.0F) {
+            for (std::size_t i = 0; i < node->connectors.size(); ++i) {
+                const glm::vec2 cw = connectorWorld(*node, i);
+                const glm::vec2 delta = mouseWorld - cw;
+                if (glm::dot(delta, delta) <= 100.0F / (m_viewState->zoom * m_viewState->zoom)) {
                     const Core::CanvasConnectorId picked = node->connectors[i];
                     if (!m_pendingConnector.isValid()) {
                         m_pendingConnector = picked;
@@ -201,41 +161,47 @@ void NodeDiagramWindow::draw() {
                         (void)m_basics->connect(m_pendingConnector, picked);
                         m_pendingConnector = {};
                     }
+                    ImGui::End();
+                    return;
                 }
             }
-        }
-    }
 
-    for (const auto& edge : frame.edges) {
-        for (std::size_t i = 0; i + 1 < edge.points.size(); ++i) {
-            const glm::vec4 p0 = m_camera.viewProjection() * glm::vec4(edge.points[i].x, edge.points[i].y, 0.0F, 1.0F);
-            const glm::vec4 p1 =
-                m_camera.viewProjection() * glm::vec4(edge.points[i + 1].x, edge.points[i + 1].y, 0.0F, 1.0F);
-            ImVec2 a(canvasPos.x + (p0.x / p0.w + 1.0F) * 0.5F * canvasSize.x,
-                     canvasPos.y + (1.0F - (p0.y / p0.w + 1.0F) * 0.5F) * canvasSize.y);
-            ImVec2 b(canvasPos.x + (p1.x / p1.w + 1.0F) * 0.5F * canvasSize.x,
-                     canvasPos.y + (1.0F - (p1.y / p1.w + 1.0F) * 0.5F) * canvasSize.y);
-            dl->AddLine(a, b, IM_COL32(220, 220, 235, 210), 2.0F);
+            if (pointInNode(mouseWorld, *node)) {
+                m_dragNode = nodeId;
+                m_selectedNode = nodeId;
+                m_dragOffset = mouseWorld - node->position;
+                break;
+            }
+        }
+
+        if (!m_dragNode.isValid()) {
+            m_selectionRectActive = true;
+            m_selectionRectStart = mouseWorld;
+            m_selectionRectEnd = mouseWorld;
         }
     }
 
     if (dragging && m_dragNode.isValid()) {
         if (Core::Node* node = m_basics->model().getNode(m_dragNode); node != nullptr) {
-            glm::vec2 p{mouseWorld.x - m_dragOffset.x, mouseWorld.y - m_dragOffset.y};
+            glm::vec2 position = mouseWorld - m_dragOffset;
             if (m_basics->gridSettings().snapEnabled) {
                 const float s = m_basics->gridSettings().cellSize;
-                p.x = std::round(p.x / s) * s;
-                p.y = std::round(p.y / s) * s;
+                position.x = std::round(position.x / s) * s;
+                position.y = std::round(position.y / s) * s;
             }
-            node->setPosition(p);
+            node->setPosition(position);
         }
+    } else if (dragging && m_selectionRectActive) {
+        m_selectionRectEnd = mouseWorld;
     }
     if (released) {
         m_dragNode = {};
+        m_selectionRectActive = false;
     }
 
-    if (hovered && ImGui::IsKeyPressed(ImGuiKey_Delete) && m_dragNode.isValid()) {
-        m_basics->deleteNode(m_dragNode);
+    if (hovered && ImGui::IsKeyPressed(ImGuiKey_Delete) && m_selectedNode.isValid()) {
+        m_basics->deleteNode(m_selectedNode);
+        m_selectedNode = {};
         m_dragNode = {};
     }
 

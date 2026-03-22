@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ScopeCanvas/core/DiagramModel.h>
+#include <ScopeCanvas/core/GraphDocument.h>
 #include <ScopeCanvas/routing/EdgeRouter.h>
 #include <vector>
 
@@ -21,8 +21,8 @@ class DiagramBasics {
   public:
     DiagramBasics();
 
-    Core::DiagramModel& model();
-    const Core::DiagramModel& model() const;
+    Core::GraphDocument& model();
+    const Core::GraphDocument& model() const;
 
     GridSettings& gridSettings();
     const GridSettings& gridSettings() const;
@@ -40,7 +40,7 @@ class DiagramBasics {
     std::vector<Routing::EdgeRoute> routeAllEdges() const;
 
   private:
-    Core::DiagramModel m_model{};
+    Core::GraphDocument m_model{};
     GridSettings m_grid{};
     std::vector<Core::CanvasNodeId> m_nodeIds{};
     std::vector<Core::CanvasEdgeId> m_edgeIds{};

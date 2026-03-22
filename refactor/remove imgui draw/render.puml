@@ -1,0 +1,27 @@
+@startuml
+package Render {
+  class RenderScene
+  class SceneBuilder
+  class Camera2D
+  class CanvasRenderer
+  class EdgeRenderer
+  class NodeRenderer
+  class GridRenderer
+  class Shader
+  class GLBuffer
+  class VertexArray
+}
+CanvasRenderer --> RenderScene
+CanvasRenderer --> Camera2D
+CanvasRenderer --> EdgeRenderer
+CanvasRenderer --> NodeRenderer
+CanvasRenderer --> GridRenderer
+
+EdgeRenderer --> Shader
+NodeRenderer --> Shader
+GridRenderer --> Shader
+
+EdgeRenderer --> GLBuffer
+NodeRenderer --> GLBuffer
+GridRenderer --> GLBuffer
+@enduml

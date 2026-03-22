@@ -1,10 +1,10 @@
-#include <ScopeCanvas/core/DiagramModel.h>
+#include <ScopeCanvas/core/GraphDocument.h>
 #include <TestAssert.h>
 
 using namespace ScopeCanvas::Core;
 
 static int test_connect() {
-    DiagramModel model{};
+    GraphDocument model{};
 
     const auto n1 = model.createNode(NodeTypeId{1});
     const auto n2 = model.createNode(NodeTypeId{2});
@@ -31,7 +31,7 @@ static int test_connect() {
 }
 
 static int test_disconnect() {
-    DiagramModel model{};
+    GraphDocument model{};
 
     const auto n1 = model.createNode(NodeTypeId{1});
     const auto n2 = model.createNode(NodeTypeId{2});
@@ -49,7 +49,7 @@ static int test_disconnect() {
 }
 
 static int test_grouping() {
-    DiagramModel model{};
+    GraphDocument model{};
 
     const auto n = model.createNode(NodeTypeId{1});
     const LayoutGroupId g{100};

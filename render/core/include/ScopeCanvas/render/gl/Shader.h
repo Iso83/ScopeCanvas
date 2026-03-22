@@ -30,4 +30,6 @@ extern const char GridVertex[];
 extern const char GridFragment[];
 extern const char EdgeVertex[];
 extern const char EdgeFragment[];
+extern const char SelectionRectVertex[];
+extern const char SelectionRectFragment[];
 } // namespace ScopeCanvas::Render::GL

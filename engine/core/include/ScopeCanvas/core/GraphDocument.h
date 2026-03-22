@@ -10,9 +10,9 @@
 #include <vector>
 
 namespace ScopeCanvas::Core {
-class DiagramModel {
+class GraphDocument {
   public:
-    DiagramModel() = default;
+    GraphDocument() = default;
 
     CanvasNodeId createNode(NodeTypeId typeId);
     void removeNode(CanvasNodeId nodeId);

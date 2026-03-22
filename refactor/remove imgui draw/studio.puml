@@ -1,0 +1,7 @@
+@startuml
+package Studio {
+  class ImGuiLayer
+  class DiagramBasics
+}
+ImGuiLayer --> DiagramBasics
+@enduml

@@ -1,0 +1,11 @@
+@startuml
+package Core {
+  class DiagramModel
+  class Node
+  class Edge
+  class Connector
+}
+DiagramModel --> Node
+DiagramModel --> Edge
+Edge --> Connector
+@enduml

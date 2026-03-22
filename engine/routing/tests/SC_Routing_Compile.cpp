@@ -18,7 +18,7 @@ int main() {
 
     SC_TEST(!bundle.edges.empty());
 
-    Core::DiagramModel model{};
+    Core::GraphDocument model{};
     Routing::EdgeRouter router{};
 
     const auto routed = router.routeEdge(model, Core::CanvasEdgeId{2});
