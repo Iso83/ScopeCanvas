@@ -178,7 +178,7 @@ bool App::initWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(1280, 720, "ScopeCanvas DemoGL", nullptr, nullptr);
+    m_window = glfwCreateWindow(1280, 720, "ScopeCanvas OpenGL Demo", nullptr, nullptr);
     if (m_window == nullptr) {
         glfwTerminate();
         return false;
@@ -397,6 +397,52 @@ void App::processInput(float deltaTime) {
         m_debugEnabled = true;
         m_renderOptions.showDebug = true;
     }
+    static bool create1Handled = false;
+    static bool create2Handled = false;
+    static bool create3Handled = false;
+    static bool create4Handled = false;
+    static bool deleteHandled = false;
+
+    if (glfwGetKey(m_window, GLFW_KEY_1) == GLFW_PRESS) {
+        if (!create1Handled) {
+            (void)createNodeShortcut(ScopeCanvas::Core::NodeTypeId{1});
+        }
+        create1Handled = true;
+    } else {
+        create1Handled = false;
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_2) == GLFW_PRESS) {
+        if (!create2Handled) {
+            (void)createNodeShortcut(ScopeCanvas::Core::NodeTypeId{2});
+        }
+        create2Handled = true;
+    } else {
+        create2Handled = false;
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_3) == GLFW_PRESS) {
+        if (!create3Handled) {
+            (void)createNodeShortcut(ScopeCanvas::Core::NodeTypeId{3});
+        }
+        create3Handled = true;
+    } else {
+        create3Handled = false;
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_4) == GLFW_PRESS) {
+        if (!create4Handled) {
+            (void)createNodeShortcut(ScopeCanvas::Core::NodeTypeId{4});
+        }
+        create4Handled = true;
+    } else {
+        create4Handled = false;
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_DELETE) == GLFW_PRESS) {
+        if (!deleteHandled) {
+            deleteSelection();
+        }
+        deleteHandled = true;
+    } else {
+        deleteHandled = false;
+    }
 
     constexpr float panSpeed = 500.0f;
     glm::vec2 panDelta(0.0f);
@@ -438,14 +484,32 @@ void App::processInput(float deltaTime) {
     if (leftPressed) {
         const auto hoveredConnector = pickConnector(mouseWorld);
         if (hoveredConnector.isValid()) {
-            m_activeConnector = hoveredConnector;
             m_selectionRectActive = false;
-            m_renderOptions.selectedEdgeId = {};
+            if (m_renderOptions.selectedEdgeId.isValid()) {
+                if (const ScopeCanvas::Core::Edge* edge = m_document.getEdge(m_renderOptions.selectedEdgeId); edge != nullptr) {
+                    if (hoveredConnector == edge->fromConnector || hoveredConnector == edge->toConnector) {
+                        m_reconnectingEdge = true;
+                        m_reconnectingFromStart = hoveredConnector == edge->fromConnector;
+                        m_reconnectOriginalFrom = edge->fromConnector;
+                        m_reconnectOriginalTo = edge->toConnector;
+                        m_reconnectFixedConnector = m_reconnectingFromStart ? edge->toConnector : edge->fromConnector;
+                        m_document.disconnect(m_renderOptions.selectedEdgeId);
+                        m_activeConnector = m_reconnectFixedConnector;
+                    } else {
+                        m_activeConnector = hoveredConnector;
+                        m_renderOptions.selectedEdgeId = {};
+                    }
+                }
+            } else {
+                m_activeConnector = hoveredConnector;
+                m_renderOptions.selectedEdgeId = {};
+            }
         } else {
             const auto pickedNode = pickNode(mouseWorld);
             if (pickedNode.isValid()) {
                 m_dragNode = pickedNode;
                 m_renderOptions.selectedEdgeId = {};
+                m_reconnectingEdge = false;
                 if (!isNodeSelected(pickedNode)) {
                     setSingleSelection(pickedNode);
                 }
@@ -465,6 +529,7 @@ void App::processInput(float deltaTime) {
                 m_renderOptions.selectedEdgeId = pickedEdge;
                 if (pickedEdge.isValid()) {
                     clearSelection();
+                    m_reconnectingEdge = false;
                 } else {
                     clearSelection();
                     m_selectionRectActive = true;
@@ -495,11 +560,26 @@ void App::processInput(float deltaTime) {
     if (leftReleased) {
         if (m_activeConnector.isValid()) {
             const auto targetConnector = pickConnector(mouseWorld);
+            ScopeCanvas::Core::CanvasEdgeId newEdge{};
             if (targetConnector.isValid() && targetConnector != m_activeConnector &&
                 canConnect(m_document, m_activeConnector, targetConnector)) {
-                m_document.connect(m_activeConnector, targetConnector);
+                if (m_reconnectingEdge) {
+                    newEdge = m_reconnectingFromStart ? m_document.connect(targetConnector, m_reconnectFixedConnector)
+                                                      : m_document.connect(m_reconnectFixedConnector, targetConnector);
+                } else {
+                    newEdge = m_document.connect(m_activeConnector, targetConnector);
+                }
+            } else if (m_reconnectingEdge) {
+                newEdge = m_document.connect(m_reconnectOriginalFrom, m_reconnectOriginalTo);
+            }
+            if (newEdge.isValid()) {
+                m_renderOptions.selectedEdgeId = newEdge;
             }
             m_activeConnector = {};
+            m_reconnectingEdge = false;
+            m_reconnectFixedConnector = {};
+            m_reconnectOriginalFrom = {};
+            m_reconnectOriginalTo = {};
         } else if (m_selectionRectActive) {
             applySelectionRect();
             m_selectionRectActive = false;
@@ -511,6 +591,37 @@ void App::processInput(float deltaTime) {
 
     m_input.previousLeftDown = m_input.leftDown;
     m_input.previousMiddleDown = m_input.middleDown;
+}
+
+
+ScopeCanvas::Core::CanvasNodeId App::createNodeShortcut(ScopeCanvas::Core::NodeTypeId typeId) {
+    glm::vec2 position = m_camera.position();
+    position -= glm::vec2(96.0F, 56.0F);
+    position = snapToGrid(position);
+
+    const ScopeCanvas::Core::CanvasNodeId nodeId = m_document.createNode(typeId);
+    if (ScopeCanvas::Core::Node* node = m_document.getNode(nodeId); node != nullptr) {
+        node->setPosition(position);
+        node->setSize({180.0F, 110.0F});
+    }
+    m_nodeIds.push_back(nodeId);
+    setSingleSelection(nodeId);
+    m_renderOptions.selectedEdgeId = {};
+    return nodeId;
+}
+
+void App::deleteSelection() {
+    if (m_renderOptions.selectedEdgeId.isValid()) {
+        m_document.disconnect(m_renderOptions.selectedEdgeId);
+        m_renderOptions.selectedEdgeId = {};
+    }
+
+    const std::vector<ScopeCanvas::Core::CanvasNodeId> selection = m_selectedNodes;
+    for (const ScopeCanvas::Core::CanvasNodeId nodeId : selection) {
+        m_document.removeNode(nodeId);
+        m_nodeIds.erase(std::remove(m_nodeIds.begin(), m_nodeIds.end(), nodeId), m_nodeIds.end());
+    }
+    m_selectedNodes.clear();
 }
 
 void App::setupCallbacks() {

@@ -42,6 +42,11 @@ class App {
     std::vector<glm::vec2> m_dragSelectionStartPositions{};
 
     ScopeCanvas::Core::CanvasConnectorId m_activeConnector{};
+    bool m_reconnectingEdge{false};
+    bool m_reconnectingFromStart{false};
+    ScopeCanvas::Core::CanvasConnectorId m_reconnectFixedConnector{};
+    ScopeCanvas::Core::CanvasConnectorId m_reconnectOriginalFrom{};
+    ScopeCanvas::Core::CanvasConnectorId m_reconnectOriginalTo{};
     bool m_selectionRectActive{false};
     glm::vec2 m_selectionRectStart{};
     glm::vec2 m_selectionRectEnd{};
@@ -85,4 +90,6 @@ class App {
     bool isNodeSelected(ScopeCanvas::Core::CanvasNodeId nodeId) const;
     void applySelectionRect();
     glm::vec2 snapToGrid(glm::vec2 position) const;
+    ScopeCanvas::Core::CanvasNodeId createNodeShortcut(ScopeCanvas::Core::NodeTypeId typeId);
+    void deleteSelection();
 };

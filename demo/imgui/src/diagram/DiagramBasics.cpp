@@ -91,6 +91,14 @@ Core::CanvasEdgeId DiagramBasics::connect(Core::CanvasConnectorId a, Core::Canva
     return edgeId;
 }
 
+void DiagramBasics::deleteEdge(Core::CanvasEdgeId edgeId) {
+    if (!edgeId.isValid()) {
+        return;
+    }
+    m_model.disconnect(edgeId);
+    m_edgeIds.erase(std::remove(m_edgeIds.begin(), m_edgeIds.end(), edgeId), m_edgeIds.end());
+}
+
 void DiagramBasics::deleteNode(Core::CanvasNodeId nodeId) {
     m_model.removeNode(nodeId);
     m_nodeIds.erase(std::remove(m_nodeIds.begin(), m_nodeIds.end(), nodeId), m_nodeIds.end());

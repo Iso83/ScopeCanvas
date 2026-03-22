@@ -74,6 +74,14 @@ NodeDiagramWindow::~NodeDiagramWindow() {
     }
 }
 
+Core::CanvasEdgeId NodeDiagramWindow::selectedEdge() const {
+    return m_selectedEdge;
+}
+
+void NodeDiagramWindow::clearSelectedEdge() {
+    m_selectedEdge = {};
+}
+
 void NodeDiagramWindow::ensureRenderTarget(int width, int height) {
     width = std::max(width, 1);
     height = std::max(height, 1);
@@ -307,8 +315,25 @@ void NodeDiagramWindow::draw() {
         m_selectionRectActive = false;
 
         if (m_hoveredConnector.isValid()) {
-            m_pendingConnector = m_hoveredConnector;
-            m_selectedEdge = {};
+            if (m_selectedEdge.isValid()) {
+                if (const Core::Edge* edge = m_basics->model().getEdge(m_selectedEdge); edge != nullptr) {
+                    if (m_hoveredConnector == edge->fromConnector || m_hoveredConnector == edge->toConnector) {
+                        m_reconnectingEdge = true;
+                        m_reconnectingFromStart = m_hoveredConnector == edge->fromConnector;
+                        m_reconnectOriginalFrom = edge->fromConnector;
+                        m_reconnectOriginalTo = edge->toConnector;
+                        m_reconnectFixedConnector = m_reconnectingFromStart ? edge->toConnector : edge->fromConnector;
+                        m_basics->deleteEdge(m_selectedEdge);
+                        m_pendingConnector = m_reconnectFixedConnector;
+                    } else {
+                        m_pendingConnector = m_hoveredConnector;
+                        m_selectedEdge = {};
+                    }
+                }
+            } else {
+                m_pendingConnector = m_hoveredConnector;
+                m_selectedEdge = {};
+            }
         } else {
             const Core::CanvasNodeId pickedNode = pickNode(mouseWorld);
             if (pickedNode.isValid()) {
@@ -317,6 +342,7 @@ void NodeDiagramWindow::draw() {
                 }
                 m_dragNode = pickedNode;
                 m_selectedEdge = {};
+                m_reconnectingEdge = false;
                 m_dragSelection = m_basics->selectedNodeIds();
                 m_dragSelectionStartPositions.clear();
                 for (const Core::CanvasNodeId nodeId : m_dragSelection) {
@@ -361,11 +387,23 @@ void NodeDiagramWindow::draw() {
     if (released) {
         if (m_pendingConnector.isValid()) {
             const Core::CanvasConnectorId target = hovered ? pickConnector(mouseWorld) : Core::CanvasConnectorId{};
+            Core::CanvasEdgeId newEdge{};
             if (target.isValid() && target != m_pendingConnector &&
                 canConnect(m_basics->model(), m_pendingConnector, target)) {
-                (void)m_basics->connect(m_pendingConnector, target);
+                newEdge = m_reconnectingEdge ? (m_reconnectingFromStart ? m_basics->connect(target, m_reconnectFixedConnector)
+                                                                         : m_basics->connect(m_reconnectFixedConnector, target))
+                                            : m_basics->connect(m_pendingConnector, target);
+            } else if (m_reconnectingEdge) {
+                newEdge = m_basics->connect(m_reconnectOriginalFrom, m_reconnectOriginalTo);
+            }
+            if (newEdge.isValid()) {
+                m_selectedEdge = newEdge;
             }
             m_pendingConnector = {};
+            m_reconnectingEdge = false;
+            m_reconnectFixedConnector = {};
+            m_reconnectOriginalFrom = {};
+            m_reconnectOriginalTo = {};
         } else if (m_selectionRectActive) {
             applySelectionRect();
             m_selectionRectActive = false;
@@ -376,6 +414,10 @@ void NodeDiagramWindow::draw() {
     }
 
     if (hovered && ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+        if (m_selectedEdge.isValid()) {
+            m_basics->deleteEdge(m_selectedEdge);
+            m_selectedEdge = {};
+        }
         const std::vector<Core::CanvasNodeId> selection = m_basics->selectedNodeIds();
         for (const Core::CanvasNodeId nodeId : selection) {
             m_basics->deleteNode(nodeId);

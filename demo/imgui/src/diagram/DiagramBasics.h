@@ -39,6 +39,7 @@ class DiagramBasics {
 
     Core::CanvasNodeId createNode(Core::NodeTypeId typeId, glm::vec2 position);
     Core::CanvasEdgeId connect(Core::CanvasConnectorId a, Core::CanvasConnectorId b);
+    void deleteEdge(Core::CanvasEdgeId edgeId);
     void deleteNode(Core::CanvasNodeId nodeId);
 
     void clearSelection();

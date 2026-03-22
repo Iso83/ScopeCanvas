@@ -16,6 +16,8 @@ class NodeDiagramWindow {
     ~NodeDiagramWindow();
 
     void draw();
+    [[nodiscard]] Core::CanvasEdgeId selectedEdge() const;
+    void clearSelectedEdge();
 
   private:
     void ensureRenderTarget(int width, int height);
@@ -48,6 +50,11 @@ class NodeDiagramWindow {
     std::vector<Core::CanvasNodeId> m_dragSelection{};
     std::vector<glm::vec2> m_dragSelectionStartPositions{};
     Core::CanvasConnectorId m_pendingConnector{};
+    bool m_reconnectingEdge{false};
+    bool m_reconnectingFromStart{false};
+    Core::CanvasConnectorId m_reconnectFixedConnector{};
+    Core::CanvasConnectorId m_reconnectOriginalFrom{};
+    Core::CanvasConnectorId m_reconnectOriginalTo{};
     Core::CanvasEdgeId m_selectedEdge{};
     Core::CanvasConnectorId m_hoveredConnector{};
     bool m_selectionRectActive{false};
