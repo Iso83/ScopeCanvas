@@ -284,6 +284,11 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
         glUniform2f(sizeLoc, node.size.x, headerHeight);
         glUniform4f(colorLoc, style.headerColor.r, style.headerColor.g, style.headerColor.b, style.headerColor.a);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+        glUniform2f(posLoc, node.position.x + 8.0F, node.position.y + node.size.y - headerHeight + 5.0F);
+        glUniform2f(sizeLoc, 14.0F, std::max(headerHeight - 10.0F, 8.0F));
+        glUniform4f(colorLoc, style.borderColor.r, style.borderColor.g, style.borderColor.b, 0.85F);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     }
 
     glBindVertexArray(m_textVao);
@@ -295,7 +300,7 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
                                            1.2F, 2.2F);
         std::vector<float> textVertices;
         textVertices.reserve(title.size() * 7U * 5U * 12U);
-        appendTextGeometry(textVertices, title, {node.position.x + 8.0F, node.position.y + node.size.y - headerHeight + 6.0F}, pixelSize);
+        appendTextGeometry(textVertices, title, {node.position.x + 28.0F, node.position.y + node.size.y - headerHeight + 6.0F}, pixelSize);
         if (textVertices.empty()) {
             continue;
         }

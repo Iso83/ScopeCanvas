@@ -44,9 +44,11 @@ class NodeDiagramWindow {
 
     Core::CanvasNodeId m_dragNode{};
     glm::vec2 m_dragOffset{};
+    glm::vec2 m_dragAnchorStartPosition{};
     std::vector<Core::CanvasNodeId> m_dragSelection{};
     std::vector<glm::vec2> m_dragSelectionStartPositions{};
     Core::CanvasConnectorId m_pendingConnector{};
+    Core::CanvasEdgeId m_selectedEdge{};
     Core::CanvasConnectorId m_hoveredConnector{};
     bool m_selectionRectActive{false};
     glm::vec2 m_selectionRectStart{};

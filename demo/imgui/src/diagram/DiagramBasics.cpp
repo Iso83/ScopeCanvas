@@ -4,6 +4,20 @@
 #include <cmath>
 
 namespace ScopeCanvas::Studio {
+namespace {
+glm::vec2 connectorAnchor(const Core::Node& node, std::size_t index) {
+    const bool output = (index % 2U) == 1U;
+    const std::size_t sideIndex = index / 2U;
+    const std::size_t sideCount = output ? node.connectors.size() / 2U : (node.connectors.size() + 1U) / 2U;
+    constexpr float headerHeight = 24.0F;
+    constexpr float verticalInset = 12.0F;
+    const float bodyMinY = node.position.y + verticalInset;
+    const float bodyMaxY = std::max(bodyMinY + 1.0F, node.position.y + node.size.y - headerHeight - verticalInset);
+    const float step = std::max(bodyMaxY - bodyMinY, 1.0F) / static_cast<float>(sideCount + 1U);
+    const float y = bodyMinY + step * static_cast<float>(sideIndex + 1U);
+    return {output ? node.position.x + node.size.x : node.position.x, y};
+}
+} // namespace
 DiagramBasics::DiagramBasics() {
     (void)createNode(Core::NodeTypeId{10}, {-260.0F, -96.0F});
     (void)createNode(Core::NodeTypeId{11}, {32.0F, -160.0F});
@@ -131,8 +145,16 @@ std::vector<Routing::EdgeRoute> DiagramBasics::routeAllEdges() const {
             }
             Routing::EdgeRoute route{};
             route.edgeId = id;
-            route.points.push_back({n0->position.x + n0->size.x, n0->position.y + n0->size.y * 0.5F});
-            route.points.push_back({n1->position.x, n1->position.y + n1->size.y * 0.5F});
+            std::size_t fromIndex = 0;
+            while (fromIndex < n0->connectors.size() && n0->connectors[fromIndex] != edge->fromConnector) {
+                ++fromIndex;
+            }
+            std::size_t toIndex = 0;
+            while (toIndex < n1->connectors.size() && n1->connectors[toIndex] != edge->toConnector) {
+                ++toIndex;
+            }
+            route.points.push_back(connectorAnchor(*n0, std::min(fromIndex, n0->connectors.size() - 1U)));
+            route.points.push_back(connectorAnchor(*n1, std::min(toIndex, n1->connectors.size() - 1U)));
             routes.push_back(route);
         }
     }

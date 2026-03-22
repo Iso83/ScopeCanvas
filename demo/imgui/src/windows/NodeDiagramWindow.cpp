@@ -14,6 +14,18 @@ bool pointInNode(const glm::vec2& point, const Core::Node& node) {
            point.y <= node.position.y + node.size.y;
 }
 
+float distanceToSegmentSquared(const glm::vec2& point, const glm::vec2& a, const glm::vec2& b) {
+    const glm::vec2 ab = b - a;
+    const float len2 = glm::dot(ab, ab);
+    if (len2 <= 0.0001F) {
+        const glm::vec2 d = point - a;
+        return glm::dot(d, d);
+    }
+    const float t = std::clamp(glm::dot(point - a, ab) / len2, 0.0F, 1.0F);
+    const glm::vec2 proj = a + ab * t;
+    const glm::vec2 d = point - proj;
+    return glm::dot(d, d);
+}
 
 bool canConnect(const Core::GraphDocument& model, Core::CanvasConnectorId a, Core::CanvasConnectorId b) {
     if (!a.isValid() || !b.isValid() || a == b) {
@@ -169,7 +181,9 @@ void NodeDiagramWindow::applySelectionRect() {
         }
         const glm::vec2 nodeMin = node->position;
         const glm::vec2 nodeMax = node->position + node->size;
-        if (nodeMin.x >= rectMin.x && nodeMax.x <= rectMax.x && nodeMin.y >= rectMin.y && nodeMax.y <= rectMax.y) {
+        const bool overlapX = nodeMax.x >= rectMin.x && nodeMin.x <= rectMax.x;
+        const bool overlapY = nodeMax.y >= rectMin.y && nodeMin.y <= rectMax.y;
+        if (overlapX && overlapY) {
             selection.push_back(nodeId);
         }
     }
@@ -215,19 +229,25 @@ void NodeDiagramWindow::draw() {
     glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
     glViewport(0, 0, m_renderWidth, m_renderHeight);
 
+    const ImVec2 mouse = ImGui::GetIO().MousePos;
+    const glm::vec2 mouseWorld =
+        screenToWorld(mouse.x - canvasPos.x, mouse.y - canvasPos.y, std::max(canvasSize.x, 1.0F), std::max(canvasSize.y, 1.0F));
+
+    const std::vector<Routing::EdgeRoute> routes = m_basics->routeAllEdges();
+
     Render::CanvasRenderOptions options{};
     options.showGrid = m_showGrid && m_basics->gridSettings().enabled;
     options.showDebug = m_showDebug;
     options.gridSize = m_basics->gridSettings().cellSize;
     options.selectedNodeIds = m_basics->selectedNodeIds();
+    options.selectedEdgeId = m_selectedEdge;
     options.selectionRectActive = m_selectionRectActive;
     options.selectionRectStart = m_selectionRectStart;
     options.selectionRectEnd = m_selectionRectEnd;
     options.hoveredConnectorId = m_hoveredConnector;
     options.activeConnectorId = m_pendingConnector;
     options.previewEdgeActive = m_pendingConnector.isValid();
-    options.previewEdgeEnd = screenToWorld(ImGui::GetIO().MousePos.x - canvasPos.x, ImGui::GetIO().MousePos.y - canvasPos.y,
-                                           std::max(canvasSize.x, 1.0F), std::max(canvasSize.y, 1.0F));
+    options.previewEdgeEnd = mouseWorld;
     if (m_pendingConnector.isValid()) {
         const Core::Connector* connector = m_basics->model().getConnector(m_pendingConnector);
         const Core::Node* node = connector == nullptr ? nullptr : m_basics->model().getNode(connector->nodeId);
@@ -248,7 +268,19 @@ void NodeDiagramWindow::draw() {
         static const Render::Theme::NodeVisualRegistry registry{};
         return registry.getVisual(typeId).title;
     };
-    m_renderer.render(m_basics->model(), m_basics->routeAllEdges(), m_camera, options);
+    const float edgePickThresholdSquared = 100.0F / (m_viewState->zoom * m_viewState->zoom);
+    for (const auto& route : routes) {
+        for (std::size_t i = 0; i + 1 < route.points.size(); ++i) {
+            if (distanceToSegmentSquared(mouseWorld, route.points[i], route.points[i + 1]) <= edgePickThresholdSquared) {
+                options.hoveredEdgeId = route.edgeId;
+                break;
+            }
+        }
+        if (options.hoveredEdgeId.isValid()) {
+            break;
+        }
+    }
+    m_renderer.render(m_basics->model(), routes, m_camera, options);
 
     glBindFramebuffer(GL_FRAMEBUFFER, oldFb);
     glViewport(oldVp[0], oldVp[1], oldVp[2], oldVp[3]);
@@ -259,9 +291,6 @@ void NodeDiagramWindow::draw() {
     const bool clicked = hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
     const bool dragging = hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
     const bool released = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
-    const ImVec2 mouse = ImGui::GetIO().MousePos;
-    const glm::vec2 mouseWorld =
-        screenToWorld(mouse.x - canvasPos.x, mouse.y - canvasPos.y, std::max(canvasSize.x, 1.0F), std::max(canvasSize.y, 1.0F));
     m_hoveredConnector = hovered ? pickConnector(mouseWorld) : Core::CanvasConnectorId{};
 
     if (hovered && ImGui::GetIO().MouseWheel != 0.0F) {
@@ -279,6 +308,7 @@ void NodeDiagramWindow::draw() {
 
         if (m_hoveredConnector.isValid()) {
             m_pendingConnector = m_hoveredConnector;
+            m_selectedEdge = {};
         } else {
             const Core::CanvasNodeId pickedNode = pickNode(mouseWorld);
             if (pickedNode.isValid()) {
@@ -286,6 +316,7 @@ void NodeDiagramWindow::draw() {
                     m_basics->setSelection({pickedNode});
                 }
                 m_dragNode = pickedNode;
+                m_selectedEdge = {};
                 m_dragSelection = m_basics->selectedNodeIds();
                 m_dragSelectionStartPositions.clear();
                 for (const Core::CanvasNodeId nodeId : m_dragSelection) {
@@ -296,8 +327,13 @@ void NodeDiagramWindow::draw() {
                 }
                 if (const Core::Node* node = m_basics->model().getNode(pickedNode); node != nullptr) {
                     m_dragOffset = mouseWorld - node->position;
+                    m_dragAnchorStartPosition = node->position;
                 }
+            } else if (options.hoveredEdgeId.isValid()) {
+                m_basics->clearSelection();
+                m_selectedEdge = options.hoveredEdgeId;
             } else {
+                m_selectedEdge = {};
                 m_basics->clearSelection();
                 m_selectionRectActive = true;
                 m_selectionRectStart = mouseWorld;
@@ -310,7 +346,7 @@ void NodeDiagramWindow::draw() {
         const Core::Node* draggedNode = m_basics->model().getNode(m_dragNode);
         if (draggedNode != nullptr) {
             const glm::vec2 base = snapToGrid(mouseWorld - m_dragOffset);
-            const glm::vec2 delta = base - draggedNode->position;
+            const glm::vec2 delta = base - m_dragAnchorStartPosition;
             for (std::size_t i = 0; i < m_dragSelection.size() && i < m_dragSelectionStartPositions.size(); ++i) {
                 if (Core::Node* node = m_basics->model().getNode(m_dragSelection[i]); node != nullptr) {
                     node->setPosition(snapToGrid(m_dragSelectionStartPositions[i] + delta));

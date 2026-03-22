@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <glm/geometric.hpp>
 #include <glm/vec4.hpp>
 #include <iostream>
@@ -28,6 +29,18 @@ bool pointInNode(const glm::vec2& point, const ScopeCanvas::Core::Node& node) {
            point.y <= node.position.y + node.size.y;
 }
 
+float distanceToSegmentSquared(const glm::vec2& point, const glm::vec2& a, const glm::vec2& b) {
+    const glm::vec2 ab = b - a;
+    const float len2 = glm::dot(ab, ab);
+    if (len2 <= 0.0001F) {
+        const glm::vec2 d = point - a;
+        return glm::dot(d, d);
+    }
+    const float t = std::clamp(glm::dot(point - a, ab) / len2, 0.0F, 1.0F);
+    const glm::vec2 proj = a + ab * t;
+    const glm::vec2 d = point - proj;
+    return glm::dot(d, d);
+}
 
 bool canConnect(const ScopeCanvas::Core::GraphDocument& model, ScopeCanvas::Core::CanvasConnectorId a,
                 ScopeCanvas::Core::CanvasConnectorId b) {
@@ -147,7 +160,8 @@ void App::run() {
             }
         }
 
-        const auto routes = m_router.routeAll(m_document);
+        const auto routes = routeAllEdges();
+        m_renderOptions.hoveredEdgeId = pickEdge(screenToWorld(m_input.mouseX, m_input.mouseY), routes);
         m_renderer.render(m_document, routes, m_camera, m_renderOptions);
 
         glfwSwapBuffers(m_window);
@@ -244,6 +258,61 @@ glm::vec2 App::connectorWorld(const ScopeCanvas::Core::Node& node, std::size_t i
     return {output ? node.position.x + node.size.x : node.position.x, y};
 }
 
+
+std::vector<ScopeCanvas::Routing::EdgeRoute> App::routeAllEdges() const {
+    std::vector<ScopeCanvas::Routing::EdgeRoute> routes = m_router.routeAll(m_document);
+    if (!routes.empty()) {
+        return routes;
+    }
+
+    constexpr std::uint32_t kMaxConsecutiveMissingEdgeIds = 128;
+    std::uint32_t missStreak = 0;
+    for (std::uint32_t probe = 1; missStreak < kMaxConsecutiveMissingEdgeIds; ++probe) {
+        const ScopeCanvas::Core::Edge* edge = m_document.getEdge(ScopeCanvas::Core::CanvasEdgeId{probe});
+        if (edge == nullptr) {
+            ++missStreak;
+            continue;
+        }
+        missStreak = 0;
+        const ScopeCanvas::Core::Connector* from = m_document.getConnector(edge->fromConnector);
+        const ScopeCanvas::Core::Connector* to = m_document.getConnector(edge->toConnector);
+        if (from == nullptr || to == nullptr) {
+            continue;
+        }
+        const ScopeCanvas::Core::Node* fromNode = m_document.getNode(from->nodeId);
+        const ScopeCanvas::Core::Node* toNode = m_document.getNode(to->nodeId);
+        if (fromNode == nullptr || toNode == nullptr) {
+            continue;
+        }
+        std::size_t fromIndex = 0;
+        while (fromIndex < fromNode->connectors.size() && fromNode->connectors[fromIndex] != edge->fromConnector) {
+            ++fromIndex;
+        }
+        std::size_t toIndex = 0;
+        while (toIndex < toNode->connectors.size() && toNode->connectors[toIndex] != edge->toConnector) {
+            ++toIndex;
+        }
+        ScopeCanvas::Routing::EdgeRoute route{};
+        route.edgeId = edge->id;
+        route.points.push_back(connectorWorld(*fromNode, std::min(fromIndex, fromNode->connectors.size() - 1U)));
+        route.points.push_back(connectorWorld(*toNode, std::min(toIndex, toNode->connectors.size() - 1U)));
+        routes.push_back(route);
+    }
+    return routes;
+}
+
+ScopeCanvas::Core::CanvasEdgeId App::pickEdge(const glm::vec2& world, const std::vector<ScopeCanvas::Routing::EdgeRoute>& routes) const {
+    const float thresholdSquared = 100.0F / (m_camera.zoom() * m_camera.zoom());
+    for (const auto& route : routes) {
+        for (std::size_t i = 0; i + 1 < route.points.size(); ++i) {
+            if (distanceToSegmentSquared(world, route.points[i], route.points[i + 1]) <= thresholdSquared) {
+                return route.edgeId;
+            }
+        }
+    }
+    return {};
+}
+
 ScopeCanvas::Core::CanvasNodeId App::pickNode(const glm::vec2& world) const {
     for (auto it = m_nodeIds.rbegin(); it != m_nodeIds.rend(); ++it) {
         if (const ScopeCanvas::Core::Node* node = m_document.getNode(*it); node != nullptr && pointInNode(world, *node)) {
@@ -299,7 +368,9 @@ void App::applySelectionRect() {
         }
         const glm::vec2 nodeMin = node->position;
         const glm::vec2 nodeMax = node->position + node->size;
-        if (nodeMin.x >= rectMin.x && nodeMax.x <= rectMax.x && nodeMin.y >= rectMin.y && nodeMax.y <= rectMax.y) {
+        const bool overlapX = nodeMax.x >= rectMin.x && nodeMin.x <= rectMax.x;
+        const bool overlapY = nodeMax.y >= rectMin.y && nodeMin.y <= rectMax.y;
+        if (overlapX && overlapY) {
             m_selectedNodes.push_back(nodeId);
         }
     }
@@ -369,10 +440,12 @@ void App::processInput(float deltaTime) {
         if (hoveredConnector.isValid()) {
             m_activeConnector = hoveredConnector;
             m_selectionRectActive = false;
+            m_renderOptions.selectedEdgeId = {};
         } else {
             const auto pickedNode = pickNode(mouseWorld);
             if (pickedNode.isValid()) {
                 m_dragNode = pickedNode;
+                m_renderOptions.selectedEdgeId = {};
                 if (!isNodeSelected(pickedNode)) {
                     setSingleSelection(pickedNode);
                 }
@@ -385,12 +458,19 @@ void App::processInput(float deltaTime) {
                 }
                 if (const ScopeCanvas::Core::Node* node = m_document.getNode(pickedNode); node != nullptr) {
                     m_dragOffset = mouseWorld - node->position;
+                    m_dragAnchorStartPosition = node->position;
                 }
             } else {
-                clearSelection();
-                m_selectionRectActive = true;
-                m_selectionRectStart = mouseWorld;
-                m_selectionRectEnd = mouseWorld;
+                const ScopeCanvas::Core::CanvasEdgeId pickedEdge = pickEdge(mouseWorld, routeAllEdges());
+                m_renderOptions.selectedEdgeId = pickedEdge;
+                if (pickedEdge.isValid()) {
+                    clearSelection();
+                } else {
+                    clearSelection();
+                    m_selectionRectActive = true;
+                    m_selectionRectStart = mouseWorld;
+                    m_selectionRectEnd = mouseWorld;
+                }
             }
         }
     }
@@ -399,7 +479,7 @@ void App::processInput(float deltaTime) {
         if (m_dragNode.isValid()) {
             const glm::vec2 anchorPosition = snapToGrid(mouseWorld - m_dragOffset);
             if (const ScopeCanvas::Core::Node* draggedNode = m_document.getNode(m_dragNode); draggedNode != nullptr) {
-                const glm::vec2 delta = anchorPosition - draggedNode->position;
+                const glm::vec2 delta = anchorPosition - m_dragAnchorStartPosition;
                 for (std::size_t i = 0; i < m_dragSelection.size() && i < m_dragSelectionStartPositions.size(); ++i) {
                     if (ScopeCanvas::Core::Node* node = m_document.getNode(m_dragSelection[i]); node != nullptr) {
                         node->setPosition(snapToGrid(m_dragSelectionStartPositions[i] + delta));

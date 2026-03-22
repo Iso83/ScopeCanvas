@@ -37,6 +37,7 @@ class App {
 
     ScopeCanvas::Core::CanvasNodeId m_dragNode{};
     glm::vec2 m_dragOffset{};
+    glm::vec2 m_dragAnchorStartPosition{};
     std::vector<ScopeCanvas::Core::CanvasNodeId> m_dragSelection{};
     std::vector<glm::vec2> m_dragSelectionStartPositions{};
 
@@ -75,8 +76,10 @@ class App {
     void setupCallbacks();
     glm::vec2 screenToWorld(double x, double y) const;
     glm::vec2 connectorWorld(const ScopeCanvas::Core::Node& node, std::size_t index) const;
+    std::vector<ScopeCanvas::Routing::EdgeRoute> routeAllEdges() const;
     ScopeCanvas::Core::CanvasNodeId pickNode(const glm::vec2& world) const;
     ScopeCanvas::Core::CanvasConnectorId pickConnector(const glm::vec2& world) const;
+    ScopeCanvas::Core::CanvasEdgeId pickEdge(const glm::vec2& world, const std::vector<ScopeCanvas::Routing::EdgeRoute>& routes) const;
     void clearSelection();
     void setSingleSelection(ScopeCanvas::Core::CanvasNodeId nodeId);
     bool isNodeSelected(ScopeCanvas::Core::CanvasNodeId nodeId) const;
