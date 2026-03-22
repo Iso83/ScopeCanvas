@@ -3,86 +3,81 @@
 #include "ScopeCanvas/render/camera/Camera2D.h"
 
 #include <glad/glad.h>
+#include <algorithm>
 #include <glm/glm.hpp>
 
 namespace ScopeCanvas::Render::Renderers {
 namespace {
 unsigned int compile(unsigned int type, const char* src) {
-    unsigned int shader = glCreateShader(type);
+    const unsigned int shader = glCreateShader(type);
     glShaderSource(shader, 1, &src, nullptr);
     glCompileShader(shader);
     return shader;
 }
 
-struct NodePalette {
-    glm::vec3 body;
-    glm::vec3 header;
-    glm::vec3 border;
-    glm::vec3 connectorIn;
-    glm::vec3 connectorOut;
-};
-
-NodePalette paletteForType(Core::NodeTypeId typeId) {
-    switch (typeId.value()) {
-    case 10:
-        return {{0.20F, 0.22F, 0.29F},
-                {0.11F, 0.13F, 0.18F},
-                {0.64F, 0.70F, 0.86F},
-                {0.80F, 0.84F, 0.95F},
-                {0.97F, 0.80F, 0.27F}};
-    case 11:
-        return {{0.36F, 0.31F, 0.14F},
-                {0.20F, 0.17F, 0.06F},
-                {0.86F, 0.77F, 0.38F},
-                {0.92F, 0.88F, 0.70F},
-                {0.99F, 0.86F, 0.34F}};
-    case 12:
-        return {{0.16F, 0.29F, 0.46F},
-                {0.09F, 0.16F, 0.27F},
-                {0.50F, 0.75F, 0.98F},
-                {0.78F, 0.89F, 0.98F},
-                {0.55F, 0.79F, 1.00F}};
-    case 13:
-        return {{0.15F, 0.36F, 0.21F},
-                {0.08F, 0.21F, 0.12F},
-                {0.55F, 0.94F, 0.65F},
-                {0.78F, 0.95F, 0.83F},
-                {0.47F, 1.00F, 0.65F}};
-    case 14:
-        return {{0.43F, 0.16F, 0.16F},
-                {0.24F, 0.08F, 0.08F},
-                {0.98F, 0.56F, 0.56F},
-                {0.97F, 0.83F, 0.83F},
-                {1.00F, 0.54F, 0.54F}};
-    case 15:
-        return {{0.43F, 0.27F, 0.12F},
-                {0.24F, 0.14F, 0.06F},
-                {0.97F, 0.70F, 0.38F},
-                {0.97F, 0.89F, 0.80F},
-                {1.00F, 0.73F, 0.36F}};
-    default:
-        return {{0.22F, 0.27F, 0.34F},
-                {0.13F, 0.17F, 0.22F},
-                {0.83F, 0.86F, 0.92F},
-                {0.86F, 0.88F, 0.95F},
-                {0.92F, 0.94F, 0.98F}};
-    }
+bool isSelected(Core::CanvasNodeId nodeId, const std::vector<Core::CanvasNodeId>& selectedNodeIds) {
+    return std::find(selectedNodeIds.begin(), selectedNodeIds.end(), nodeId) != selectedNodeIds.end();
 }
 } // namespace
 
+NodeRenderStyle NodeRenderer::defaultStyle(Core::NodeTypeId typeId) {
+    switch (typeId.value()) {
+    case 10:
+        return {{0.12F, 0.14F, 0.18F, 0.96F}, {0.08F, 0.10F, 0.14F, 1.0F}, {0.36F, 0.43F, 0.56F, 1.0F},
+                {0.86F, 0.63F, 0.27F, 1.0F}, 1.5F, 24.0F};
+    case 11:
+        return {{0.18F, 0.16F, 0.10F, 0.96F}, {0.13F, 0.11F, 0.07F, 1.0F}, {0.58F, 0.48F, 0.21F, 1.0F},
+                {0.94F, 0.75F, 0.28F, 1.0F}, 1.5F, 24.0F};
+    case 12:
+        return {{0.10F, 0.16F, 0.23F, 0.96F}, {0.07F, 0.11F, 0.17F, 1.0F}, {0.25F, 0.53F, 0.76F, 1.0F},
+                {0.51F, 0.82F, 1.0F, 1.0F}, 1.5F, 24.0F};
+    case 13:
+        return {{0.09F, 0.17F, 0.13F, 0.96F}, {0.06F, 0.12F, 0.09F, 1.0F}, {0.24F, 0.58F, 0.39F, 1.0F},
+                {0.45F, 0.92F, 0.61F, 1.0F}, 1.5F, 24.0F};
+    case 14:
+        return {{0.20F, 0.11F, 0.12F, 0.96F}, {0.14F, 0.08F, 0.09F, 1.0F}, {0.62F, 0.29F, 0.33F, 1.0F},
+                {0.98F, 0.58F, 0.56F, 1.0F}, 1.5F, 24.0F};
+    case 15:
+        return {{0.19F, 0.13F, 0.09F, 0.96F}, {0.14F, 0.09F, 0.06F, 1.0F}, {0.62F, 0.39F, 0.19F, 1.0F},
+                {0.98F, 0.72F, 0.39F, 1.0F}, 1.5F, 24.0F};
+    default:
+        return {};
+    }
+}
+
 bool NodeRenderer::init() {
-    constexpr float quad[] = {
-        0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F,
+    constexpr float quadVertices[] = {
+        0.0F, 0.0F,
+        1.0F, 0.0F,
+        1.0F, 1.0F,
+        0.0F, 1.0F,
+    };
+    constexpr unsigned int quadIndices[] = {0, 1, 2, 2, 3, 0};
+    constexpr float outlineVertices[] = {
+        0.0F, 0.0F,
+        1.0F, 0.0F,
+        1.0F, 1.0F,
+        0.0F, 1.0F,
     };
 
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
+    glGenVertexArrays(1, &m_fillVao);
+    glGenBuffers(1, &m_fillVbo);
+    glGenBuffers(1, &m_fillEbo);
+    glBindVertexArray(m_fillVao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_fillVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_fillEbo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quadIndices), quadIndices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
+
+    glGenVertexArrays(1, &m_lineVao);
+    glGenBuffers(1, &m_lineVbo);
+    glBindVertexArray(m_lineVao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(outlineVertices), outlineVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), nullptr);
     glBindVertexArray(0);
 
     const char* vs = R"(#version 330 core
@@ -122,24 +117,36 @@ void NodeRenderer::shutdown() {
         glDeleteProgram(m_program);
         m_program = 0;
     }
-    if (m_vbo != 0) {
-        glDeleteBuffers(1, &m_vbo);
-        m_vbo = 0;
+    if (m_lineVbo != 0) {
+        glDeleteBuffers(1, &m_lineVbo);
+        m_lineVbo = 0;
     }
-    if (m_vao != 0) {
-        glDeleteVertexArrays(1, &m_vao);
-        m_vao = 0;
+    if (m_lineVao != 0) {
+        glDeleteVertexArrays(1, &m_lineVao);
+        m_lineVao = 0;
+    }
+    if (m_fillEbo != 0) {
+        glDeleteBuffers(1, &m_fillEbo);
+        m_fillEbo = 0;
+    }
+    if (m_fillVbo != 0) {
+        glDeleteBuffers(1, &m_fillVbo);
+        m_fillVbo = 0;
+    }
+    if (m_fillVao != 0) {
+        glDeleteVertexArrays(1, &m_fillVao);
+        m_fillVao = 0;
     }
 }
 
 void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const Camera::Camera2D& camera,
-                          Core::CanvasNodeId selectedNodeId) const {
+                          const std::vector<Core::CanvasNodeId>& selectedNodeIds,
+                          const StyleResolver& styleResolver) const {
     if (nodes.empty()) {
         return;
     }
 
     glUseProgram(m_program);
-    glBindVertexArray(m_vao);
 
     const glm::mat4 vp = camera.viewProjection();
     const int vpLoc = glGetUniformLocation(m_program, "uVP");
@@ -149,58 +156,40 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
 
     glUniformMatrix4fv(vpLoc, 1, GL_FALSE, &vp[0][0]);
 
+    glBindVertexArray(m_fillVao);
     for (const Scene::NodeRenderData& node : nodes) {
-        const NodePalette palette = paletteForType(node.typeId);
-        const bool selected = selectedNodeId.isValid() && node.id == selectedNodeId;
+        const NodeRenderStyle style = styleResolver ? styleResolver(node.typeId) : defaultStyle(node.typeId);
+        const bool selected = isSelected(node.id, selectedNodeIds);
+        const float headerHeight = std::clamp(style.headerHeight, 18.0F, node.size.y);
 
         glUniform2f(posLoc, node.position.x, node.position.y);
         glUniform2f(sizeLoc, node.size.x, node.size.y);
-        glUniform4f(colorLoc, palette.body.r, palette.body.g, palette.body.b, 0.96F);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glUniform4f(colorLoc, style.bodyColor.r, style.bodyColor.g, style.bodyColor.b, style.bodyColor.a);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
-        const float titleHeight = std::min(node.size.y, 24.0F);
-        glUniform2f(posLoc, node.position.x, node.position.y + node.size.y - titleHeight);
-        glUniform2f(sizeLoc, node.size.x, titleHeight);
-        glUniform4f(colorLoc, palette.header.r, palette.header.g, palette.header.b, 1.0F);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glUniform2f(posLoc, node.position.x, node.position.y + node.size.y - headerHeight);
+        glUniform2f(sizeLoc, node.size.x, headerHeight);
+        glUniform4f(colorLoc, style.headerColor.r, style.headerColor.g, style.headerColor.b, style.headerColor.a);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
-        constexpr float borderThickness = 1.5F;
-        const glm::vec3 border = selected ? glm::vec3(0.95F, 0.67F, 0.25F) : palette.border;
-        glUniform2f(posLoc, node.position.x, node.position.y);
-        glUniform2f(sizeLoc, node.size.x, node.size.y);
-        glUniform4f(colorLoc, border.r, border.g, border.b, 1.0F);
-
-        constexpr float outline[] = {
-            0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F,
-        };
-
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(outline), outline, GL_DYNAMIC_DRAW);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-        glLineWidth(selected ? 2.5F : borderThickness);
-        glDrawArrays(GL_LINE_LOOP, 0, 4);
-
-        constexpr float quad[] = {
-            0.0F, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.0F, 1.0F,
-        };
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quad), quad, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-
-        const float connectorSize = 8.0F;
-        const float connectorOffset = connectorSize * 0.5F;
-        const float count = static_cast<float>(node.connectorCount + 1U);
-        const float step = node.size.y / count;
-        for (std::uint32_t i = 0; i < node.connectorCount; ++i) {
-            const bool output = (i % 2U) == 1U;
-            const float cy = node.position.y + step * static_cast<float>(i + 1U) - connectorOffset;
-            const float cx =
-                output ? node.position.x + node.size.x - connectorOffset : node.position.x - connectorOffset;
-            const glm::vec3 connectorColor = output ? palette.connectorOut : palette.connectorIn;
-            glUniform2f(posLoc, cx, cy);
-            glUniform2f(sizeLoc, connectorSize, connectorSize);
-            glUniform4f(colorLoc, connectorColor.r, connectorColor.g, connectorColor.b, 1.0F);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+        if (selected) {
+            glUniform2f(posLoc, node.position.x - 2.0F, node.position.y - 2.0F);
+            glUniform2f(sizeLoc, node.size.x + 4.0F, node.size.y + 4.0F);
+            glUniform4f(colorLoc, style.selectionColor.r, style.selectionColor.g, style.selectionColor.b, 0.18F);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
         }
+    }
+
+    glBindVertexArray(m_lineVao);
+    for (const Scene::NodeRenderData& node : nodes) {
+        const NodeRenderStyle style = styleResolver ? styleResolver(node.typeId) : defaultStyle(node.typeId);
+        const bool selected = isSelected(node.id, selectedNodeIds);
+        const glm::vec4 border = selected ? style.selectionColor : style.borderColor;
+        glUniform2f(posLoc, node.position.x, node.position.y);
+        glUniform2f(sizeLoc, node.size.x, node.size.y);
+        glUniform4f(colorLoc, border.r, border.g, border.b, border.a);
+        glLineWidth(selected ? style.borderThickness + 1.5F : style.borderThickness);
+        glDrawArrays(GL_LINE_LOOP, 0, 4);
     }
 
     glBindVertexArray(0);

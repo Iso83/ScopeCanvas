@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ScopeCanvas/core/GraphDocument.h>
+#include <ScopeCanvas/core/ids/CanvasIds.h>
 #include <ScopeCanvas/routing/EdgeRouter.h>
 #include <vector>
 
@@ -33,9 +34,17 @@ class DiagramBasics {
     std::vector<Core::CanvasEdgeId>& edgeIds();
     const std::vector<Core::CanvasEdgeId>& edgeIds() const;
 
+    std::vector<Core::CanvasNodeId>& selectedNodeIds();
+    const std::vector<Core::CanvasNodeId>& selectedNodeIds() const;
+
     Core::CanvasNodeId createNode(Core::NodeTypeId typeId, glm::vec2 position);
     Core::CanvasEdgeId connect(Core::CanvasConnectorId a, Core::CanvasConnectorId b);
     void deleteNode(Core::CanvasNodeId nodeId);
+
+    void clearSelection();
+    void setSelection(const std::vector<Core::CanvasNodeId>& nodeIds);
+    void setNodeSelected(Core::CanvasNodeId nodeId, bool selected);
+    [[nodiscard]] bool isNodeSelected(Core::CanvasNodeId nodeId) const;
 
     std::vector<Routing::EdgeRoute> routeAllEdges() const;
 
@@ -44,5 +53,6 @@ class DiagramBasics {
     GridSettings m_grid{};
     std::vector<Core::CanvasNodeId> m_nodeIds{};
     std::vector<Core::CanvasEdgeId> m_edgeIds{};
+    std::vector<Core::CanvasNodeId> m_selectedNodeIds{};
 };
 } // namespace ScopeCanvas::Studio

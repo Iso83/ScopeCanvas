@@ -2,49 +2,60 @@
 
 namespace ScopeCanvas::Render::Theme {
 namespace {
-NodeVisual makeVisual(const char* title, const char* icon, ColorRgba8 titleBar, ColorRgba8 body,
+NodeVisual makeVisual(const char* title, const char* icon, ColorRgba8 titleBar, ColorRgba8 body, ColorRgba8 border,
                       ColorRgba8 outputConnector) {
     NodeVisual visual{};
     visual.title = title;
     visual.icon = icon;
     visual.titleBarColor = titleBar;
     visual.bodyColor = body;
+    visual.borderColor = border;
     visual.connectorOutputColor = outputConnector;
-    visual.borderColor = {235, 235, 240, 180};
-    visual.titleTextColor = {245, 245, 245, 255};
-    visual.connectorInputColor = {215, 215, 230, 255};
-    visual.selectionColor = {255, 210, 120, 220};
+    visual.titleTextColor = {242, 244, 248, 255};
+    visual.connectorInputColor = {210, 216, 232, 255};
+    visual.selectionColor = {255, 196, 102, 228};
     visual.cornerRadius = 6.0F;
-    visual.borderThickness = 1.0F;
+    visual.borderThickness = 1.25F;
     visual.titleBarHeight = 24.0F;
     return visual;
 }
 } // namespace
 
 NodeVisualRegistry::NodeVisualRegistry() {
-    m_defaultVisual = makeVisual("Node", "N", {28, 32, 40, 220}, {64, 68, 80, 210}, {225, 225, 240, 255});
+    m_defaultVisual = makeVisual("Node", "N", {20, 24, 31, 235}, {30, 35, 43, 226}, {68, 78, 96, 255},
+                                 {208, 216, 236, 255});
 
     registerVisual(Core::NodeTypeId{1},
-                   makeVisual("Number", "1", {30, 34, 44, 220}, {70, 74, 86, 210}, {225, 225, 240, 255}));
+                   makeVisual("Number", "1", {24, 28, 36, 235}, {38, 43, 54, 226}, {83, 93, 112, 255},
+                              {214, 220, 238, 255}));
     registerVisual(Core::NodeTypeId{2},
-                   makeVisual("Add", "+", {32, 38, 52, 220}, {80, 90, 118, 210}, {225, 225, 240, 255}));
+                   makeVisual("Add", "+", {18, 30, 44, 235}, {28, 47, 69, 226}, {66, 118, 176, 255},
+                              {118, 194, 255, 255}));
     registerVisual(Core::NodeTypeId{3},
-                   makeVisual("Multiply", "*", {44, 34, 26, 220}, {120, 90, 54, 210}, {255, 200, 120, 255}));
+                   makeVisual("Multiply", "*", {45, 28, 18, 235}, {68, 41, 27, 226}, {161, 102, 58, 255},
+                              {255, 186, 112, 255}));
     registerVisual(Core::NodeTypeId{4},
-                   makeVisual("Output", "O", {24, 44, 34, 220}, {50, 104, 78, 210}, {120, 255, 170, 255}));
+                   makeVisual("Output", "O", {17, 38, 30, 235}, {26, 57, 44, 226}, {68, 154, 115, 255},
+                              {124, 245, 174, 255}));
 
     registerVisual(Core::NodeTypeId{10},
-                   makeVisual("Bits Container", "[]", {24, 28, 38, 230}, {52, 58, 74, 220}, {225, 225, 240, 255}));
+                   makeVisual("Message Block", "[]", {19, 24, 34, 238}, {27, 33, 46, 228}, {88, 108, 148, 255},
+                              {204, 214, 236, 255}));
     registerVisual(Core::NodeTypeId{11},
-                   makeVisual("Bit", "b", {62, 56, 18, 230}, {128, 118, 36, 220}, {255, 228, 120, 255}));
+                   makeVisual("Round Const", "b", {44, 35, 14, 238}, {61, 50, 21, 228}, {170, 140, 57, 255},
+                              {255, 214, 101, 255}));
     registerVisual(Core::NodeTypeId{12},
-                   makeVisual("Loop", "L", {26, 40, 68, 230}, {50, 96, 162, 220}, {120, 190, 255, 255}));
+                   makeVisual("Loop", "L", {18, 33, 55, 238}, {24, 48, 84, 228}, {70, 138, 214, 255},
+                              {110, 190, 255, 255}));
     registerVisual(Core::NodeTypeId{13},
-                   makeVisual("Const True", "T", {18, 58, 30, 230}, {42, 126, 68, 220}, {110, 255, 146, 255}));
+                   makeVisual("Choose", "T", {17, 42, 31, 238}, {26, 61, 43, 228}, {70, 163, 112, 255},
+                              {118, 245, 168, 255}));
     registerVisual(Core::NodeTypeId{14},
-                   makeVisual("Const False", "F", {68, 24, 24, 230}, {138, 48, 48, 220}, {255, 120, 120, 255}));
+                   makeVisual("Mix", "F", {53, 20, 28, 238}, {78, 28, 39, 228}, {186, 70, 96, 255},
+                              {255, 124, 140, 255}));
     registerVisual(Core::NodeTypeId{15},
-                   makeVisual("BitShift", ">>", {66, 40, 18, 230}, {138, 88, 44, 220}, {255, 188, 110, 255}));
+                   makeVisual("Sigma", ">>", {54, 31, 13, 238}, {78, 45, 20, 228}, {186, 116, 57, 255},
+                              {255, 190, 110, 255}));
 }
 
 void NodeVisualRegistry::registerVisual(Core::NodeTypeId typeId, const NodeVisual& visual) {

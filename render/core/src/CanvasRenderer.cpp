@@ -31,17 +31,25 @@ void CanvasRenderer::render(const Core::GraphDocument& document, const std::vect
         m_grid.render(camera, options.gridSize);
     }
     if (options.showEdges) {
-        m_edges.render(scene.edges, camera);
+        m_edges.render(scene.edges, camera, options.hoveredEdgeId, options.selectedEdgeId);
+        if (options.previewEdgeActive) {
+            m_edges.renderPreviewEdge(options.previewEdgeStart, options.previewEdgeEnd, camera);
+        }
     }
     if (options.showNodes) {
-        m_nodes.render(scene.nodes, camera, options.selectedNodeId);
+        m_nodes.render(scene.nodes, camera, options.selectedNodeIds, options.nodeStyleResolver);
     }
     if (options.showConnectors) {
-        m_edges.renderConnectors(scene.connectorAnchors, camera);
+        m_edges.renderConnectors(scene.connectorAnchors, camera, options.hoveredConnectorId, options.activeConnectorId);
     }
     if (options.selectionRectActive) {
-        m_selection.render(camera.viewProjection(), options.selectionRectStart, options.selectionRectEnd);
+        renderSelectionRect(camera, options.selectionRectStart, options.selectionRectEnd);
     }
+}
+
+void CanvasRenderer::renderSelectionRect(const Camera::Camera2D& camera, const glm::vec2& start,
+                                         const glm::vec2& end) const {
+    m_selection.render(camera.viewProjection(), start, end);
 }
 
 } // namespace ScopeCanvas::Render

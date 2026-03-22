@@ -28,12 +28,23 @@ struct CanvasRenderOptions {
     bool showEdges{true};
     bool showNodes{true};
     bool showConnectors{true};
+    bool showDebug{false};
     float gridSize{32.0f};
 
-    Core::CanvasNodeId selectedNodeId{};
+    std::vector<Core::CanvasNodeId> selectedNodeIds{};
+    Core::CanvasEdgeId hoveredEdgeId{};
+    Core::CanvasEdgeId selectedEdgeId{};
+    Core::CanvasConnectorId hoveredConnectorId{};
+    Core::CanvasConnectorId activeConnectorId{};
+    bool previewEdgeActive{false};
+    glm::vec2 previewEdgeStart{};
+    glm::vec2 previewEdgeEnd{};
+
     bool selectionRectActive{false};
     glm::vec2 selectionRectStart{};
     glm::vec2 selectionRectEnd{};
+
+    Renderers::NodeRenderer::StyleResolver nodeStyleResolver{};
 };
 
 class CanvasRenderer {
@@ -43,6 +54,7 @@ class CanvasRenderer {
 
     void render(const Core::GraphDocument& document, const std::vector<Routing::EdgeRoute>& routes,
                 const Camera::Camera2D& camera, const CanvasRenderOptions& options) const;
+    void renderSelectionRect(const Camera::Camera2D& camera, const glm::vec2& start, const glm::vec2& end) const;
 
   private:
     Renderers::GridRenderer m_grid{};

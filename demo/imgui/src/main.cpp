@@ -73,6 +73,8 @@ int RunStudioApp() {
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Show Grid", nullptr, &basics.gridSettings().enabled);
                 ImGui::MenuItem("Snap to Grid", nullptr, &basics.gridSettings().snapEnabled);
+                ImGui::Separator();
+                ImGui::TextUnformatted("Use the per-canvas panel for grid/debug toggles.");
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();

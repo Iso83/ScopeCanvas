@@ -5,9 +5,22 @@
 
 namespace ScopeCanvas::Studio {
 DiagramBasics::DiagramBasics() {
-    (void)createNode(Core::NodeTypeId{1}, {-220.0F, -40.0F});
-    (void)createNode(Core::NodeTypeId{2}, {20.0F, 60.0F});
-    (void)createNode(Core::NodeTypeId{4}, {280.0F, -80.0F});
+    (void)createNode(Core::NodeTypeId{10}, {-260.0F, -96.0F});
+    (void)createNode(Core::NodeTypeId{11}, {32.0F, -160.0F});
+    (void)createNode(Core::NodeTypeId{15}, {48.0F, 80.0F});
+    (void)createNode(Core::NodeTypeId{4}, {336.0F, -24.0F});
+
+    if (m_nodeIds.size() >= 4U) {
+        const Core::Node* n0 = m_model.getNode(m_nodeIds[0]);
+        const Core::Node* n1 = m_model.getNode(m_nodeIds[1]);
+        const Core::Node* n2 = m_model.getNode(m_nodeIds[2]);
+        const Core::Node* n3 = m_model.getNode(m_nodeIds[3]);
+        if (n0 != nullptr && n1 != nullptr && n2 != nullptr && n3 != nullptr) {
+            connect(n0->connectors[1], n1->connectors[0]);
+            connect(n0->connectors[1], n2->connectors[0]);
+            connect(n2->connectors[1], n3->connectors[0]);
+        }
+    }
 }
 
 Core::GraphDocument& DiagramBasics::model() {
@@ -33,6 +46,12 @@ std::vector<Core::CanvasEdgeId>& DiagramBasics::edgeIds() {
 }
 const std::vector<Core::CanvasEdgeId>& DiagramBasics::edgeIds() const {
     return m_edgeIds;
+}
+std::vector<Core::CanvasNodeId>& DiagramBasics::selectedNodeIds() {
+    return m_selectedNodeIds;
+}
+const std::vector<Core::CanvasNodeId>& DiagramBasics::selectedNodeIds() const {
+    return m_selectedNodeIds;
 }
 
 Core::CanvasNodeId DiagramBasics::createNode(Core::NodeTypeId typeId, glm::vec2 position) {
@@ -61,9 +80,33 @@ Core::CanvasEdgeId DiagramBasics::connect(Core::CanvasConnectorId a, Core::Canva
 void DiagramBasics::deleteNode(Core::CanvasNodeId nodeId) {
     m_model.removeNode(nodeId);
     m_nodeIds.erase(std::remove(m_nodeIds.begin(), m_nodeIds.end(), nodeId), m_nodeIds.end());
+    m_selectedNodeIds.erase(std::remove(m_selectedNodeIds.begin(), m_selectedNodeIds.end(), nodeId), m_selectedNodeIds.end());
     m_edgeIds.erase(std::remove_if(m_edgeIds.begin(), m_edgeIds.end(),
                                    [this](Core::CanvasEdgeId id) { return m_model.getEdge(id) == nullptr; }),
                     m_edgeIds.end());
+}
+
+void DiagramBasics::clearSelection() {
+    m_selectedNodeIds.clear();
+}
+
+void DiagramBasics::setSelection(const std::vector<Core::CanvasNodeId>& nodeIds) {
+    m_selectedNodeIds = nodeIds;
+}
+
+void DiagramBasics::setNodeSelected(Core::CanvasNodeId nodeId, bool selected) {
+    const auto it = std::find(m_selectedNodeIds.begin(), m_selectedNodeIds.end(), nodeId);
+    if (selected) {
+        if (it == m_selectedNodeIds.end()) {
+            m_selectedNodeIds.push_back(nodeId);
+        }
+    } else if (it != m_selectedNodeIds.end()) {
+        m_selectedNodeIds.erase(it);
+    }
+}
+
+bool DiagramBasics::isNodeSelected(Core::CanvasNodeId nodeId) const {
+    return std::find(m_selectedNodeIds.begin(), m_selectedNodeIds.end(), nodeId) != m_selectedNodeIds.end();
 }
 
 std::vector<Routing::EdgeRoute> DiagramBasics::routeAllEdges() const {

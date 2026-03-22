@@ -32,7 +32,8 @@ void EdgeRenderer::shutdown() {
     destroy();
 }
 
-void EdgeRenderer::render(const std::vector<Scene::EdgeRenderData>& edges, const Camera::Camera2D& camera) const {
+void EdgeRenderer::render(const std::vector<Scene::EdgeRenderData>& edges, const Camera::Camera2D& camera,
+                          Core::CanvasEdgeId hoveredEdgeId, Core::CanvasEdgeId selectedEdgeId) const {
     for (const Scene::EdgeRenderData& edge : edges) {
         if (edge.points.size() < 2U) {
             continue;
@@ -40,12 +41,25 @@ void EdgeRenderer::render(const std::vector<Scene::EdgeRenderData>& edges, const
         Routing::EdgeRoute route{};
         route.edgeId = edge.edgeId;
         route.points = edge.points;
-        renderPolyline(buildEdgeGeometry(route, 16), camera, {0.84F, 0.86F, 0.92F}, 2.0F);
+
+        glm::vec3 color{0.72F, 0.75F, 0.83F};
+        float thickness = 2.0F;
+        if (selectedEdgeId.isValid() && edge.edgeId == selectedEdgeId) {
+            color = {0.98F, 0.76F, 0.33F};
+            thickness = 3.0F;
+        }
+        if (hoveredEdgeId.isValid() && edge.edgeId == hoveredEdgeId) {
+            color = {0.96F, 0.97F, 1.0F};
+            thickness = std::max(thickness, 2.5F);
+        }
+
+        renderPolyline(buildEdgeGeometry(route, 18), camera, color, thickness);
     }
 }
 
 void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRenderData>& connectors,
-                                    const Camera::Camera2D& camera) const {
+                                    const Camera::Camera2D& camera, Core::CanvasConnectorId hoveredConnectorId,
+                                    Core::CanvasConnectorId activeConnectorId) const {
     if (connectors.empty()) {
         return;
     }
@@ -60,16 +74,27 @@ void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRend
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
-    glPointSize(7.0F);
     for (const Scene::ConnectorAnchorRenderData& connector : connectors) {
-        const glm::vec2 point = connector.anchor;
-        const glm::vec3 color = connector.output ? glm::vec3(1.0F, 0.83F, 0.33F) : glm::vec3(0.86F, 0.88F, 0.96F);
+        const bool hovered = hoveredConnectorId.isValid() && connector.connectorId == hoveredConnectorId;
+        const bool active = activeConnectorId.isValid() && connector.connectorId == activeConnectorId;
+        const float pointSize = active ? 11.0F : hovered ? 9.5F : 7.0F;
+        const glm::vec3 color = active ? glm::vec3(1.0F, 0.84F, 0.30F)
+                                       : hovered ? glm::vec3(1.0F, 1.0F, 1.0F)
+                                                 : connector.output ? glm::vec3(0.95F, 0.75F, 0.28F)
+                                                                    : glm::vec3(0.82F, 0.85F, 0.94F);
         glUniform3f(colorLoc, color.x, color.y, color.z);
-        glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(sizeof(glm::vec2)), &point, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(sizeof(glm::vec2)), &connector.anchor, GL_DYNAMIC_DRAW);
+        glPointSize(pointSize);
         glDrawArrays(GL_POINTS, 0, 1);
     }
 
     glBindVertexArray(0);
+}
+
+void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const Camera::Camera2D& camera) const {
+    Routing::EdgeRoute route{};
+    route.points = {start, end};
+    renderPolyline(buildEdgeGeometry(route, 20), camera, {0.92F, 0.94F, 1.0F}, 2.0F);
 }
 
 std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute& route, int segmentsPerCurve) const {
@@ -122,8 +147,8 @@ void EdgeRenderer::appendBezierSamples(std::vector<glm::vec2>& points, const glm
 }
 
 void EdgeRenderer::renderPolyline(const std::vector<glm::vec2>& points, const Camera::Camera2D& camera,
-                                  const glm::vec3& color, float thickness) const {
-    if (points.size() < 2U) {
+                                  const glm::vec3& color, float thickness, GLenum primitive) const {
+    if (points.size() < 2U && primitive != GL_POINTS) {
         return;
     }
 
@@ -142,7 +167,7 @@ void EdgeRenderer::renderPolyline(const std::vector<glm::vec2>& points, const Ca
     glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(points.size() * sizeof(glm::vec2)), points.data(),
                  GL_DYNAMIC_DRAW);
     glLineWidth(thickness);
-    glDrawArrays(GL_LINE_STRIP, 0, static_cast<GLsizei>(points.size()));
+    glDrawArrays(primitive, 0, static_cast<GLsizei>(points.size()));
     glBindVertexArray(0);
 }
 

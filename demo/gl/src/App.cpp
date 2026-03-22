@@ -1,11 +1,14 @@
 #include "App.h"
 
+#include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include "GLFWTrampoline.h"
 
 #include <GLFW/glfw3.h>
-#include <glm/vec2.hpp>
+#include <algorithm>
+#include <cmath>
+#include <glm/geometric.hpp>
 #include <glm/vec4.hpp>
 #include <iostream>
 
@@ -23,6 +26,42 @@ void setupNode(ScopeCanvas::Core::GraphDocument& document, ScopeCanvas::Core::Ca
 bool pointInNode(const glm::vec2& point, const ScopeCanvas::Core::Node& node) {
     return point.x >= node.position.x && point.x <= node.position.x + node.size.x && point.y >= node.position.y &&
            point.y <= node.position.y + node.size.y;
+}
+
+
+bool canConnect(const ScopeCanvas::Core::GraphDocument& model, ScopeCanvas::Core::CanvasConnectorId a,
+                ScopeCanvas::Core::CanvasConnectorId b) {
+    if (!a.isValid() || !b.isValid() || a == b) {
+        return false;
+    }
+    const auto* connectorA = model.getConnector(a);
+    const auto* connectorB = model.getConnector(b);
+    if (connectorA == nullptr || connectorB == nullptr || connectorA->nodeId == connectorB->nodeId) {
+        return false;
+    }
+    for (const auto edgeId : connectorA->edges) {
+        const auto* edge = model.getEdge(edgeId);
+        if (edge != nullptr && edge->fromConnector == a && edge->toConnector == b) {
+            return false;
+        }
+    }
+    return true;
+}
+
+ScopeCanvas::Render::Renderers::NodeRenderStyle toRenderStyle(const ScopeCanvas::Render::Theme::NodeVisual& visual) {
+    auto rgba = [](const ScopeCanvas::Render::Theme::ColorRgba8& color) {
+        return glm::vec4(static_cast<float>(color.r) / 255.0F, static_cast<float>(color.g) / 255.0F,
+                         static_cast<float>(color.b) / 255.0F, static_cast<float>(color.a) / 255.0F);
+    };
+
+    ScopeCanvas::Render::Renderers::NodeRenderStyle style{};
+    style.bodyColor = rgba(visual.bodyColor);
+    style.headerColor = rgba(visual.titleBarColor);
+    style.borderColor = rgba(visual.borderColor);
+    style.selectionColor = rgba(visual.selectionColor);
+    style.borderThickness = visual.borderThickness;
+    style.headerHeight = visual.titleBarHeight;
+    return style;
 }
 } // namespace
 
@@ -57,6 +96,12 @@ bool App::init() {
         return false;
     }
 
+    m_renderOptions.nodeStyleResolver = [](ScopeCanvas::Core::NodeTypeId typeId) {
+        static const ScopeCanvas::Render::Theme::NodeVisualRegistry registry{};
+        return toRenderStyle(registry.getVisual(typeId));
+    };
+    m_renderOptions.gridSize = 32.0F;
+
     m_initialized = true;
     return true;
 }
@@ -74,10 +119,27 @@ void App::run() {
 
         processInput(deltaTime);
 
-        m_renderOptions.selectedNodeId = m_selectedNode;
+        m_renderOptions.selectedNodeIds = m_selectedNodes;
         m_renderOptions.selectionRectActive = m_selectionRectActive;
         m_renderOptions.selectionRectStart = m_selectionRectStart;
         m_renderOptions.selectionRectEnd = m_selectionRectEnd;
+        m_renderOptions.hoveredConnectorId = pickConnector(screenToWorld(m_input.mouseX, m_input.mouseY));
+        m_renderOptions.activeConnectorId = m_activeConnector;
+        m_renderOptions.previewEdgeActive = m_activeConnector.isValid();
+        m_renderOptions.previewEdgeEnd = m_previewEdgeEnd;
+        if (m_activeConnector.isValid()) {
+            if (const ScopeCanvas::Core::Connector* connector = m_document.getConnector(m_activeConnector);
+                connector != nullptr) {
+                if (const ScopeCanvas::Core::Node* node = m_document.getNode(connector->nodeId); node != nullptr) {
+                    for (std::size_t i = 0; i < node->connectors.size(); ++i) {
+                        if (node->connectors[i] == m_activeConnector) {
+                            m_renderOptions.previewEdgeStart = connectorWorld(*node, i);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
         const auto routes = m_router.routeAll(m_document);
         m_renderer.render(m_document, routes, m_camera, m_renderOptions);
@@ -119,10 +181,10 @@ void App::initializeDocument() {
     const auto c = m_document.createNode(Core::NodeTypeId{15});
     const auto d = m_document.createNode(Core::NodeTypeId{4});
 
-    setupNode(m_document, a, {-280.0F, -60.0F}, {220.0F, 120.0F});
-    setupNode(m_document, b, {20.0F, -140.0F}, {180.0F, 100.0F});
-    setupNode(m_document, c, {20.0F, 80.0F}, {220.0F, 110.0F});
-    setupNode(m_document, d, {320.0F, -30.0F}, {200.0F, 110.0F});
+    setupNode(m_document, a, {-288.0F, -96.0F}, {224.0F, 128.0F});
+    setupNode(m_document, b, {32.0F, -160.0F}, {188.0F, 104.0F});
+    setupNode(m_document, c, {48.0F, 80.0F}, {220.0F, 112.0F});
+    setupNode(m_document, d, {344.0F, -16.0F}, {196.0F, 112.0F});
 
     const Core::Node* n0 = m_document.getNode(a);
     const Core::Node* n1 = m_document.getNode(b);
@@ -162,9 +224,94 @@ glm::vec2 App::screenToWorld(double x, double y) const {
     return {world.x / world.w, world.y / world.w};
 }
 
+glm::vec2 App::connectorWorld(const ScopeCanvas::Core::Node& node, std::size_t index) const {
+    const float count = static_cast<float>(node.connectors.size() + 1U);
+    const float y = node.position.y + (node.size.y / count) * static_cast<float>(index + 1U);
+    const bool right = (index % 2U) == 1U;
+    return {right ? node.position.x + node.size.x : node.position.x, y};
+}
+
+ScopeCanvas::Core::CanvasNodeId App::pickNode(const glm::vec2& world) const {
+    for (auto it = m_nodeIds.rbegin(); it != m_nodeIds.rend(); ++it) {
+        if (const ScopeCanvas::Core::Node* node = m_document.getNode(*it); node != nullptr && pointInNode(world, *node)) {
+            return *it;
+        }
+    }
+    return {};
+}
+
+ScopeCanvas::Core::CanvasConnectorId App::pickConnector(const glm::vec2& world) const {
+    const float pickRadiusSquared = 100.0F / (m_camera.zoom() * m_camera.zoom());
+    for (auto it = m_nodeIds.rbegin(); it != m_nodeIds.rend(); ++it) {
+        const ScopeCanvas::Core::Node* node = m_document.getNode(*it);
+        if (node == nullptr) {
+            continue;
+        }
+        for (std::size_t i = 0; i < node->connectors.size(); ++i) {
+            const glm::vec2 delta = world - connectorWorld(*node, i);
+            if (glm::dot(delta, delta) <= pickRadiusSquared) {
+                return node->connectors[i];
+            }
+        }
+    }
+    return {};
+}
+
+void App::clearSelection() {
+    m_selectedNodes.clear();
+}
+
+void App::setSingleSelection(ScopeCanvas::Core::CanvasNodeId nodeId) {
+    m_selectedNodes.clear();
+    if (nodeId.isValid()) {
+        m_selectedNodes.push_back(nodeId);
+    }
+}
+
+bool App::isNodeSelected(ScopeCanvas::Core::CanvasNodeId nodeId) const {
+    return std::find(m_selectedNodes.begin(), m_selectedNodes.end(), nodeId) != m_selectedNodes.end();
+}
+
+void App::applySelectionRect() {
+    const glm::vec2 rectMin(std::min(m_selectionRectStart.x, m_selectionRectEnd.x),
+                            std::min(m_selectionRectStart.y, m_selectionRectEnd.y));
+    const glm::vec2 rectMax(std::max(m_selectionRectStart.x, m_selectionRectEnd.x),
+                            std::max(m_selectionRectStart.y, m_selectionRectEnd.y));
+
+    m_selectedNodes.clear();
+    for (ScopeCanvas::Core::CanvasNodeId nodeId : m_nodeIds) {
+        const ScopeCanvas::Core::Node* node = m_document.getNode(nodeId);
+        if (node == nullptr) {
+            continue;
+        }
+        const glm::vec2 nodeMin = node->position;
+        const glm::vec2 nodeMax = node->position + node->size;
+        if (nodeMin.x >= rectMin.x && nodeMax.x <= rectMax.x && nodeMin.y >= rectMin.y && nodeMax.y <= rectMax.y) {
+            m_selectedNodes.push_back(nodeId);
+        }
+    }
+}
+
+glm::vec2 App::snapToGrid(glm::vec2 position) const {
+    if (!m_renderOptions.showGrid || m_renderOptions.gridSize <= 0.0F) {
+        return position;
+    }
+    const float s = m_renderOptions.gridSize;
+    position.x = std::round(position.x / s) * s;
+    position.y = std::round(position.y / s) * s;
+    return position;
+}
+
 void App::processInput(float deltaTime) {
     if (glfwGetKey(m_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_G) == GLFW_PRESS) {
+        m_renderOptions.showGrid = true;
+    }
+    if (glfwGetKey(m_window, GLFW_KEY_F1) == GLFW_PRESS) {
+        m_debugEnabled = true;
+        m_renderOptions.showDebug = true;
     }
 
     constexpr float panSpeed = 500.0f;
@@ -190,6 +337,7 @@ void App::processInput(float deltaTime) {
     }
 
     const glm::vec2 mouseWorld = screenToWorld(m_input.mouseX, m_input.mouseY);
+    m_previewEdgeEnd = mouseWorld;
     const bool leftPressed = m_input.leftDown && !m_input.previousLeftDown;
     const bool leftReleased = !m_input.leftDown && m_input.previousLeftDown;
 
@@ -204,29 +352,46 @@ void App::processInput(float deltaTime) {
     }
 
     if (leftPressed) {
-        m_dragNode = {};
-        for (auto it = m_nodeIds.rbegin(); it != m_nodeIds.rend(); ++it) {
-            if (const ScopeCanvas::Core::Node* node = m_document.getNode(*it);
-                node != nullptr && pointInNode(mouseWorld, *node)) {
-                m_dragNode = *it;
-                m_selectedNode = *it;
-                m_dragOffset = mouseWorld - node->position;
-                break;
+        const auto hoveredConnector = pickConnector(mouseWorld);
+        if (hoveredConnector.isValid()) {
+            m_activeConnector = hoveredConnector;
+            m_selectionRectActive = false;
+        } else {
+            const auto pickedNode = pickNode(mouseWorld);
+            if (pickedNode.isValid()) {
+                m_dragNode = pickedNode;
+                if (!isNodeSelected(pickedNode)) {
+                    setSingleSelection(pickedNode);
+                }
+                m_dragSelection = m_selectedNodes;
+                m_dragSelectionStartPositions.clear();
+                for (const auto nodeId : m_dragSelection) {
+                    if (const ScopeCanvas::Core::Node* node = m_document.getNode(nodeId); node != nullptr) {
+                        m_dragSelectionStartPositions.push_back(node->position);
+                    }
+                }
+                if (const ScopeCanvas::Core::Node* node = m_document.getNode(pickedNode); node != nullptr) {
+                    m_dragOffset = mouseWorld - node->position;
+                }
+            } else {
+                clearSelection();
+                m_selectionRectActive = true;
+                m_selectionRectStart = mouseWorld;
+                m_selectionRectEnd = mouseWorld;
             }
-        }
-
-        if (!m_dragNode.isValid()) {
-            m_selectedNode = {};
-            m_selectionRectActive = true;
-            m_selectionRectStart = mouseWorld;
-            m_selectionRectEnd = mouseWorld;
         }
     }
 
     if (m_input.leftDown) {
         if (m_dragNode.isValid()) {
-            if (ScopeCanvas::Core::Node* node = m_document.getNode(m_dragNode); node != nullptr) {
-                node->setPosition(mouseWorld - m_dragOffset);
+            const glm::vec2 anchorPosition = snapToGrid(mouseWorld - m_dragOffset);
+            if (const ScopeCanvas::Core::Node* draggedNode = m_document.getNode(m_dragNode); draggedNode != nullptr) {
+                const glm::vec2 delta = anchorPosition - draggedNode->position;
+                for (std::size_t i = 0; i < m_dragSelection.size() && i < m_dragSelectionStartPositions.size(); ++i) {
+                    if (ScopeCanvas::Core::Node* node = m_document.getNode(m_dragSelection[i]); node != nullptr) {
+                        node->setPosition(snapToGrid(m_dragSelectionStartPositions[i] + delta));
+                    }
+                }
             }
         } else if (m_selectionRectActive) {
             m_selectionRectEnd = mouseWorld;
@@ -234,8 +399,20 @@ void App::processInput(float deltaTime) {
     }
 
     if (leftReleased) {
+        if (m_activeConnector.isValid()) {
+            const auto targetConnector = pickConnector(mouseWorld);
+            if (targetConnector.isValid() && targetConnector != m_activeConnector &&
+                canConnect(m_document, m_activeConnector, targetConnector)) {
+                m_document.connect(m_activeConnector, targetConnector);
+            }
+            m_activeConnector = {};
+        } else if (m_selectionRectActive) {
+            applySelectionRect();
+            m_selectionRectActive = false;
+        }
         m_dragNode = {};
-        m_selectionRectActive = false;
+        m_dragSelection.clear();
+        m_dragSelectionStartPositions.clear();
     }
 
     m_input.previousLeftDown = m_input.leftDown;
