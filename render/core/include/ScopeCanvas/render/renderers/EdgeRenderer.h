@@ -29,7 +29,8 @@ class EdgeRenderer {
     void renderConnectors(const std::vector<Scene::ConnectorAnchorRenderData>& connectors,
                           const Camera::Camera2D& camera, Core::CanvasConnectorId hoveredConnectorId = {},
                           Core::CanvasConnectorId activeConnectorId = {}) const;
-    void renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const Camera::Camera2D& camera) const;
+    void renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const glm::vec2& startNormal,
+                           const Camera::Camera2D& camera) const;
 
     [[nodiscard]] std::vector<glm::vec2> buildEdgeGeometry(const Routing::EdgeRoute& route,
                                                            int segmentsPerCurve = 20) const;

@@ -33,7 +33,7 @@ void CanvasRenderer::render(const Core::GraphDocument& document, const std::vect
     if (options.showEdges) {
         m_edges.render(scene.edges, camera, options.hoveredEdgeId, options.selectedEdgeId);
         if (options.previewEdgeActive) {
-            m_edges.renderPreviewEdge(options.previewEdgeStart, options.previewEdgeEnd, camera);
+            m_edges.renderPreviewEdge(options.previewEdgeStart, options.previewEdgeEnd, options.previewEdgeStartNormal, camera);
         }
     }
     if (options.showNodes) {

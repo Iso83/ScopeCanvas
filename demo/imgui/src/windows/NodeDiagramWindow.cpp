@@ -266,6 +266,8 @@ void NodeDiagramWindow::draw() {
             for (std::size_t i = 0; i < node->connectors.size(); ++i) {
                 if (node->connectors[i] == m_pendingConnector) {
                     options.previewEdgeStart = connectorWorld(*node, i);
+                    options.previewEdgeStartNormal = (i % 2U) == 1U ? glm::vec2(1.0F, 0.0F)
+                                                                    : glm::vec2(-1.0F, 0.0F);
                     break;
                 }
             }

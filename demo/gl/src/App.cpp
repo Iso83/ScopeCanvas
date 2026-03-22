@@ -160,6 +160,8 @@ void App::run() {
                     for (std::size_t i = 0; i < node->connectors.size(); ++i) {
                         if (node->connectors[i] == m_activeConnector) {
                             m_renderOptions.previewEdgeStart = connectorWorld(*node, i);
+                            m_renderOptions.previewEdgeStartNormal = (i % 2U) == 1U ? glm::vec2(1.0F, 0.0F)
+                                                                                     : glm::vec2(-1.0F, 0.0F);
                             break;
                         }
                     }

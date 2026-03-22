@@ -2,6 +2,7 @@
 #include <ScopeCanvas/render/renderers/EdgeRenderer.h>
 #include <algorithm>
 #include <cmath>
+#include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 namespace ScopeCanvas::Render::Renderers {
@@ -91,9 +92,30 @@ void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRend
     glBindVertexArray(0);
 }
 
-void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const Camera::Camera2D& camera) const {
+void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const glm::vec2& startNormal,
+                                     const Camera::Camera2D& camera) const {
     Routing::EdgeRoute route{};
-    route.points = {start, end};
+    route.points.push_back(start);
+
+    glm::vec2 normal = startNormal;
+    if (glm::dot(normal, normal) <= 0.0001F) {
+        normal = {1.0F, 0.0F};
+    } else {
+        normal = glm::normalize(normal);
+    }
+
+    const glm::vec2 delta = end - start;
+    const float forwardDistance = glm::dot(delta, normal);
+    if (forwardDistance < 48.0F) {
+        const float escapeDistance = std::clamp(std::abs(delta.x) * 0.35F + 28.0F, 48.0F, 96.0F);
+        const glm::vec2 breakout = start + normal * escapeDistance;
+        route.points.push_back(breakout);
+        if (std::abs(end.y - breakout.y) > 6.0F) {
+            route.points.push_back({breakout.x, end.y});
+        }
+    }
+
+    route.points.push_back(end);
     renderPolyline(buildEdgeGeometry(route, 20), camera, {0.92F, 0.94F, 1.0F}, 2.0F);
 }
 

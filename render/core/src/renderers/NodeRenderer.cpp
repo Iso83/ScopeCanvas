@@ -140,12 +140,17 @@ std::vector<glm::vec2> roundedRectPoints(const glm::vec2& pos, const glm::vec2& 
         glm::vec2(max.x - clampedRadius, min.y + clampedRadius),
         glm::vec2(min.x + clampedRadius, min.y + clampedRadius),
     };
-    const std::array<float, 5> startAngles = {
+    const std::array<float, 4> angleStarts = {
         kPi,
         kPi * 0.5F,
         0.0F,
         -kPi * 0.5F,
-        kPi,
+    };
+    const std::array<float, 4> angleEnds = {
+        kPi * 0.5F,
+        0.0F,
+        -kPi * 0.5F,
+        -kPi,
     };
 
     std::vector<glm::vec2> points;
@@ -156,7 +161,7 @@ std::vector<glm::vec2> roundedRectPoints(const glm::vec2& pos, const glm::vec2& 
                 continue;
             }
             const float t = static_cast<float>(i) / static_cast<float>(segments);
-            const float angle = startAngles[corner] + (startAngles[corner + 1] - startAngles[corner]) * t;
+            const float angle = angleStarts[corner] + (angleEnds[corner] - angleStarts[corner]) * t;
             points.push_back(centers[corner] + glm::vec2(std::cos(angle), std::sin(angle)) * clampedRadius);
         }
     }

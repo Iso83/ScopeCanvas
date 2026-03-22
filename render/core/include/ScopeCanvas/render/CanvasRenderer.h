@@ -39,6 +39,7 @@ struct CanvasRenderOptions {
     bool previewEdgeActive{false};
     glm::vec2 previewEdgeStart{};
     glm::vec2 previewEdgeEnd{};
+    glm::vec2 previewEdgeStartNormal{1.0F, 0.0F};
 
     bool selectionRectActive{false};
     glm::vec2 selectionRectStart{};
