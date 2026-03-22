@@ -45,6 +45,7 @@ struct CanvasRenderOptions {
     glm::vec2 selectionRectEnd{};
 
     Renderers::NodeRenderer::StyleResolver nodeStyleResolver{};
+    Renderers::NodeRenderer::TitleResolver nodeTitleResolver{};
 };
 
 class CanvasRenderer {

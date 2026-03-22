@@ -41,7 +41,8 @@ bool canConnect(const ScopeCanvas::Core::GraphDocument& model, ScopeCanvas::Core
     }
     for (const auto edgeId : connectorA->edges) {
         const auto* edge = model.getEdge(edgeId);
-        if (edge != nullptr && edge->fromConnector == a && edge->toConnector == b) {
+        if (edge != nullptr && ((edge->fromConnector == a && edge->toConnector == b) ||
+                                (edge->fromConnector == b && edge->toConnector == a))) {
             return false;
         }
     }
@@ -59,6 +60,7 @@ ScopeCanvas::Render::Renderers::NodeRenderStyle toRenderStyle(const ScopeCanvas:
     style.headerColor = rgba(visual.titleBarColor);
     style.borderColor = rgba(visual.borderColor);
     style.selectionColor = rgba(visual.selectionColor);
+    style.textColor = rgba(visual.titleTextColor);
     style.borderThickness = visual.borderThickness;
     style.headerHeight = visual.titleBarHeight;
     return style;
@@ -99,6 +101,10 @@ bool App::init() {
     m_renderOptions.nodeStyleResolver = [](ScopeCanvas::Core::NodeTypeId typeId) {
         static const ScopeCanvas::Render::Theme::NodeVisualRegistry registry{};
         return toRenderStyle(registry.getVisual(typeId));
+    };
+    m_renderOptions.nodeTitleResolver = [](ScopeCanvas::Core::NodeTypeId typeId) {
+        static const ScopeCanvas::Render::Theme::NodeVisualRegistry registry{};
+        return registry.getVisual(typeId).title;
     };
     m_renderOptions.gridSize = 32.0F;
 
@@ -225,10 +231,17 @@ glm::vec2 App::screenToWorld(double x, double y) const {
 }
 
 glm::vec2 App::connectorWorld(const ScopeCanvas::Core::Node& node, std::size_t index) const {
-    const float count = static_cast<float>(node.connectors.size() + 1U);
-    const float y = node.position.y + (node.size.y / count) * static_cast<float>(index + 1U);
-    const bool right = (index % 2U) == 1U;
-    return {right ? node.position.x + node.size.x : node.position.x, y};
+    const bool output = (index % 2U) == 1U;
+    const std::size_t sideIndex = index / 2U;
+    const std::size_t sideCount = output ? node.connectors.size() / 2U : (node.connectors.size() + 1U) / 2U;
+    constexpr float headerHeight = 24.0F;
+    constexpr float verticalInset = 12.0F;
+    const float bodyMinY = node.position.y + verticalInset;
+    const float bodyMaxY = std::max(bodyMinY + 1.0F, node.position.y + node.size.y - headerHeight - verticalInset);
+    const float bodyHeight = std::max(bodyMaxY - bodyMinY, 1.0F);
+    const float step = bodyHeight / static_cast<float>(sideCount + 1U);
+    const float y = bodyMinY + step * static_cast<float>(sideIndex + 1U);
+    return {output ? node.position.x + node.size.x : node.position.x, y};
 }
 
 ScopeCanvas::Core::CanvasNodeId App::pickNode(const glm::vec2& world) const {
@@ -395,6 +408,7 @@ void App::processInput(float deltaTime) {
             }
         } else if (m_selectionRectActive) {
             m_selectionRectEnd = mouseWorld;
+            applySelectionRect();
         }
     }
 

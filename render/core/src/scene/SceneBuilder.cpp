@@ -86,10 +86,16 @@ std::vector<Core::CanvasNodeId> collectNodeIds(const Core::GraphDocument& model,
 }
 
 glm::vec2 computeConnectorAnchor(const Core::Node& node, std::size_t connectorIndex) {
-    const float count = static_cast<float>(node.connectors.size() + 1U);
-    const float step = node.size.y / count;
-    const float y = node.position.y + step * static_cast<float>(connectorIndex + 1U);
     const bool output = (connectorIndex % 2U) == 1U;
+    const std::size_t sideIndex = connectorIndex / 2U;
+    const std::size_t sideCount = output ? node.connectors.size() / 2U : (node.connectors.size() + 1U) / 2U;
+    constexpr float kHeaderHeight = 24.0F;
+    constexpr float kVerticalInset = 12.0F;
+    const float bodyMinY = node.position.y + kVerticalInset;
+    const float bodyMaxY = std::max(bodyMinY + 1.0F, node.position.y + node.size.y - kHeaderHeight - kVerticalInset);
+    const float bodyHeight = std::max(bodyMaxY - bodyMinY, 1.0F);
+    const float step = bodyHeight / static_cast<float>(sideCount + 1U);
+    const float y = bodyMinY + step * static_cast<float>(sideIndex + 1U);
     return {output ? node.position.x + node.size.x : node.position.x, y};
 }
 } // namespace

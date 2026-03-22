@@ -37,7 +37,7 @@ void CanvasRenderer::render(const Core::GraphDocument& document, const std::vect
         }
     }
     if (options.showNodes) {
-        m_nodes.render(scene.nodes, camera, options.selectedNodeIds, options.nodeStyleResolver);
+        m_nodes.render(scene.nodes, camera, options.selectedNodeIds, options.nodeStyleResolver, options.nodeTitleResolver);
     }
     if (options.showConnectors) {
         m_edges.renderConnectors(scene.connectorAnchors, camera, options.hoveredConnectorId, options.activeConnectorId);
