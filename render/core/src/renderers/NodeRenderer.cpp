@@ -98,6 +98,10 @@ glm::vec4 withAlpha(const glm::vec4& color, float alphaScale) {
     return {color.r, color.g, color.b, color.a * alphaScale};
 }
 
+glm::vec4 opaque(const glm::vec4& color) {
+    return {color.r, color.g, color.b, 1.0F};
+}
+
 glm::vec4 brighten(const glm::vec4& color, float amount) {
     return mixColor(color, glm::vec4(1.0F), amount);
 }
@@ -435,10 +439,10 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
         fillVertices.reserve(512U);
 
         const std::array<glm::vec4, 4> borderColors = {
-            brighten(border, selected ? 0.18F : 0.10F),
-            brighten(border, selected ? 0.12F : 0.06F),
-            withAlpha(border, 0.92F),
-            withAlpha(border, 0.95F),
+            opaque(brighten(border, selected ? 0.18F : 0.10F)),
+            opaque(brighten(border, selected ? 0.12F : 0.06F)),
+            opaque(border),
+            opaque(border),
         };
         appendConvexPolygon(fillVertices, roundedRectPoints(node.position, node.size, cornerRadius, 8), borderColors, node.position,
                             node.position + node.size);
@@ -447,18 +451,18 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
         const glm::vec2 innerSize = node.size - glm::vec2(borderThickness * 2.0F);
         const float innerRadius = std::max(cornerRadius - borderThickness, 2.0F);
 
-        const glm::vec4 bodyTop = brighten(style.bodyColor, 0.05F);
-        const glm::vec4 bodyBottom = withAlpha(style.bodyColor, 0.96F);
+        const glm::vec4 bodyTop = opaque(brighten(style.bodyColor, 0.05F));
+        const glm::vec4 bodyBottom = opaque(style.bodyColor);
         const std::array<glm::vec4, 4> bodyColors = {bodyTop, bodyTop, bodyBottom, bodyBottom};
         appendConvexPolygon(fillVertices, roundedRectPoints(innerPos, innerSize, innerRadius, 8), bodyColors, innerPos,
                             innerPos + innerSize);
 
         const glm::vec2 headerPos = {innerPos.x, innerPos.y + innerSize.y - headerHeight};
         const glm::vec2 headerSize = {innerSize.x, headerHeight};
-        const glm::vec4 headerLeft = brighten(style.headerColor, 0.06F);
-        const glm::vec4 headerRight = brighten(style.headerAccentColor, 0.10F);
-        const glm::vec4 headerBottomLeft = withAlpha(mixColor(style.headerColor, style.bodyColor, 0.28F), 0.98F);
-        const glm::vec4 headerBottomRight = withAlpha(mixColor(style.headerAccentColor, style.bodyColor, 0.18F), 0.98F);
+        const glm::vec4 headerLeft = opaque(brighten(style.headerColor, 0.06F));
+        const glm::vec4 headerRight = opaque(brighten(style.headerAccentColor, 0.10F));
+        const glm::vec4 headerBottomLeft = opaque(mixColor(style.headerColor, style.bodyColor, 0.28F));
+        const glm::vec4 headerBottomRight = opaque(mixColor(style.headerAccentColor, style.bodyColor, 0.18F));
         const std::array<glm::vec4, 4> headerColors = {headerLeft, headerRight, headerBottomRight, headerBottomLeft};
         appendConvexPolygon(fillVertices, topRoundedRectPoints(headerPos, headerSize, innerRadius, 8), headerColors, headerPos,
                             headerPos + headerSize);
@@ -476,9 +480,9 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
 
         const glm::vec2 iconPos = {headerPos.x + 10.0F, headerPos.y + 5.0F};
         const glm::vec2 iconSize = {17.0F, std::max(headerHeight - 10.0F, 12.0F)};
-        const glm::vec4 iconBgLeft = withAlpha(brighten(style.headerAccentColor, 0.08F), 0.92F);
-        const glm::vec4 iconBgRight = withAlpha(brighten(style.borderColor, 0.16F), 0.88F);
-        const std::array<glm::vec4, 4> iconColors = {iconBgLeft, iconBgRight, withAlpha(iconBgRight, 0.78F), withAlpha(iconBgLeft, 0.78F)};
+        const glm::vec4 iconBgLeft = opaque(brighten(style.headerAccentColor, 0.08F));
+        const glm::vec4 iconBgRight = opaque(brighten(style.borderColor, 0.16F));
+        const std::array<glm::vec4, 4> iconColors = {iconBgLeft, iconBgRight, iconBgRight, iconBgLeft};
         appendConvexPolygon(fillVertices, roundedRectPoints(iconPos, iconSize, 4.5F, 6), iconColors, iconPos, iconPos + iconSize);
 
         const glm::vec2 underlinePos = {headerPos.x + 8.0F, headerPos.y + 2.0F};
