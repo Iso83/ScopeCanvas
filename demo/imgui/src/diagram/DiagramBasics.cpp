@@ -43,7 +43,7 @@ std::vector<glm::vec2> buildFallbackRoutePoints(const Core::Node& fromNode, std:
     }
 
     if (glm::dot(end - start, startNormal) < kBreakout) {
-        return {start, startStub, end};
+        return {start, startStub, {startStub.x, end.y}, endStub, end};
     }
 
     return {start, end};
