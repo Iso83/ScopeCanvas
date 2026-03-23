@@ -115,7 +115,3 @@ add_subdirectory(render/core)
 add_subdirectory(widget)
 add_subdirectory(demo/gl)
 add_subdirectory(demo/imgui)
-
-
-## Refactor
-add_subdirectory(refactor/remove\ imgui\ draw/OldScopeCanvas)

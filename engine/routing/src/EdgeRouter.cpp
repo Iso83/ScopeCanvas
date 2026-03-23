@@ -9,7 +9,7 @@ EdgeRoute EdgeRouter::routeEdge(const Core::GraphDocument& model, Core::CanvasEd
     return route;
 }
 
-std::vector<EdgeRoute> EdgeRouter::routeAll(const Core::GraphDocument& model) {
+std::vector<EdgeRoute> EdgeRouter::routeAll(const Core::GraphDocument& model) const {
     (void)model;
     return {};
 }

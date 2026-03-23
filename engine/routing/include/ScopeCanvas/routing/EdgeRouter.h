@@ -13,7 +13,7 @@ class EdgeRouter {
   public:
     EdgeRoute routeEdge(const Core::GraphDocument& model, Core::CanvasEdgeId edgeId);
 
-    std::vector<EdgeRoute> routeAll(const Core::GraphDocument& model);
+    std::vector<EdgeRoute> routeAll(const Core::GraphDocument& model) const;
 
     void bundleEdges(std::vector<EdgeRoute>& routes);
 };
