@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <glm/geometric.hpp>
 
 namespace ScopeCanvas::Studio {
 namespace {
@@ -16,6 +17,36 @@ glm::vec2 connectorAnchor(const Core::Node& node, std::size_t index) {
     const float step = std::max(bodyMaxY - bodyMinY, 1.0F) / static_cast<float>(sideCount + 1U);
     const float y = bodyMinY + step * static_cast<float>(sideIndex + 1U);
     return {output ? node.position.x + node.size.x : node.position.x, y};
+}
+
+std::vector<glm::vec2> buildFallbackRoutePoints(const Core::Node& fromNode, std::size_t fromIndex, const Core::Node& toNode,
+                                                std::size_t toIndex) {
+    const glm::vec2 start = connectorAnchor(fromNode, fromIndex);
+    const glm::vec2 end = connectorAnchor(toNode, toIndex);
+    const glm::vec2 startNormal = (fromIndex % 2U) == 1U ? glm::vec2(1.0F, 0.0F) : glm::vec2(-1.0F, 0.0F);
+    const glm::vec2 endNormal = (toIndex % 2U) == 1U ? glm::vec2(1.0F, 0.0F) : glm::vec2(-1.0F, 0.0F);
+    constexpr float kBreakout = 48.0F;
+    constexpr float kDetourMargin = 36.0F;
+
+    const glm::vec2 startStub = start + startNormal * kBreakout;
+    const glm::vec2 endStub = end + endNormal * kBreakout;
+    const bool needsDetour =
+        startNormal.x > 0.0F && endNormal.x < 0.0F && end.x <= start.x + kBreakout * 1.5F;
+    if (needsDetour) {
+        const float fromTop = fromNode.position.y;
+        const float fromBottom = fromNode.position.y + fromNode.size.y;
+        const float toTop = toNode.position.y;
+        const float toBottom = toNode.position.y + toNode.size.y;
+        const float detourY = end.y >= start.y ? std::max(fromBottom, toBottom) + kDetourMargin
+                                               : std::min(fromTop, toTop) - kDetourMargin;
+        return {start, startStub, {startStub.x, detourY}, {endStub.x, detourY}, endStub, end};
+    }
+
+    if (glm::dot(end - start, startNormal) < kBreakout) {
+        return {start, startStub, end};
+    }
+
+    return {start, end};
 }
 } // namespace
 DiagramBasics::DiagramBasics() {
@@ -161,8 +192,8 @@ std::vector<Routing::EdgeRoute> DiagramBasics::routeAllEdges() const {
             while (toIndex < n1->connectors.size() && n1->connectors[toIndex] != edge->toConnector) {
                 ++toIndex;
             }
-            route.points.push_back(connectorAnchor(*n0, std::min(fromIndex, n0->connectors.size() - 1U)));
-            route.points.push_back(connectorAnchor(*n1, std::min(toIndex, n1->connectors.size() - 1U)));
+            route.points = buildFallbackRoutePoints(*n0, std::min(fromIndex, n0->connectors.size() - 1U), *n1,
+                                                    std::min(toIndex, n1->connectors.size() - 1U));
             routes.push_back(route);
         }
     }

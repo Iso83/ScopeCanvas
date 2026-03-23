@@ -301,10 +301,33 @@ std::vector<ScopeCanvas::Routing::EdgeRoute> App::routeAllEdges() const {
         while (toIndex < toNode->connectors.size() && toNode->connectors[toIndex] != edge->toConnector) {
             ++toIndex;
         }
+        const std::size_t safeFromIndex = std::min(fromIndex, fromNode->connectors.size() - 1U);
+        const std::size_t safeToIndex = std::min(toIndex, toNode->connectors.size() - 1U);
+        const glm::vec2 start = connectorWorld(*fromNode, safeFromIndex);
+        const glm::vec2 end = connectorWorld(*toNode, safeToIndex);
+        const glm::vec2 startNormal = (safeFromIndex % 2U) == 1U ? glm::vec2(1.0F, 0.0F) : glm::vec2(-1.0F, 0.0F);
+        const glm::vec2 endNormal = (safeToIndex % 2U) == 1U ? glm::vec2(1.0F, 0.0F) : glm::vec2(-1.0F, 0.0F);
+        constexpr float kBreakout = 48.0F;
+        constexpr float kDetourMargin = 36.0F;
         ScopeCanvas::Routing::EdgeRoute route{};
         route.edgeId = edge->id;
-        route.points.push_back(connectorWorld(*fromNode, std::min(fromIndex, fromNode->connectors.size() - 1U)));
-        route.points.push_back(connectorWorld(*toNode, std::min(toIndex, toNode->connectors.size() - 1U)));
+        const glm::vec2 startStub = start + startNormal * kBreakout;
+        const glm::vec2 endStub = end + endNormal * kBreakout;
+        const bool needsDetour =
+            startNormal.x > 0.0F && endNormal.x < 0.0F && end.x <= start.x + kBreakout * 1.5F;
+        if (needsDetour) {
+            const float fromTop = fromNode->position.y;
+            const float fromBottom = fromNode->position.y + fromNode->size.y;
+            const float toTop = toNode->position.y;
+            const float toBottom = toNode->position.y + toNode->size.y;
+            const float detourY = end.y >= start.y ? std::max(fromBottom, toBottom) + kDetourMargin
+                                                   : std::min(fromTop, toTop) - kDetourMargin;
+            route.points = {start, startStub, {startStub.x, detourY}, {endStub.x, detourY}, endStub, end};
+        } else if (glm::dot(end - start, startNormal) < kBreakout) {
+            route.points = {start, startStub, end};
+        } else {
+            route.points = {start, end};
+        }
         routes.push_back(route);
     }
     return routes;
