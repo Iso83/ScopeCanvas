@@ -323,8 +323,10 @@ std::vector<ScopeCanvas::Routing::EdgeRoute> App::routeAllEdges() const {
             const float detourY = end.y >= start.y ? std::max(fromBottom, toBottom) + kDetourMargin
                                                    : std::min(fromTop, toTop) - kDetourMargin;
             route.points = {start, startStub, {startStub.x, detourY}, {endStub.x, detourY}, endStub, end};
+            route.preferStraightSegments = true;
         } else if (glm::dot(end - start, startNormal) < kBreakout) {
             route.points = {start, startStub, end};
+            route.preferStraightSegments = true;
         } else {
             route.points = {start, end};
         }

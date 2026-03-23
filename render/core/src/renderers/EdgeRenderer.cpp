@@ -123,6 +123,9 @@ std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute&
     if (route.points.size() < 2) {
         return route.points;
     }
+    if (route.preferStraightSegments) {
+        return route.points;
+    }
 
     const int segments = std::max(segmentsPerCurve, 1);
     if (route.points.size() == 2U) {

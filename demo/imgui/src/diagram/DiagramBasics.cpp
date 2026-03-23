@@ -194,6 +194,7 @@ std::vector<Routing::EdgeRoute> DiagramBasics::routeAllEdges() const {
             }
             route.points = buildFallbackRoutePoints(*n0, std::min(fromIndex, n0->connectors.size() - 1U), *n1,
                                                     std::min(toIndex, n1->connectors.size() - 1U));
+            route.preferStraightSegments = route.points.size() > 2U;
             routes.push_back(route);
         }
     }
