@@ -21,12 +21,12 @@ class Camera2D {
     glm::mat4 invViewProjection() const;
 
   private:
-    void updateProjection();
-
     glm::vec2 m_position;
     float m_zoom;
     int m_viewportWidth;
     int m_viewportHeight;
     glm::mat4 m_projection;
+
+    void updateProjection();
 };
 } // namespace ScopeCanvas::Render::Camera

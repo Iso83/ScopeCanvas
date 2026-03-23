@@ -12,6 +12,24 @@
 struct GLFWwindow;
 
 class App {
+  public:
+    App();
+    ~App();
+
+    bool init();
+    void run();
+
+    void onFramebufferSizeChanged(int width, int height);
+    void onCursorPos(double xPos, double yPos) {
+        m_input.mouseX = xPos;
+        m_input.mouseY = yPos;
+    }
+    void onMouseButton(int button, int action, int mods);
+    void onScroll(double xOffset, double yOffset) {
+        (void)xOffset;
+        m_input.scrollDelta += static_cast<float>(yOffset);
+    }
+
   private:
     GLFWwindow* m_window{};
     bool m_initialized{false};
@@ -54,25 +72,6 @@ class App {
 
     bool m_debugEnabled{false};
 
-  public:
-    App();
-    ~App();
-
-    bool init();
-    void run();
-
-    void onFramebufferSizeChanged(int width, int height);
-    void onCursorPos(double xPos, double yPos) {
-        m_input.mouseX = xPos;
-        m_input.mouseY = yPos;
-    }
-    void onMouseButton(int button, int action, int mods);
-    void onScroll(double xOffset, double yOffset) {
-        (void)xOffset;
-        m_input.scrollDelta += static_cast<float>(yOffset);
-    }
-
-  private:
     bool initWindow();
     bool initGL();
     void initializeDocument();

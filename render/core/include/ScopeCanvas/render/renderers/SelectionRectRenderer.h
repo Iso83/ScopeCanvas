@@ -18,12 +18,12 @@ class SelectionRectRenderer {
     void render(const glm::mat4& viewProjection, const glm::vec2& start, const glm::vec2& end) const;
 
   private:
-    void destroy();
-
     GL::Shader m_shader;
     GLuint m_vao;
     GLuint m_vbo;
     GLuint m_fillEbo;
     GLuint m_outlineEbo;
+
+    void destroy();
 };
 } // namespace ScopeCanvas::Render::Renderers

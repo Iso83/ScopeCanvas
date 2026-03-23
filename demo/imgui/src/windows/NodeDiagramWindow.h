@@ -20,15 +20,6 @@ class NodeDiagramWindow {
     void clearSelectedEdge();
 
   private:
-    void ensureRenderTarget(int width, int height);
-    void releaseRenderTarget();
-    glm::vec2 screenToWorld(float sx, float sy, float w, float h) const;
-    glm::vec2 connectorWorld(const Core::Node& node, std::size_t index) const;
-    Core::CanvasNodeId pickNode(const glm::vec2& world) const;
-    Core::CanvasConnectorId pickConnector(const glm::vec2& world) const;
-    void applySelectionRect();
-    glm::vec2 snapToGrid(glm::vec2 position) const;
-
     GLFWwindow* m_window{};
     DiagramBasics* m_basics{};
     ViewState* m_viewState{};
@@ -62,5 +53,14 @@ class NodeDiagramWindow {
     glm::vec2 m_selectionRectEnd{};
     bool m_showGrid{true};
     bool m_showDebug{false};
+
+    void ensureRenderTarget(int width, int height);
+    void releaseRenderTarget();
+    glm::vec2 screenToWorld(float sx, float sy, float w, float h) const;
+    glm::vec2 connectorWorld(const Core::Node& node, std::size_t index) const;
+    Core::CanvasNodeId pickNode(const glm::vec2& world) const;
+    Core::CanvasConnectorId pickConnector(const glm::vec2& world) const;
+    void applySelectionRect();
+    glm::vec2 snapToGrid(glm::vec2 position) const;
 };
 } // namespace ScopeCanvas::Studio

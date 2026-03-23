@@ -20,10 +20,10 @@ class Shader {
     GLuint id() const;
 
   private:
+    GLuint m_programId;
+
     bool compileShader(GLuint shaderId, const char* source) const;
     void destroy();
-
-    GLuint m_programId;
 };
 
 extern const char GridVertex[];

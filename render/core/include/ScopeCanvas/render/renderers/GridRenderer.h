@@ -23,12 +23,12 @@ class GridRenderer {
     void render(const Camera::Camera2D& camera, float cellSize) const;
 
   private:
-    void uploadAndDrawLines(const std::vector<glm::vec2>& vertices, const glm::mat4& viewProjection,
-                            const glm::vec3& color) const;
-    void destroy();
-
     GL::Shader m_shader;
     GLuint m_vao;
     GLuint m_vbo;
+
+    void uploadAndDrawLines(const std::vector<glm::vec2>& vertices, const glm::mat4& viewProjection,
+                            const glm::vec3& color) const;
+    void destroy();
 };
 } // namespace ScopeCanvas::Render::Renderers
