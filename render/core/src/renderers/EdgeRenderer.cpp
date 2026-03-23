@@ -125,20 +125,66 @@ std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute&
     }
 
     const int segments = std::max(segmentsPerCurve, 1);
-    std::vector<glm::vec2> geometry;
-    geometry.reserve(route.points.size() * static_cast<std::size_t>(segments));
+    if (route.points.size() == 2U) {
+        std::vector<glm::vec2> geometry;
+        geometry.reserve(route.points.size() * static_cast<std::size_t>(segments));
 
-    for (std::size_t i = 0; i + 1 < route.points.size(); ++i) {
-        const glm::vec2 p0 = route.points[i];
-        const glm::vec2 p3 = route.points[i + 1];
+        for (std::size_t i = 0; i + 1 < route.points.size(); ++i) {
+            const glm::vec2 p0 = route.points[i];
+            const glm::vec2 p3 = route.points[i + 1];
 
-        glm::vec2 p1{};
-        glm::vec2 p2{};
-        computeBezierControls(p0, p3, p1, p2);
+            glm::vec2 p1{};
+            glm::vec2 p2{};
+            computeBezierControls(p0, p3, p1, p2);
 
-        appendBezierSamples(geometry, p0, p1, p2, p3, segments);
+            appendBezierSamples(geometry, p0, p1, p2, p3, segments);
+        }
+
+        return geometry;
     }
 
+    std::vector<glm::vec2> geometry;
+    geometry.reserve(route.points.size() * static_cast<std::size_t>(segments));
+    geometry.push_back(route.points.front());
+
+    for (std::size_t i = 1; i + 1 < route.points.size(); ++i) {
+        const glm::vec2 previous = route.points[i - 1];
+        const glm::vec2 current = route.points[i];
+        const glm::vec2 next = route.points[i + 1];
+
+        const glm::vec2 incoming = current - previous;
+        const glm::vec2 outgoing = next - current;
+        const float incomingLength = glm::length(incoming);
+        const float outgoingLength = glm::length(outgoing);
+        if (incomingLength <= 0.001F || outgoingLength <= 0.001F) {
+            if (glm::distance(geometry.back(), current) > 0.001F) {
+                geometry.push_back(current);
+            }
+            continue;
+        }
+
+        const glm::vec2 incomingDir = incoming / incomingLength;
+        const glm::vec2 outgoingDir = outgoing / outgoingLength;
+        const float alignment = glm::dot(incomingDir, outgoingDir);
+        if (std::abs(alignment) > 0.999F) {
+            if (glm::distance(geometry.back(), current) > 0.001F) {
+                geometry.push_back(current);
+            }
+            continue;
+        }
+
+        const float cornerRadius = std::min({24.0F, incomingLength * 0.35F, outgoingLength * 0.35F});
+        const glm::vec2 cornerStart = current - incomingDir * cornerRadius;
+        const glm::vec2 cornerEnd = current + outgoingDir * cornerRadius;
+        if (glm::distance(geometry.back(), cornerStart) > 0.001F) {
+            geometry.push_back(cornerStart);
+        }
+        appendQuadraticSamples(geometry, cornerStart, current, cornerEnd, std::max(segments / 2, 6));
+    }
+
+    if (glm::distance(geometry.back(), route.points.back()) > 0.001F) {
+        geometry.push_back(route.points.back());
+    }
     return geometry;
 }
 
@@ -165,6 +211,20 @@ void EdgeRenderer::appendBezierSamples(std::vector<glm::vec2>& points, const glm
             omt * omt * omt * p0.y + 3.0F * omt * omt * t * p1.y + 3.0F * omt * t * t * p2.y + t * t * t * p3.y;
 
         points.push_back({x, y});
+    }
+}
+
+void EdgeRenderer::appendQuadraticSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
+                                          const glm::vec2& p2, int segments) {
+    if (!points.empty()) {
+        points.pop_back();
+    }
+
+    for (int i = 0; i <= segments; ++i) {
+        const float t = static_cast<float>(i) / static_cast<float>(segments);
+        const float omt = 1.0F - t;
+        const glm::vec2 point = omt * omt * p0 + 2.0F * omt * t * p1 + t * t * p2;
+        points.push_back(point);
     }
 }
 

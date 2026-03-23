@@ -39,6 +39,8 @@ class EdgeRenderer {
     static void computeBezierControls(const glm::vec2& p0, const glm::vec2& p3, glm::vec2& p1, glm::vec2& p2);
     static void appendBezierSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
                                     const glm::vec2& p2, const glm::vec2& p3, int segments);
+    static void appendQuadraticSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
+                                       const glm::vec2& p2, int segments);
     void renderPolyline(const std::vector<glm::vec2>& points, const Camera::Camera2D& camera, const glm::vec3& color,
                         float thickness, GLenum primitive = GL_LINE_STRIP) const;
     void destroy();
