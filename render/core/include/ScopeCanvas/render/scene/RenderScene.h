@@ -1,20 +1,25 @@
 #pragma once
 
-#include <glm/vec2.hpp>
 #include <ScopeCanvas/core/ids/CanvasIds.h>
+#include <ScopeCanvas/core/ids/TypeIds.h>
+#include <cstdint>
+#include <glm/vec2.hpp>
 #include <vector>
 
 namespace ScopeCanvas::Render::Scene {
 struct NodeRenderData {
     Core::CanvasNodeId id{};
+    Core::NodeTypeId typeId{};
     glm::vec2 position{};
     glm::vec2 size{};
+    std::uint32_t connectorCount{};
 };
 
 struct ConnectorAnchorRenderData {
     Core::CanvasConnectorId connectorId{};
     Core::CanvasNodeId nodeId{};
     glm::vec2 anchor{};
+    bool output{};
 };
 
 struct EdgeRenderData {

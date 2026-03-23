@@ -1,7 +1,7 @@
 #include <ScopeCanvas/routing/EdgeRouter.h>
 
 namespace ScopeCanvas::Routing {
-EdgeRoute EdgeRouter::routeEdge(const Core::DiagramModel& model, Core::CanvasEdgeId edgeId) {
+EdgeRoute EdgeRouter::routeEdge(const Core::GraphDocument& model, Core::CanvasEdgeId edgeId) {
     (void)model;
 
     EdgeRoute route{};
@@ -9,7 +9,7 @@ EdgeRoute EdgeRouter::routeEdge(const Core::DiagramModel& model, Core::CanvasEdg
     return route;
 }
 
-std::vector<EdgeRoute> EdgeRouter::routeAll(const Core::DiagramModel& model) {
+std::vector<EdgeRoute> EdgeRouter::routeAll(const Core::GraphDocument& model) const {
     (void)model;
     return {};
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <ScopeCanvas/render/renderers/EdgeRenderer.h>
-#include <ScopeCanvas/render/renderers/NodeRenderer.h>
 #include <ScopeCanvas/render/scene/RenderScene.h>
 #include <vector>
 
@@ -11,12 +9,8 @@ struct CanvasFrameData {
     std::vector<Scene::EdgeRenderData> edges{};
 };
 
-class CanvasRenderer {
+class CanvasFrameBuilder {
   public:
     [[nodiscard]] CanvasFrameData buildFrame(const Scene::RenderScene& scene) const;
-
-  private:
-    NodeRenderer m_nodeRenderer{};
-    EdgeRenderer m_edgeRenderer{};
 };
 } // namespace ScopeCanvas::Render::Renderers

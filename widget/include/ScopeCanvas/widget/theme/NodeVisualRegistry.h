@@ -18,9 +18,11 @@ struct NodeVisual {
     std::string icon{};
 
     ColorRgba8 titleBarColor{30, 34, 44, 185};
+    ColorRgba8 titleBarAccentColor{58, 78, 110, 215};
     ColorRgba8 bodyColor{130, 130, 130, 95};
     ColorRgba8 borderColor{235, 235, 240, 180};
     ColorRgba8 titleTextColor{245, 245, 245, 255};
+    ColorRgba8 iconColor{245, 245, 245, 255};
     ColorRgba8 connectorInputColor{215, 215, 230, 255};
     ColorRgba8 connectorOutputColor{225, 225, 240, 255};
     ColorRgba8 selectionColor{255, 210, 120, 220};

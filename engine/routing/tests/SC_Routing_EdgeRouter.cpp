@@ -6,7 +6,7 @@
 int main() {
     using namespace ScopeCanvas;
 
-    Core::DiagramModel model{};
+    Core::GraphDocument model{};
     Routing::EdgeRouter router{};
 
     const auto route = router.routeEdge(model, Core::CanvasEdgeId{1});

@@ -10,9 +10,9 @@
 #include <vector>
 
 namespace ScopeCanvas::Core {
-class DiagramModel {
+class GraphDocument {
   public:
-    DiagramModel() = default;
+    GraphDocument() = default;
 
     CanvasNodeId createNode(NodeTypeId typeId);
     void removeNode(CanvasNodeId nodeId);
@@ -37,15 +37,6 @@ class DiagramModel {
     const LayoutGroup* getLayoutGroup(LayoutGroupId groupId) const;
 
   private:
-    static bool contains(const std::vector<CanvasNodeId>& values, CanvasNodeId value);
-    static bool contains(const std::vector<CanvasConnectorId>& values, CanvasConnectorId value);
-    static bool contains(const std::vector<CanvasEdgeId>& values, CanvasEdgeId value);
-    static bool contains(const std::vector<LayoutGroupId>& values, LayoutGroupId value);
-    static void eraseValue(std::vector<CanvasNodeId>& values, CanvasNodeId value);
-    static void eraseValue(std::vector<CanvasConnectorId>& values, CanvasConnectorId value);
-    static void eraseValue(std::vector<CanvasEdgeId>& values, CanvasEdgeId value);
-    static void eraseValue(std::vector<LayoutGroupId>& values, LayoutGroupId value);
-
     std::uint32_t m_nextNodeId{1};
     std::uint32_t m_nextConnectorId{1};
     std::uint32_t m_nextEdgeId{1};
@@ -55,5 +46,14 @@ class DiagramModel {
     std::vector<Edge> m_edges{};
     std::vector<LayoutGroup> m_layoutGroups{};
     LayoutEngine* m_layoutEngine{};
+
+    static bool contains(const std::vector<CanvasNodeId>& values, CanvasNodeId value);
+    static bool contains(const std::vector<CanvasConnectorId>& values, CanvasConnectorId value);
+    static bool contains(const std::vector<CanvasEdgeId>& values, CanvasEdgeId value);
+    static bool contains(const std::vector<LayoutGroupId>& values, LayoutGroupId value);
+    static void eraseValue(std::vector<CanvasNodeId>& values, CanvasNodeId value);
+    static void eraseValue(std::vector<CanvasConnectorId>& values, CanvasConnectorId value);
+    static void eraseValue(std::vector<CanvasEdgeId>& values, CanvasEdgeId value);
+    static void eraseValue(std::vector<LayoutGroupId>& values, LayoutGroupId value);
 };
 } // namespace ScopeCanvas::Core

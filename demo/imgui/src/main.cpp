@@ -19,7 +19,7 @@ int RunStudioApp() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(1400, 900, "ScopeCanvas Studio", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1400, 900, "ScopeCanvas Docking Demo", nullptr, nullptr);
     if (window == nullptr) {
         glfwTerminate();
         return -1;
@@ -47,8 +47,8 @@ int RunStudioApp() {
     ViewState viewA{0.0F, 0.0F, 1.0F};
     ViewState viewB{180.0F, -80.0F, 0.9F};
 
-    NodeDiagramWindow canvasA(window, &basics, &viewA, "Canvas A");
-    NodeDiagramWindow canvasB(window, &basics, &viewB, "Canvas B");
+    NodeDiagramWindow canvasA(window, &basics, &viewA, "Primary Canvas");
+    NodeDiagramWindow canvasB(window, &basics, &viewB, "Secondary Canvas");
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -70,9 +70,29 @@ int RunStudioApp() {
                     basics.createNode(ScopeCanvas::Core::NodeTypeId{4}, {480.0F, 0.0F});
                 ImGui::EndMenu();
             }
+            if (ImGui::BeginMenu("Edit")) {
+                if (ImGui::MenuItem("Delete Selection")) {
+                    if (canvasA.selectedEdge().isValid()) {
+                        basics.deleteEdge(canvasA.selectedEdge());
+                    }
+                    if (canvasB.selectedEdge().isValid() && canvasB.selectedEdge() != canvasA.selectedEdge()) {
+                        basics.deleteEdge(canvasB.selectedEdge());
+                    }
+                    canvasA.clearSelectedEdge();
+                    canvasB.clearSelectedEdge();
+                    const std::vector<ScopeCanvas::Core::CanvasNodeId> selection = basics.selectedNodeIds();
+                    for (const ScopeCanvas::Core::CanvasNodeId nodeId : selection) {
+                        basics.deleteNode(nodeId);
+                    }
+                    basics.clearSelection();
+                }
+                ImGui::EndMenu();
+            }
             if (ImGui::BeginMenu("View")) {
                 ImGui::MenuItem("Show Grid", nullptr, &basics.gridSettings().enabled);
                 ImGui::MenuItem("Snap to Grid", nullptr, &basics.gridSettings().snapEnabled);
+                ImGui::Separator();
+                ImGui::TextUnformatted("Use the per-canvas panel for grid/debug toggles.");
                 ImGui::EndMenu();
             }
             ImGui::EndMainMenuBar();
