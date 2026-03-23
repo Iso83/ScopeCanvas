@@ -35,7 +35,7 @@ std::vector<glm::vec2> buildFallbackRoutePoints(const Core::Node& fromNode, std:
         if (std::abs(midY - start.y) < 6.0F) {
             midY += end.y >= start.y ? 24.0F : -24.0F;
         }
-        return {start, startStub, {startStub.x, midY}, {endStub.x, midY}, endStub, end};
+        return {start, startStub, {startStub.x, midY}, {end.x, midY}, end};
     }
     const bool needsDetour =
         startNormal.x > 0.0F && endNormal.x < 0.0F && end.x <= start.x + kBreakout * 1.5F;

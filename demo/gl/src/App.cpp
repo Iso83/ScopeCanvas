@@ -318,7 +318,7 @@ std::vector<ScopeCanvas::Routing::EdgeRoute> App::routeAllEdges() const {
             if (std::abs(midY - start.y) < 6.0F) {
                 midY += end.y >= start.y ? 24.0F : -24.0F;
             }
-            route.points = {start, startStub, {startStub.x, midY}, {endStub.x, midY}, endStub, end};
+            route.points = {start, startStub, {startStub.x, midY}, {end.x, midY}, end};
             route.preferStraightSegments = true;
             routes.push_back(route);
             continue;
