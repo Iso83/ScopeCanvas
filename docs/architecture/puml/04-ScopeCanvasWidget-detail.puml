@@ -1,0 +1,51 @@
+@startuml
+!theme plain
+hide circle
+skinparam classAttributeIconSize 0
+
+title ScopeCanvasWidget - detail class diagram
+
+package "ScopeCanvas::Render::Theme" {
+  class ColorRgba8 {
+    + uint8_t r = 0
+    + uint8_t g = 0
+    + uint8_t b = 0
+    + uint8_t a = 255
+  }
+
+  class NodeVisual {
+    + string title
+    + string icon
+    + ColorRgba8 titleBarColor
+    + ColorRgba8 titleBarAccentColor
+    + ColorRgba8 bodyColor
+    + ColorRgba8 borderColor
+    + ColorRgba8 titleTextColor
+    + ColorRgba8 iconColor
+    + ColorRgba8 connectorInputColor
+    + ColorRgba8 connectorOutputColor
+    + ColorRgba8 selectionColor
+    + float cornerRadius = 4
+    + float borderThickness = 1
+    + float titleBarHeight = 22
+  }
+
+  class NodeVisualRegistry {
+    - unordered_map<uint32_t, NodeVisual> m_visuals
+    - NodeVisual m_defaultVisual
+    + NodeVisualRegistry()
+    + void registerVisual(Core::NodeTypeId, const NodeVisual&)
+    + const NodeVisual& getVisual(Core::NodeTypeId) const
+  }
+
+  NodeVisualRegistry *-- NodeVisual
+  NodeVisual *-- ColorRgba8
+}
+
+note bottom of NodeVisualRegistry
+Implemented with concrete defaults and presets
+for multiple NodeTypeId values (1,2,3,4,10..15).
+This module is functional and data-rich rather than skeletal.
+end note
+
+@enduml

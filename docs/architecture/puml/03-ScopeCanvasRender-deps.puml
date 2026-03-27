@@ -1,0 +1,49 @@
+@startuml
+!theme plain
+hide circle
+
+title ScopeCanvasRender - dependency map to previous modules
+
+package "ScopeCanvasRender classes" {
+  class CanvasRenderer
+  class CanvasRenderOptions
+  class SceneBuilder
+  class RenderScene
+  class NodeRenderData
+  class ConnectorAnchorRenderData
+  class EdgeRenderData
+  class EdgeRenderer
+  class NodeRenderer
+}
+
+package "ScopeCanvasCore classes" {
+  class GraphDocument
+  class NodeTypeId
+  class CanvasNodeId
+  class CanvasConnectorId
+  class CanvasEdgeId
+}
+
+package "ScopeCanvasRouting classes" {
+  class EdgeRoute
+}
+
+CanvasRenderer ..> GraphDocument
+CanvasRenderer ..> EdgeRoute
+CanvasRenderOptions ..> CanvasNodeId
+CanvasRenderOptions ..> CanvasConnectorId
+CanvasRenderOptions ..> CanvasEdgeId
+SceneBuilder ..> GraphDocument
+SceneBuilder ..> EdgeRoute
+NodeRenderData ..> CanvasNodeId
+NodeRenderData ..> NodeTypeId
+ConnectorAnchorRenderData ..> CanvasConnectorId
+ConnectorAnchorRenderData ..> CanvasNodeId
+EdgeRenderData ..> CanvasEdgeId
+EdgeRenderer ..> EdgeRoute
+EdgeRenderer ..> CanvasEdgeId
+EdgeRenderer ..> CanvasConnectorId
+NodeRenderer ..> NodeTypeId
+NodeRenderer ..> CanvasNodeId
+
+@enduml

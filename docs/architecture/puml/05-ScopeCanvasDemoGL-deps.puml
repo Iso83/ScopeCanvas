@@ -1,0 +1,55 @@
+@startuml
+!theme plain
+hide circle
+
+title ScopeCanvasDemoGL - dependency map to previous modules
+
+package "ScopeCanvasDemoGL classes" {
+  class App
+  class AppInputState
+}
+
+package "ScopeCanvasCore classes" {
+  class GraphDocument
+  class Node
+  class Connector
+  class Edge
+  class NodeTypeId
+  class CanvasNodeId
+  class CanvasConnectorId
+  class CanvasEdgeId
+}
+
+package "ScopeCanvasRouting classes" {
+  class EdgeRouter
+  class EdgeRoute
+}
+
+package "ScopeCanvasRender classes" {
+  class CanvasRenderer
+  class CanvasRenderOptions
+  class Camera2D
+  class SceneBuilder
+}
+
+package "ScopeCanvasWidget classes" {
+  class NodeVisualRegistry
+}
+
+App ..> GraphDocument
+App ..> Node
+App ..> Connector
+App ..> Edge
+App ..> NodeTypeId
+App ..> CanvasNodeId
+App ..> CanvasConnectorId
+App ..> CanvasEdgeId
+App ..> EdgeRouter
+App ..> EdgeRoute
+App ..> CanvasRenderer
+App ..> CanvasRenderOptions
+App ..> Camera2D
+App ..> SceneBuilder
+App ..> NodeVisualRegistry
+
+@enduml

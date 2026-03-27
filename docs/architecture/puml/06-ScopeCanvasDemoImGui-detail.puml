@@ -1,0 +1,112 @@
+@startuml
+!theme plain
+hide circle
+skinparam classAttributeIconSize 0
+
+title ScopeCanvasDemoImGui - detail class diagram
+
+package "ScopeCanvas::Studio" {
+  class GridSettings {
+    + bool enabled = true
+    + bool snapEnabled = true
+    + float cellSize = 32
+  }
+
+  class ViewState {
+    + float cameraX = 0
+    + float cameraY = 0
+    + float zoom = 1
+  }
+
+  class DiagramBasics {
+    - Core::GraphDocument m_model
+    - GridSettings m_grid
+    - vector<Core::CanvasNodeId> m_nodeIds
+    - vector<Core::CanvasEdgeId> m_edgeIds
+    - vector<Core::CanvasNodeId> m_selectedNodeIds
+    + DiagramBasics()
+    + Core::GraphDocument& model()
+    + const Core::GraphDocument& model() const
+    + GridSettings& gridSettings()
+    + const GridSettings& gridSettings() const
+    + vector<Core::CanvasNodeId>& nodeIds()
+    + const vector<Core::CanvasNodeId>& nodeIds() const
+    + vector<Core::CanvasEdgeId>& edgeIds()
+    + const vector<Core::CanvasEdgeId>& edgeIds() const
+    + vector<Core::CanvasNodeId>& selectedNodeIds()
+    + const vector<Core::CanvasNodeId>& selectedNodeIds() const
+    + Core::CanvasNodeId createNode(Core::NodeTypeId, glm::vec2)
+    + Core::CanvasEdgeId connect(Core::CanvasConnectorId, Core::CanvasConnectorId)
+    + void deleteEdge(Core::CanvasEdgeId)
+    + void deleteNode(Core::CanvasNodeId)
+    + void clearSelection()
+    + void setSelection(const vector<Core::CanvasNodeId>&)
+    + void setNodeSelected(Core::CanvasNodeId, bool)
+    + bool isNodeSelected(Core::CanvasNodeId) const
+    + vector<Routing::EdgeRoute> routeAllEdges() const
+  }
+
+  class NodeDiagramWindow {
+    - GLFWwindow* m_window
+    - DiagramBasics* m_basics
+    - ViewState* m_viewState
+    - string m_title
+    - Render::Camera::Camera2D m_camera
+    - Render::CanvasRenderer m_renderer
+    - bool m_rendererInitialized
+    - uint m_framebuffer
+    - uint m_colorTexture
+    - uint m_depthStencilRenderbuffer
+    - int m_renderWidth
+    - int m_renderHeight
+    - Core::CanvasNodeId m_dragNode
+    - glm::vec2 m_dragOffset
+    - glm::vec2 m_dragAnchorStartPosition
+    - vector<Core::CanvasNodeId> m_dragSelection
+    - vector<glm::vec2> m_dragSelectionStartPositions
+    - Core::CanvasConnectorId m_pendingConnector
+    - bool m_reconnectingEdge
+    - bool m_reconnectingFromStart
+    - Core::CanvasConnectorId m_reconnectFixedConnector
+    - Core::CanvasConnectorId m_reconnectOriginalFrom
+    - Core::CanvasConnectorId m_reconnectOriginalTo
+    - Core::CanvasEdgeId m_selectedEdge
+    - Core::CanvasConnectorId m_hoveredConnector
+    - bool m_selectionRectActive
+    - glm::vec2 m_selectionRectStart
+    - glm::vec2 m_selectionRectEnd
+    - bool m_showGrid = true
+    - bool m_showDebug = false
+    + NodeDiagramWindow(GLFWwindow*, DiagramBasics*, ViewState*, string)
+    + ~NodeDiagramWindow()
+    + void draw()
+    + Core::CanvasEdgeId selectedEdge() const
+    + void clearSelectedEdge()
+    - void ensureRenderTarget(int, int)
+    - void releaseRenderTarget()
+    - glm::vec2 screenToWorld(float, float, float, float) const
+    - glm::vec2 connectorWorld(const Core::Node&, size_t) const
+    - Core::CanvasNodeId pickNode(const glm::vec2&) const
+    - Core::CanvasConnectorId pickConnector(const glm::vec2&) const
+    - void applySelectionRect()
+    - glm::vec2 snapToGrid(glm::vec2) const
+  }
+
+  DiagramBasics *-- GridSettings
+  NodeDiagramWindow ..> DiagramBasics
+  NodeDiagramWindow ..> ViewState
+}
+
+note bottom of DiagramBasics
+Mostly functional state-manager wrapper around GraphDocument.
+Route generation includes fallback path generation because
+Routing::EdgeRouter::routeAll currently returns empty.
+end note
+
+note bottom of NodeDiagramWindow
+High-feature interaction layer (selection rectangle, dragging,
+connector reconnection, per-canvas camera and FBO rendering)
+with no obvious skeleton placeholders in core flow.
+end note
+
+@enduml

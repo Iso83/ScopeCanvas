@@ -1,0 +1,156 @@
+@startuml
+!theme plain
+hide circle
+skinparam classAttributeIconSize 0
+
+title ScopeCanvasCore - detail class diagram
+
+package "ScopeCanvas::Core" {
+  class "StrongId<Tag, ValueT>" as StrongId {
+    - ValueType m_value
+    + StrongId()
+    + StrongId(ValueType value)
+    + ValueType value() const
+    + bool isValid() const
+    + operator==(StrongId, StrongId)
+    + operator!=(StrongId, StrongId)
+  }
+
+  class CanvasNodeId
+  class CanvasConnectorId
+  class CanvasEdgeId
+  class NodeTypeId
+  class ConnectorTypeId
+  class LayoutGroupId
+
+  StrongId <|-- CanvasNodeId
+  StrongId <|-- CanvasConnectorId
+  StrongId <|-- CanvasEdgeId
+  StrongId <|-- NodeTypeId
+  StrongId <|-- ConnectorTypeId
+  StrongId <|-- LayoutGroupId
+
+  class Node {
+    + CanvasNodeId id
+    + NodeTypeId typeId
+    + glm::vec2 position
+    + glm::vec2 size
+    + CanvasNodeId parentId
+    + bool collapsed
+    + vector<LayoutGroupId> groups
+    + vector<CanvasConnectorId> connectors
+    + void setPosition(const glm::vec2&)
+    + void setSize(const glm::vec2&)
+  }
+
+  class Connector {
+    + CanvasConnectorId id
+    + CanvasNodeId nodeId
+    + ConnectorTypeId typeId
+    + vector<CanvasEdgeId> edges
+  }
+
+  class Edge {
+    + CanvasEdgeId id
+    + CanvasConnectorId fromConnector
+    + CanvasConnectorId toConnector
+  }
+
+  class LayoutGroup {
+    + LayoutGroupId id
+    + vector<CanvasNodeId> nodes
+    + bool preserveInternalLayout
+  }
+
+  interface LayoutEngine {
+    + void layout(GraphDocument&)
+    + void layoutNodes(GraphDocument&, const vector<CanvasNodeId>&)
+  }
+
+  class GraphDocument {
+    - uint32_t m_nextNodeId = 1
+    - uint32_t m_nextConnectorId = 1
+    - uint32_t m_nextEdgeId = 1
+    - vector<Node> m_nodes
+    - vector<Connector> m_connectors
+    - vector<Edge> m_edges
+    - vector<LayoutGroup> m_layoutGroups
+    - LayoutEngine* m_layoutEngine
+    + CanvasNodeId createNode(NodeTypeId)
+    + void removeNode(CanvasNodeId)
+    + CanvasEdgeId connect(CanvasConnectorId, CanvasConnectorId)
+    + void disconnect(CanvasEdgeId)
+    + void addNodeToGroup(CanvasNodeId, LayoutGroupId)
+    + void removeNodeFromGroup(CanvasNodeId, LayoutGroupId)
+    + void setLayoutEngine(LayoutEngine&)
+    + void layoutAll()
+    + void layoutNodes(const vector<CanvasNodeId>&)
+    + Node* getNode(CanvasNodeId)
+    + const Node* getNode(CanvasNodeId) const
+    + Connector* getConnector(CanvasConnectorId)
+    + const Connector* getConnector(CanvasConnectorId) const
+    + Edge* getEdge(CanvasEdgeId)
+    + const Edge* getEdge(CanvasEdgeId) const
+    + LayoutGroup* getLayoutGroup(LayoutGroupId)
+    + const LayoutGroup* getLayoutGroup(LayoutGroupId) const
+    - static bool contains(vector<CanvasNodeId>, CanvasNodeId)
+    - static bool contains(vector<CanvasConnectorId>, CanvasConnectorId)
+    - static bool contains(vector<CanvasEdgeId>, CanvasEdgeId)
+    - static bool contains(vector<LayoutGroupId>, LayoutGroupId)
+    - static void eraseValue(vector<CanvasNodeId>&, CanvasNodeId)
+    - static void eraseValue(vector<CanvasConnectorId>&, CanvasConnectorId)
+    - static void eraseValue(vector<CanvasEdgeId>&, CanvasEdgeId)
+    - static void eraseValue(vector<LayoutGroupId>&, LayoutGroupId)
+  }
+
+  class ConnectorLogic {
+    + static bool canConnect(const GraphDocument&, CanvasConnectorId, CanvasConnectorId)
+    + static bool edgeExists(const GraphDocument&, CanvasConnectorId, CanvasConnectorId)
+    + static bool sameNode(const GraphDocument&, CanvasConnectorId, CanvasConnectorId)
+  }
+
+  class NodeBuilderRegistry {
+    + using BuilderCallback = function<void()>
+    - struct Entry
+    - vector<Entry> m_entries
+    + void registerBuilder(NodeTypeId, BuilderCallback)
+    + const BuilderCallback* getBuilder(NodeTypeId) const
+  }
+
+  class "NodeBuilderRegistry::Entry" as NodeBuilderRegistryEntry {
+    + NodeTypeId typeId
+    + BuilderCallback builder
+  }
+
+  class GridSettings {
+    + bool enabled
+    + float cellSize = 1.0
+    + glm::vec2 snap(const glm::vec2&) const
+  }
+
+  GraphDocument o-- "*" Node
+  GraphDocument o-- "*" Connector
+  GraphDocument o-- "*" Edge
+  GraphDocument o-- "*" LayoutGroup
+  GraphDocument ..> LayoutEngine : uses
+  Node "*" --> "*" CanvasConnectorId
+  Node "*" --> "*" LayoutGroupId
+  Connector "*" --> "*" CanvasEdgeId
+  NodeBuilderRegistry *-- NodeBuilderRegistryEntry
+  ConnectorLogic ..> GraphDocument
+}
+
+note bottom of GraphDocument
+Implemented:
+- create/remove node, connect/disconnect edge, group membership,
+  lookup helpers and layout delegation.
+Caveat:
+- createNode always creates exactly 2 connectors (seed behavior).
+end note
+
+note bottom of LayoutEngine
+Abstraction point is present, but no default concrete
+layout engine in this module.
+end note
+
+@enduml

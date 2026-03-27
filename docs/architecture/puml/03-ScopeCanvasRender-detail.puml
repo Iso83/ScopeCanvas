@@ -1,0 +1,268 @@
+@startuml
+!theme plain
+hide circle
+skinparam classAttributeIconSize 0
+
+title ScopeCanvasRender - detail class diagram (public + internal GL wrappers)
+
+package "ScopeCanvas::Render" {
+  class CanvasRenderOptions {
+    + bool showGrid = true
+    + bool showEdges = true
+    + bool showNodes = true
+    + bool showConnectors = true
+    + bool showDebug = false
+    + float gridSize = 32
+    + vector<Core::CanvasNodeId> selectedNodeIds
+    + Core::CanvasEdgeId hoveredEdgeId
+    + Core::CanvasEdgeId selectedEdgeId
+    + Core::CanvasConnectorId hoveredConnectorId
+    + Core::CanvasConnectorId activeConnectorId
+    + bool previewEdgeActive = false
+    + glm::vec2 previewEdgeStart
+    + glm::vec2 previewEdgeEnd
+    + glm::vec2 previewEdgeStartNormal = (1,0)
+    + bool selectionRectActive = false
+    + glm::vec2 selectionRectStart
+    + glm::vec2 selectionRectEnd
+    + NodeRenderer::StyleResolver nodeStyleResolver
+    + NodeRenderer::TitleResolver nodeTitleResolver
+    + NodeRenderer::IconResolver nodeIconResolver
+  }
+
+  class CanvasRenderer {
+    - Renderers::GridRenderer m_grid
+    - Renderers::NodeRenderer m_nodes
+    - Renderers::EdgeRenderer m_edges
+    - Renderers::SelectionRectRenderer m_selection
+    - Scene::SceneBuilder m_sceneBuilder
+    + bool init()
+    + void shutdown()
+    + void render(const Core::GraphDocument&, const vector<Routing::EdgeRoute>&, const Camera::Camera2D&, const CanvasRenderOptions&) const
+    + void renderSelectionRect(const Camera::Camera2D&, const glm::vec2&, const glm::vec2&) const
+  }
+}
+
+package "ScopeCanvas::Render::Camera" {
+  class Camera2D {
+    - glm::vec2 m_position
+    - float m_zoom
+    - int m_viewportWidth
+    - int m_viewportHeight
+    - glm::mat4 m_projection
+    + Camera2D()
+    + void setViewportSize(int, int)
+    + void setPosition(const glm::vec2&)
+    + const glm::vec2& position() const
+    + void move(const glm::vec2&)
+    + void setZoom(float)
+    + float zoom() const
+    + const glm::mat4& projection() const
+    + glm::mat4 view() const
+    + glm::mat4 viewProjection() const
+    + glm::mat4 invViewProjection() const
+    - void updateProjection()
+  }
+}
+
+package "ScopeCanvas::Render::Scene" {
+  class NodeRenderData {
+    + Core::CanvasNodeId id
+    + Core::NodeTypeId typeId
+    + glm::vec2 position
+    + glm::vec2 size
+    + uint32_t connectorCount
+  }
+
+  class ConnectorAnchorRenderData {
+    + Core::CanvasConnectorId connectorId
+    + Core::CanvasNodeId nodeId
+    + glm::vec2 anchor
+    + bool output
+  }
+
+  class EdgeRenderData {
+    + Core::CanvasEdgeId edgeId
+    + vector<glm::vec2> points
+  }
+
+  class RenderScene {
+    + vector<NodeRenderData> nodes
+    + vector<ConnectorAnchorRenderData> connectorAnchors
+    + vector<EdgeRenderData> edges
+  }
+
+  class NodeInstance {
+    + glm::vec2 position
+    + glm::vec2 size
+    + glm::vec3 color
+  }
+
+  class SceneBuilder {
+    + RenderScene build(const Core::GraphDocument&, const vector<Routing::EdgeRoute>&, const Camera::Camera2D&) const
+  }
+}
+
+package "ScopeCanvas::Render::Renderers" {
+  class NodeRenderStyle {
+    + glm::vec4 bodyColor
+    + glm::vec4 headerColor
+    + glm::vec4 headerAccentColor
+    + glm::vec4 borderColor
+    + glm::vec4 selectionColor
+    + glm::vec4 textColor
+    + glm::vec4 iconColor
+    + float borderThickness
+    + float headerHeight
+    + float cornerRadius
+  }
+
+  class NodeRenderer {
+    + using StyleResolver = function<NodeRenderStyle(Core::NodeTypeId)>
+    + using TitleResolver = function<string(Core::NodeTypeId)>
+    + using IconResolver = function<string(Core::NodeTypeId)>
+    - uint m_fillVao
+    - uint m_fillVbo
+    - uint m_lineVao
+    - uint m_lineVbo
+    - uint m_program
+    - uint m_textVao
+    - uint m_textVbo
+    + bool init()
+    + void shutdown()
+    + void render(const vector<Scene::NodeRenderData>&, const Camera::Camera2D&, const vector<Core::CanvasNodeId>&, const StyleResolver&, const TitleResolver&, const IconResolver&) const
+    + static NodeRenderStyle defaultStyle(Core::NodeTypeId)
+  }
+
+  class GridRenderer {
+    - GL::Shader m_shader
+    - GLuint m_vao
+    - GLuint m_vbo
+    + GridRenderer()
+    + ~GridRenderer()
+    + bool init()
+    + void shutdown()
+    + void render(const Camera::Camera2D&, float) const
+    - void uploadAndDrawLines(const vector<glm::vec2>&, const glm::mat4&, const glm::vec3&) const
+    - void destroy()
+  }
+
+  class EdgeRenderer {
+    - GL::Shader m_shader
+    - GLuint m_vao
+    - GLuint m_vbo
+    + EdgeRenderer()
+    + ~EdgeRenderer()
+    + bool init()
+    + void shutdown()
+    + void render(const vector<Scene::EdgeRenderData>&, const Camera::Camera2D&, Core::CanvasEdgeId, Core::CanvasEdgeId) const
+    + void renderConnectors(const vector<Scene::ConnectorAnchorRenderData>&, const Camera::Camera2D&, Core::CanvasConnectorId, Core::CanvasConnectorId) const
+    + void renderPreviewEdge(const glm::vec2&, const glm::vec2&, const glm::vec2&, const Camera::Camera2D&) const
+    + vector<glm::vec2> buildEdgeGeometry(const Routing::EdgeRoute&, int = 20) const
+    - static void computeBezierControls(const glm::vec2&, const glm::vec2&, glm::vec2&, glm::vec2&)
+    - static void appendBezierSamples(vector<glm::vec2>&, const glm::vec2&, const glm::vec2&, const glm::vec2&, const glm::vec2&, int)
+    - static void appendQuadraticSamples(vector<glm::vec2>&, const glm::vec2&, const glm::vec2&, const glm::vec2&, int)
+    - void renderPolyline(const vector<glm::vec2>&, const Camera::Camera2D&, const glm::vec3&, float, GLenum) const
+    - void destroy()
+  }
+
+  class SelectionRectRenderer {
+    - GL::Shader m_shader
+    - GLuint m_vao
+    - GLuint m_vbo
+    - GLuint m_fillEbo
+    - GLuint m_outlineEbo
+    + SelectionRectRenderer()
+    + ~SelectionRectRenderer()
+    + bool init()
+    + void shutdown()
+    + void render(const glm::mat4&, const glm::vec2&, const glm::vec2&) const
+    - void destroy()
+  }
+
+  class CanvasFrameData {
+    + vector<Scene::NodeRenderData> nodes
+    + vector<Scene::EdgeRenderData> edges
+  }
+
+  class CanvasFrameBuilder {
+    + CanvasFrameData buildFrame(const Scene::RenderScene&) const
+  }
+}
+
+package "ScopeCanvas::Render::GL" {
+  class Shader {
+    - GLuint m_programId
+    + Shader()
+    + ~Shader()
+    + Shader(Shader&&)
+    + Shader& operator=(Shader&&)
+    + bool load(const char*, const char*)
+    + void use() const
+    + GLuint id() const
+    - bool compileShader(GLuint, const char*) const
+    - void destroy()
+  }
+
+  class Texture {
+    - int m_width = 0
+    - int m_height = 0
+    - uint32_t m_id = 0
+    + void resize(int, int)
+    + int width() const
+    + int height() const
+    + uint32_t id() const
+  }
+
+  class Framebuffer {
+    - bool m_complete = false
+    + void attachColor(const Texture&)
+    + bool isComplete() const
+  }
+}
+
+CanvasRenderer *-- CanvasRenderOptions
+CanvasRenderer *-- Renderers::GridRenderer
+CanvasRenderer *-- Renderers::NodeRenderer
+CanvasRenderer *-- Renderers::EdgeRenderer
+CanvasRenderer *-- Renderers::SelectionRectRenderer
+CanvasRenderer *-- Scene::SceneBuilder
+CanvasRenderer ..> Core::GraphDocument
+CanvasRenderer ..> Routing::EdgeRoute
+CanvasRenderer ..> Camera::Camera2D
+
+Scene::SceneBuilder ..> Core::GraphDocument
+Scene::SceneBuilder ..> Routing::EdgeRoute
+Scene::SceneBuilder ..> Camera::Camera2D
+
+Renderers::NodeRenderer ..> Scene::NodeRenderData
+Renderers::GridRenderer ..> Camera::Camera2D
+Renderers::EdgeRenderer ..> Scene::EdgeRenderData
+Renderers::EdgeRenderer ..> Scene::ConnectorAnchorRenderData
+Renderers::EdgeRenderer ..> Routing::EdgeRoute
+Renderers::SelectionRectRenderer ..> GL::Shader
+Renderers::GridRenderer ..> GL::Shader
+Renderers::EdgeRenderer ..> GL::Shader
+Renderers::CanvasFrameBuilder ..> Scene::RenderScene
+
+GL::Framebuffer ..> GL::Texture
+
+note bottom of Scene::SceneBuilder
+Implemented and non-trivial:
+- culls nodes using camera world bounds
+- builds connector anchors from node geometry
+- emits only edges with at least one visible endpoint
+end note
+
+note bottom of GL::Texture
+Current implementation is placeholder-like:
+resize() only stores width/height and assigns m_id=1
+instead of creating real GL texture objects.
+end note
+
+note bottom of GL::Framebuffer
+Completeness is simulated by checking Texture state;
+no real OpenGL FBO API calls here.
+end note
+
+@enduml

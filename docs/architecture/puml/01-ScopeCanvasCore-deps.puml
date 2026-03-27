@@ -1,0 +1,25 @@
+@startuml
+!theme plain
+hide circle
+
+title ScopeCanvasCore - dependencies on previous modules
+
+package "ScopeCanvasCore" {
+  class GraphDocument
+  class Node
+  class Connector
+  class Edge
+  class LayoutEngine
+  class LayoutGroup
+  class ConnectorLogic
+  class NodeBuilderRegistry
+  class GridSettings
+}
+
+note right
+ScopeCanvasCore is the first module in the chain.
+There are no class-level dependencies on earlier
+ScopeCanvas modules.
+end note
+
+@enduml

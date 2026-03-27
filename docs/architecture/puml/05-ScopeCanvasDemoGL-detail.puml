@@ -1,0 +1,103 @@
+@startuml
+!theme plain
+hide circle
+skinparam classAttributeIconSize 0
+
+title ScopeCanvasDemoGL - detail class diagram
+
+package "Global" {
+  class App {
+    - GLFWwindow* m_window
+    - bool m_initialized
+    - InputState m_input
+    - ScopeCanvas::Core::GraphDocument m_document
+    - ScopeCanvas::Render::CanvasRenderer m_renderer
+    - ScopeCanvas::Render::Camera::Camera2D m_camera
+    - ScopeCanvas::Render::CanvasRenderOptions m_renderOptions
+    - ScopeCanvas::Render::Scene::SceneBuilder m_sceneBuilder
+    - ScopeCanvas::Routing::EdgeRouter m_router
+    - vector<Core::CanvasNodeId> m_nodeIds
+    - vector<Core::CanvasNodeId> m_selectedNodes
+    - Core::CanvasNodeId m_dragNode
+    - glm::vec2 m_dragOffset
+    - glm::vec2 m_dragAnchorStartPosition
+    - vector<Core::CanvasNodeId> m_dragSelection
+    - vector<glm::vec2> m_dragSelectionStartPositions
+    - Core::CanvasConnectorId m_activeConnector
+    - bool m_reconnectingEdge
+    - bool m_reconnectingFromStart
+    - Core::CanvasConnectorId m_reconnectFixedConnector
+    - Core::CanvasConnectorId m_reconnectOriginalFrom
+    - Core::CanvasConnectorId m_reconnectOriginalTo
+    - bool m_selectionRectActive
+    - glm::vec2 m_selectionRectStart
+    - glm::vec2 m_selectionRectEnd
+    - glm::vec2 m_previewEdgeEnd
+    - bool m_debugEnabled
+    + App()
+    + ~App()
+    + bool init()
+    + void run()
+    + void onFramebufferSizeChanged(int, int)
+    + void onCursorPos(double, double)
+    + void onMouseButton(int, int, int)
+    + void onScroll(double, double)
+    - bool initWindow()
+    - bool initGL()
+    - void initializeDocument()
+    - void shutdown()
+    - void processInput(float)
+    - void setupCallbacks()
+    - glm::vec2 screenToWorld(double, double) const
+    - glm::vec2 connectorWorld(const Core::Node&, size_t) const
+    - vector<Routing::EdgeRoute> routeAllEdges() const
+    - Core::CanvasNodeId pickNode(const glm::vec2&) const
+    - Core::CanvasConnectorId pickConnector(const glm::vec2&) const
+    - Core::CanvasEdgeId pickEdge(const glm::vec2&, const vector<Routing::EdgeRoute>&) const
+    - void clearSelection()
+    - void setSingleSelection(Core::CanvasNodeId)
+    - bool isNodeSelected(Core::CanvasNodeId) const
+    - void applySelectionRect()
+    - glm::vec2 snapToGrid(glm::vec2) const
+    - Core::CanvasNodeId createNodeShortcut(Core::NodeTypeId)
+    - void deleteSelection()
+  }
+
+  class "App::InputState" as AppInputState {
+    + double mouseX = 0
+    + double mouseY = 0
+    + bool leftDown = false
+    + bool middleDown = false
+    + bool previousLeftDown = false
+    + bool previousMiddleDown = false
+    + float scrollDelta = 0
+  }
+
+  class "sc::glfw::framebufferSize<T,Method>" as GLFWFramebufferTemplate
+  class "sc::glfw::cursorPos<T,Method>" as GLFWCursorTemplate
+  class "sc::glfw::mouseButton<T,Method>" as GLFWMouseTemplate
+  class "sc::glfw::scroll<T,Method>" as GLFWScrollTemplate
+
+  App *-- AppInputState
+}
+
+App ..> ScopeCanvas::Render::Theme::NodeVisualRegistry : node style/title/icon lookup
+App ..> ScopeCanvas::Render::CanvasRenderer
+App ..> ScopeCanvas::Render::Camera::Camera2D
+App ..> ScopeCanvas::Core::GraphDocument
+App ..> ScopeCanvas::Routing::EdgeRouter
+App ..> ScopeCanvas::Render::Scene::SceneBuilder
+App ..> GLFWFramebufferTemplate
+App ..> GLFWCursorTemplate
+App ..> GLFWMouseTemplate
+App ..> GLFWScrollTemplate
+
+note bottom of App
+Implemented interaction flow is extensive (selection, drag,
+reconnect, preview edges, delete, shortcuts).
+Important caveat: routeAllEdges() contains a fallback polyline
+router because ScopeCanvasRouting::EdgeRouter::routeAll()
+currently returns empty.
+end note
+
+@enduml

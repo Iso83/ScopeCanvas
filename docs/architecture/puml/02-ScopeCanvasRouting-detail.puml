@@ -1,0 +1,46 @@
+@startuml
+!theme plain
+hide circle
+skinparam classAttributeIconSize 0
+
+title ScopeCanvasRouting - detail class diagram
+
+package "ScopeCanvas::Routing" {
+  class EdgeRoute {
+    + Core::CanvasEdgeId edgeId
+    + vector<glm::vec2> points
+    + bool preferStraightSegments = false
+  }
+
+  class EdgeBundleId
+
+  class EdgeBundle {
+    + EdgeBundleId id
+    + glm::vec2 position
+    + vector<Core::CanvasEdgeId> edges
+  }
+
+  class EdgeRouter {
+    + EdgeRoute routeEdge(const Core::GraphDocument&, Core::CanvasEdgeId)
+    + vector<EdgeRoute> routeAll(const Core::GraphDocument&) const
+    + void bundleEdges(vector<EdgeRoute>&)
+  }
+
+  EdgeBundle "*" --> "*" Core::CanvasEdgeId
+  EdgeRoute --> Core::CanvasEdgeId
+  EdgeRouter ..> Core::GraphDocument
+}
+
+note bottom of EdgeRouter
+Current implementation status:
+- routeEdge: returns EdgeRoute with edgeId only.
+- routeAll: returns empty vector.
+- bundleEdges: no-op.
+So this module compiles, but routing logic is still skeletal.
+end note
+
+note bottom of EdgeBundle
+EdgeBundle.cpp currently contains no behavior.
+end note
+
+@enduml

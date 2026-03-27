@@ -1,0 +1,23 @@
+@startuml
+!theme plain
+hide circle
+
+title ScopeCanvasWidget - dependency map to previous modules
+
+package "ScopeCanvasWidget classes" {
+  class NodeVisualRegistry
+  class NodeVisual
+}
+
+package "ScopeCanvasCore classes" {
+  class NodeTypeId
+}
+
+NodeVisualRegistry ..> NodeTypeId : key for visual lookup
+
+note right of NodeVisualRegistry
+Although namespace is Render::Theme,
+this lives in the ScopeCanvasWidget module.
+end note
+
+@enduml

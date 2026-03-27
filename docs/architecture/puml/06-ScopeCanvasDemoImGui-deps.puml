@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+hide circle
+
+title ScopeCanvasDemoImGui - dependency map to previous modules
+
+package "ScopeCanvasDemoImGui classes" {
+  class DiagramBasics
+  class NodeDiagramWindow
+  class ViewState
+  class GridSettings
+}
+
+package "ScopeCanvasCore classes" {
+  class GraphDocument
+  class Node
+  class Connector
+  class Edge
+  class NodeTypeId
+  class CanvasNodeId
+  class CanvasConnectorId
+  class CanvasEdgeId
+}
+
+package "ScopeCanvasRouting classes" {
+  class EdgeRouter
+  class EdgeRoute
+}
+
+package "ScopeCanvasRender classes" {
+  class CanvasRenderer
+  class CanvasRenderOptions
+  class Camera2D
+}
+
+package "ScopeCanvasWidget classes" {
+  class NodeVisualRegistry
+}
+
+DiagramBasics ..> GraphDocument
+DiagramBasics ..> NodeTypeId
+DiagramBasics ..> CanvasNodeId
+DiagramBasics ..> CanvasConnectorId
+DiagramBasics ..> CanvasEdgeId
+DiagramBasics ..> Edge
+DiagramBasics ..> Connector
+DiagramBasics ..> Node
+DiagramBasics ..> EdgeRouter
+DiagramBasics ..> EdgeRoute
+NodeDiagramWindow ..> CanvasRenderer
+NodeDiagramWindow ..> CanvasRenderOptions
+NodeDiagramWindow ..> Camera2D
+NodeDiagramWindow ..> NodeVisualRegistry
+NodeDiagramWindow ..> CanvasNodeId
+NodeDiagramWindow ..> CanvasConnectorId
+NodeDiagramWindow ..> CanvasEdgeId
+NodeDiagramWindow ..> Node
+NodeDiagramWindow ..> EdgeRoute
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml
+!theme plain
+hide circle
+
+title ScopeCanvasRouting - dependency map to previous modules
+
+package "ScopeCanvasRouting classes" {
+  class EdgeRouter
+  class EdgeRoute
+  class EdgeBundle
+}
+
+package "ScopeCanvasCore classes" {
+  class GraphDocument
+  class CanvasEdgeId
+}
+
+EdgeRouter ..> GraphDocument : route input model
+EdgeRouter ..> CanvasEdgeId : route target id
+EdgeRoute --> CanvasEdgeId : identifies routed edge
+EdgeBundle --> CanvasEdgeId : grouped edges
+
+@enduml
