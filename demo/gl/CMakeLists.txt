@@ -22,7 +22,7 @@ target_include_directories(ScopeCanvasDemoGL PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-set_property(TARGET ScopeCanvasDemoGL PROPERTY FOLDER "demo")
+set_property(TARGET ScopeCanvasDemoGL PROPERTY FOLDER "${SC_FOLDER}/demo")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
     PREFIX "Source"

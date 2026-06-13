@@ -17,7 +17,8 @@ add_library(ScopeCanvasRender
 )
 
 target_link_libraries(ScopeCanvasRender PUBLIC
-    ScopeCanvasDemoCommon
+    ScopeCanvasRouting
+    glad
     #opengl32
 )
 
@@ -29,7 +30,7 @@ target_include_directories(ScopeCanvasRender PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-set_property(TARGET ScopeCanvasRender PROPERTY FOLDER "render")
+set_property(TARGET ScopeCanvasRender PROPERTY FOLDER "${SC_FOLDER}/render")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/render
     PREFIX "Include"

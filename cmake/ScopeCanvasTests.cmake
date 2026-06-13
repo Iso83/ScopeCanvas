@@ -9,5 +9,5 @@ function(sc_add_module_test target folder name)
 
     add_test(NAME ${name} COMMAND ${name})
 
-    set_property(TARGET ${name} PROPERTY FOLDER "tests/${folder}")
+    set_property(TARGET ${name} PROPERTY FOLDER "${SC_FOLDER}/tests/${folder}")
 endfunction()

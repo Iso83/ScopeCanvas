@@ -28,7 +28,7 @@ target_include_directories(ScopeCanvasWidget PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-set_property(TARGET ScopeCanvasWidget PROPERTY FOLDER "widget")
+set_property(TARGET ScopeCanvasWidget PROPERTY FOLDER "${SC_FOLDER}/widget")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/widget
     PREFIX "Include"

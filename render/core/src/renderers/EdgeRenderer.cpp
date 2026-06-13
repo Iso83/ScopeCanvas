@@ -188,8 +188,9 @@ std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute&
 void EdgeRenderer::computeBezierControls(const glm::vec2& p0, const glm::vec2& p3, glm::vec2& p1, glm::vec2& p2) {
     const float dx = std::abs(p3.x - p0.x);
     const float controlDistance = std::max(80.0F, dx * 0.5F);
-    p1 = {p0.x + controlDistance, p0.y};
-    p2 = {p3.x - controlDistance, p3.y};
+    const float direction = p3.x >= p0.x ? 1.0F : -1.0F;
+    p1 = {p0.x + controlDistance * direction, p0.y};
+    p2 = {p3.x - controlDistance * direction, p3.y};
 }
 
 void EdgeRenderer::appendBezierSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,

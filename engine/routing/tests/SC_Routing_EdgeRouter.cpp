@@ -47,6 +47,30 @@ class TestGraphView final : public IGraphView {
     }
 };
 
+TestGraphView makeRightToLeftGraph() {
+    TestGraphView graph{};
+
+    Node from{};
+    from.id = NodeId{1};
+    from.position = {220.0F, 100.0F};
+    from.size = {100.0F, 60.0F};
+    from.connectors = {ConnectorId{1}, ConnectorId{2}};
+
+    Node to{};
+    to.id = NodeId{2};
+    to.position = {0.0F, 0.0F};
+    to.size = {100.0F, 60.0F};
+    to.connectors = {ConnectorId{3}, ConnectorId{4}};
+
+    graph.nodes.emplace(from.id.value(), from);
+    graph.nodes.emplace(to.id.value(), to);
+    graph.connectors.emplace(1U, Connector{ConnectorId{1}, NodeId{1}, {}, {EdgeId{1}}});
+    graph.connectors.emplace(4U, Connector{ConnectorId{4}, NodeId{2}, {}, {EdgeId{1}}});
+    graph.edges.emplace(1U, Edge{EdgeId{1}, ConnectorId{1}, ConnectorId{4}});
+    graph.edgeOrder.push_back(EdgeId{1});
+    return graph;
+}
+
 TestGraphView makeTwoNodeGraph(float toX = 220.0F) {
     TestGraphView graph{};
 
@@ -115,6 +139,19 @@ int test_close_opposing_ports_add_detour() {
     SC_TEST(routes[0].points[3].y == routes[0].points[2].y);
     return 0;
 }
+
+int test_right_to_left_opposing_ports_uses_direct_route() {
+    TestGraphView graph = makeRightToLeftGraph();
+    const EdgeRouter router{};
+
+    const std::vector<EdgeRoute> routes = router.routeAll(&graph);
+
+    SC_TEST(routes.size() == 1U);
+    SC_TEST(routes[0].points.size() == 2U);
+    SC_TEST(routes[0].points.front().x == 220.0F);
+    SC_TEST(routes[0].points.back().x == 100.0F);
+    return 0;
+}
 } // namespace
 
 int main() {
@@ -122,5 +159,6 @@ int main() {
     SC_RUN_TEST(test_valid_edge_creates_route);
     SC_RUN_TEST(test_missing_connector_skips_edge);
     SC_RUN_TEST(test_close_opposing_ports_add_detour);
+    SC_RUN_TEST(test_right_to_left_opposing_ports_uses_direct_route);
     return 0;
 }

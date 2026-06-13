@@ -28,7 +28,7 @@ target_include_directories(ScopeCanvasRouting PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-set_property(TARGET ScopeCanvasRouting PROPERTY FOLDER "engine/routing")
+set_property(TARGET ScopeCanvasRouting PROPERTY FOLDER "${SC_FOLDER}/engine/routing")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/routing
     PREFIX "Include"

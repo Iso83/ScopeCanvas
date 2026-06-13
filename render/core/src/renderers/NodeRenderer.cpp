@@ -1,4 +1,5 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
+#include <ScopeCanvas/render/geometry/RoundedRect.h>
 #include <ScopeCanvas/render/renderers/NodeRenderer.h>
 #include <algorithm>
 #include <array>
@@ -171,51 +172,7 @@ glm::vec4 bilerpColor(const std::array<glm::vec4, 4>& colors, const glm::vec2& p
 }
 
 std::vector<glm::vec2> roundedRectPoints(const glm::vec2& pos, const glm::vec2& size, float radius, int segments) {
-    const float clampedRadius = std::clamp(radius, 0.0F, std::min(size.x, size.y) * 0.5F);
-    const glm::vec2 min = pos;
-    const glm::vec2 max = pos + size;
-
-    if (clampedRadius <= 0.01F) {
-        return {
-            {min.x, min.y},
-            {max.x, min.y},
-            {max.x, max.y},
-            {min.x, max.y},
-        };
-    }
-
-    const std::array<glm::vec2, 4> centers = {
-        glm::vec2(min.x + clampedRadius, max.y - clampedRadius),
-        glm::vec2(max.x - clampedRadius, max.y - clampedRadius),
-        glm::vec2(max.x - clampedRadius, min.y + clampedRadius),
-        glm::vec2(min.x + clampedRadius, min.y + clampedRadius),
-    };
-    const std::array<float, 4> angleStarts = {
-        kPi,
-        kPi * 0.5F,
-        0.0F,
-        -kPi * 0.5F,
-    };
-    const std::array<float, 4> angleEnds = {
-        kPi * 0.5F,
-        0.0F,
-        -kPi * 0.5F,
-        -kPi,
-    };
-
-    std::vector<glm::vec2> points;
-    points.reserve(static_cast<std::size_t>(segments) * 4U + 4U);
-    for (std::size_t corner = 0; corner < 4U; ++corner) {
-        for (int i = 0; i <= segments; ++i) {
-            if (corner > 0U && i == 0)
-                continue;
-
-            const float t = static_cast<float>(i) / static_cast<float>(segments);
-            const float angle = angleStarts[corner] + (angleEnds[corner] - angleStarts[corner]) * t;
-            points.push_back(centers[corner] + glm::vec2(std::cos(angle), std::sin(angle)) * clampedRadius);
-        }
-    }
-    return points;
+    return ScopeCanvas::Render::Geometry::roundedRectOutline(pos, size, radius, segments);
 }
 
 std::vector<glm::vec2> topRoundedRectPoints(const glm::vec2& pos, const glm::vec2& size, float radius, int segments) {

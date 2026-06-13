@@ -25,7 +25,7 @@ target_include_directories(ScopeCanvasCore PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-set_property(TARGET ScopeCanvasCore PROPERTY FOLDER "engine/core")
+set_property(TARGET ScopeCanvasCore PROPERTY FOLDER "${SC_FOLDER}/engine/core")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/core
     PREFIX "Include"

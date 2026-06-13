@@ -17,7 +17,6 @@ add_library(ScopeCanvasDemoCommon
 )
 
 target_link_libraries(ScopeCanvasDemoCommon PUBLIC
-    ScopeCanvasRouting
     ScopeCanvasWidget
     glad
     glm
@@ -31,7 +30,7 @@ target_include_directories(ScopeCanvasDemoCommon PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-set_property(TARGET ScopeCanvasDemoCommon PROPERTY FOLDER "demo")
+set_property(TARGET ScopeCanvasDemoCommon PROPERTY FOLDER "${SC_FOLDER}/demo")
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/demo
     PREFIX "Include"
