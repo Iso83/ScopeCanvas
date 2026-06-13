@@ -8,22 +8,22 @@
 
 namespace ScopeCanvas::Render::Scene {
 struct NodeRenderData {
-    Core::CanvasNodeId id{};
-    Core::NodeTypeId typeId{};
+    Core::Ids::NodeId id{};
+    Core::Ids::NodeTypeId typeId{};
     glm::vec2 position{};
     glm::vec2 size{};
     std::uint32_t connectorCount{};
 };
 
 struct ConnectorAnchorRenderData {
-    Core::CanvasConnectorId connectorId{};
-    Core::CanvasNodeId nodeId{};
+    Core::Ids::ConnectorId connectorId{};
+    Core::Ids::NodeId nodeId{};
     glm::vec2 anchor{};
     bool output{};
 };
 
 struct EdgeRenderData {
-    Core::CanvasEdgeId edgeId{};
+    Core::Ids::EdgeId edgeId{};
     std::vector<glm::vec2> points{};
 };
 

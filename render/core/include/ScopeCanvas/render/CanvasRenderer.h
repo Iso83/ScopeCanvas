@@ -9,13 +9,10 @@
 #include <glm/vec2.hpp>
 #include <vector>
 
-namespace ScopeCanvas::Core {
-class GraphDocument;
-}
-
 namespace ScopeCanvas::Routing {
+class IGraphView;
 struct EdgeRoute;
-}
+} // namespace ScopeCanvas::Routing
 
 namespace ScopeCanvas::Render::Camera {
 class Camera2D;
@@ -31,11 +28,11 @@ struct CanvasRenderOptions {
     bool showDebug{false};
     float gridSize{32.0f};
 
-    std::vector<Core::CanvasNodeId> selectedNodeIds{};
-    Core::CanvasEdgeId hoveredEdgeId{};
-    Core::CanvasEdgeId selectedEdgeId{};
-    Core::CanvasConnectorId hoveredConnectorId{};
-    Core::CanvasConnectorId activeConnectorId{};
+    std::vector<Core::Ids::NodeId> selectedNodeIds{};
+    Core::Ids::EdgeId hoveredEdgeId{};
+    Core::Ids::EdgeId selectedEdgeId{};
+    Core::Ids::ConnectorId hoveredConnectorId{};
+    Core::Ids::ConnectorId activeConnectorId{};
     bool previewEdgeActive{false};
     glm::vec2 previewEdgeStart{};
     glm::vec2 previewEdgeEnd{};
@@ -51,20 +48,20 @@ struct CanvasRenderOptions {
 };
 
 class CanvasRenderer {
-  public:
-    bool init();
-    void shutdown();
-
-    void render(const Core::GraphDocument& document, const std::vector<Routing::EdgeRoute>& routes,
-                const Camera::Camera2D& camera, const CanvasRenderOptions& options) const;
-    void renderSelectionRect(const Camera::Camera2D& camera, const glm::vec2& start, const glm::vec2& end) const;
-
   private:
     Renderers::GridRenderer m_grid{};
     Renderers::NodeRenderer m_nodes{};
     Renderers::EdgeRenderer m_edges{};
     Renderers::SelectionRectRenderer m_selection{};
     Scene::SceneBuilder m_sceneBuilder{};
+
+  public:
+    bool init();
+    void shutdown();
+
+    void render(const Routing::IGraphView& document, const std::vector<Routing::EdgeRoute>& routes,
+                const Camera::Camera2D& camera, const CanvasRenderOptions& options) const;
+    void renderSelectionRect(const Camera::Camera2D& camera, const glm::vec2& start, const glm::vec2& end) const;
 };
 
 } // namespace ScopeCanvas::Render

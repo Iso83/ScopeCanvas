@@ -17,10 +17,7 @@ add_library(ScopeCanvasRender
 )
 
 target_link_libraries(ScopeCanvasRender PUBLIC
-    ScopeCanvasRouting
-    glad
-    glm
-    glfw
+    ScopeCanvasDemoCommon
     #opengl32
 )
 

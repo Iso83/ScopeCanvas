@@ -27,20 +27,6 @@ struct NodeRenderStyle {
 };
 
 class NodeRenderer {
-  public:
-    using StyleResolver = std::function<NodeRenderStyle(Core::NodeTypeId)>;
-    using TitleResolver = std::function<std::string(Core::NodeTypeId)>;
-    using IconResolver = std::function<std::string(Core::NodeTypeId)>;
-
-    bool init();
-    void shutdown();
-
-    void render(const std::vector<Scene::NodeRenderData>& nodes, const Camera::Camera2D& camera,
-                const std::vector<Core::CanvasNodeId>& selectedNodeIds, const StyleResolver& styleResolver = {},
-                const TitleResolver& titleResolver = {}, const IconResolver& iconResolver = {}) const;
-
-    [[nodiscard]] static NodeRenderStyle defaultStyle(Core::NodeTypeId typeId);
-
   private:
     unsigned int m_fillVao{0};
     unsigned int m_fillVbo{0};
@@ -49,6 +35,20 @@ class NodeRenderer {
     unsigned int m_program{0};
     unsigned int m_textVao{0};
     unsigned int m_textVbo{0};
+
+  public:
+    using StyleResolver = std::function<NodeRenderStyle(Core::Ids::NodeTypeId)>;
+    using TitleResolver = std::function<std::string(Core::Ids::NodeTypeId)>;
+    using IconResolver = std::function<std::string(Core::Ids::NodeTypeId)>;
+
+    bool init();
+    void shutdown();
+
+    void render(const std::vector<Scene::NodeRenderData>& nodes, const Camera::Camera2D& camera,
+                const std::vector<Core::Ids::NodeId>& selectedNodeIds, const StyleResolver& styleResolver = {},
+                const TitleResolver& titleResolver = {}, const IconResolver& iconResolver = {}) const;
+
+    [[nodiscard]] static NodeRenderStyle defaultStyle(Core::Ids::NodeTypeId typeId);
 };
 
 } // namespace ScopeCanvas::Render::Renderers

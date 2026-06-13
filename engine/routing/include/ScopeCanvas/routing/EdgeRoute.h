@@ -6,8 +6,7 @@
 
 namespace ScopeCanvas::Routing {
 struct EdgeRoute {
-    Core::CanvasEdgeId edgeId{};
+    Core::Ids::EdgeId edgeId{};
     std::vector<glm::vec2> points{};
-    bool preferStraightSegments{false};
 };
 } // namespace ScopeCanvas::Routing

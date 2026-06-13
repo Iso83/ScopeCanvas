@@ -3,13 +3,17 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace ScopeCanvas::Core {
+namespace ScopeCanvas::Core::Ids {
 template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
     static_assert(std::is_integral_v<ValueT>, "StrongId requires an integral value type.");
 
   public:
     using ValueType = ValueT;
 
+  private:
+    ValueType m_value{};
+
+  public:
     constexpr StrongId() = default;
     explicit constexpr StrongId(ValueType value) : m_value(value) {}
 
@@ -28,8 +32,5 @@ template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
     friend constexpr bool operator!=(StrongId lhs, StrongId rhs) {
         return !(lhs == rhs);
     }
-
-  private:
-    ValueType m_value{};
 };
-} // namespace ScopeCanvas::Core
+} // namespace ScopeCanvas::Core::Ids

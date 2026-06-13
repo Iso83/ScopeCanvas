@@ -7,21 +7,10 @@
 
 namespace ScopeCanvas::Core {
 struct Node {
-    CanvasNodeId id{};
-    NodeTypeId typeId{};
+    Ids::NodeId id{};
+    Ids::NodeTypeId typeId{};
     glm::vec2 position{};
     glm::vec2 size{};
-    CanvasNodeId parentId{};
-    bool collapsed{};
-    std::vector<LayoutGroupId> groups{};
-    std::vector<CanvasConnectorId> connectors{};
-
-    void setPosition(const glm::vec2& value) {
-        position = value;
-    }
-
-    void setSize(const glm::vec2& value) {
-        size = value;
-    }
+    std::vector<Ids::ConnectorId> connectors{};
 };
 } // namespace ScopeCanvas::Core

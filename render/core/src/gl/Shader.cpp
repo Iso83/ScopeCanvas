@@ -2,16 +2,6 @@
 #include <iostream>
 
 namespace ScopeCanvas::Render::GL {
-Shader::Shader() : m_programId(0) {}
-
-Shader::~Shader() {
-    destroy();
-}
-
-Shader::Shader(Shader&& other) noexcept : m_programId(other.m_programId) {
-    other.m_programId = 0;
-}
-
 Shader& Shader::operator=(Shader&& other) noexcept {
     if (this != &other) {
         destroy();
@@ -54,14 +44,6 @@ bool Shader::load(const char* vertexSrc, const char* fragmentSrc) {
     return true;
 }
 
-void Shader::use() const {
-    glUseProgram(m_programId);
-}
-
-GLuint Shader::id() const {
-    return m_programId;
-}
-
 bool Shader::compileShader(GLuint shaderId, const char* source) const {
     glShaderSource(shaderId, 1, &source, nullptr);
     glCompileShader(shaderId);
@@ -76,13 +58,6 @@ bool Shader::compileShader(GLuint shaderId, const char* source) const {
     }
 
     return true;
-}
-
-void Shader::destroy() {
-    if (m_programId != 0) {
-        glDeleteProgram(m_programId);
-        m_programId = 0;
-    }
 }
 
 const char GridVertex[] = R"(

@@ -1,15 +1,14 @@
 #pragma once
 
-#include "ids/CanvasIds.h"
-#include "ids/TypeIds.h"
-
+#include <ScopeCanvas/core/ids/CanvasIds.h>
+#include <ScopeCanvas/core/ids/TypeIds.h>
 #include <vector>
 
 namespace ScopeCanvas::Core {
 struct Connector {
-    CanvasConnectorId id{};
-    CanvasNodeId nodeId{};
-    ConnectorTypeId typeId{};
-    std::vector<CanvasEdgeId> edges{};
+    Ids::ConnectorId id{};
+    Ids::NodeId nodeId{};
+    Ids::ConnectorTypeId typeId{};
+    std::vector<Ids::EdgeId> edges{};
 };
 } // namespace ScopeCanvas::Core

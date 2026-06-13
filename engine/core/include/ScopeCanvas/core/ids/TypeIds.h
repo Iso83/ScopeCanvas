@@ -2,12 +2,12 @@
 
 #include <ScopeCanvas/core/ids/StrongId.h>
 
-namespace ScopeCanvas::Core {
+namespace ScopeCanvas::Core::Ids {
 struct NodeTypeIdTag;
 struct ConnectorTypeIdTag;
-struct LayoutGroupIdTag;
+struct EdgeTypeIdTag;
 
 using NodeTypeId = StrongId<NodeTypeIdTag>;
 using ConnectorTypeId = StrongId<ConnectorTypeIdTag>;
-using LayoutGroupId = StrongId<LayoutGroupIdTag>;
-} // namespace ScopeCanvas::Core
+using EdgeTypeId = StrongId<EdgeTypeIdTag>;
+} // namespace ScopeCanvas::Core::Ids

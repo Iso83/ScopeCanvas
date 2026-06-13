@@ -1,7 +1,6 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/render/renderers/GridRenderer.h>
 #include <algorithm>
-#include <cmath>
 #include <glm/gtc/type_ptr.hpp>
 
 namespace ScopeCanvas::Render::Renderers {
@@ -88,9 +87,8 @@ void main() {
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     m_shader = GL::Shader{};
-    if (program == 0) {
+    if (program == 0)
         return false;
-    }
 
     // Borrow the lightweight wrapper for use()/id().
     // Re-load with equivalent sources through the wrapper so ownership stays consistent.
@@ -146,8 +144,6 @@ void GridRenderer::render(const Camera::Camera2D& camera, float cellSize) const 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 }
-
-void GridRenderer::uploadAndDrawLines(const std::vector<glm::vec2>&, const glm::mat4&, const glm::vec3&) const {}
 
 void GridRenderer::destroy() {
     if (m_vbo != 0) {

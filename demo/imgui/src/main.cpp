@@ -1,14 +1,13 @@
-#include "diagram/DiagramBasics.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "windows/NodeDiagramWindow.h"
 
+#include <ScopeCanvas/demo/window/DiagramWindow.h>
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-using namespace ScopeCanvas::Studio;
+using namespace ScopeCanvas::Demo;
 
 namespace {
 int RunStudioApp() {
@@ -32,7 +31,7 @@ int RunStudioApp() {
         return -1;
     }
 
-    glfwSwapInterval(1);
+    // glfwSwapInterval(1);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -44,11 +43,9 @@ int RunStudioApp() {
     ImGui_ImplOpenGL3_Init("#version 130");
 
     DiagramBasics basics;
-    ViewState viewA{0.0F, 0.0F, 1.0F};
-    ViewState viewB{180.0F, -80.0F, 0.9F};
 
-    NodeDiagramWindow canvasA(window, &basics, &viewA, "Primary Canvas");
-    NodeDiagramWindow canvasB(window, &basics, &viewB, "Secondary Canvas");
+    DiagramWindow canvasA("Primary Canvas", &basics);
+    DiagramWindow canvasB("Secondary Canvas", &basics);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -61,30 +58,19 @@ int RunStudioApp() {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("Create")) {
                 if (ImGui::MenuItem("Number"))
-                    basics.createNode(ScopeCanvas::Core::NodeTypeId{1}, {-120.0F, 0.0F});
+                    basics.createNode(ScopeCanvas::Core::Ids::NodeTypeId{1}, {-120.0F, 0.0F});
                 if (ImGui::MenuItem("Add"))
-                    basics.createNode(ScopeCanvas::Core::NodeTypeId{2}, {80.0F, 0.0F});
+                    basics.createNode(ScopeCanvas::Core::Ids::NodeTypeId{2}, {80.0F, 0.0F});
                 if (ImGui::MenuItem("Multiply"))
-                    basics.createNode(ScopeCanvas::Core::NodeTypeId{3}, {280.0F, 0.0F});
+                    basics.createNode(ScopeCanvas::Core::Ids::NodeTypeId{3}, {280.0F, 0.0F});
                 if (ImGui::MenuItem("Output"))
-                    basics.createNode(ScopeCanvas::Core::NodeTypeId{4}, {480.0F, 0.0F});
+                    basics.createNode(ScopeCanvas::Core::Ids::NodeTypeId{4}, {480.0F, 0.0F});
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("Edit")) {
                 if (ImGui::MenuItem("Delete Selection")) {
-                    if (canvasA.selectedEdge().isValid()) {
-                        basics.deleteEdge(canvasA.selectedEdge());
-                    }
-                    if (canvasB.selectedEdge().isValid() && canvasB.selectedEdge() != canvasA.selectedEdge()) {
-                        basics.deleteEdge(canvasB.selectedEdge());
-                    }
-                    canvasA.clearSelectedEdge();
-                    canvasB.clearSelectedEdge();
-                    const std::vector<ScopeCanvas::Core::CanvasNodeId> selection = basics.selectedNodeIds();
-                    for (const ScopeCanvas::Core::CanvasNodeId nodeId : selection) {
-                        basics.deleteNode(nodeId);
-                    }
-                    basics.clearSelection();
+                    canvasA.deleteSelection();
+                    canvasB.deleteSelection();
                 }
                 ImGui::EndMenu();
             }
@@ -98,8 +84,37 @@ int RunStudioApp() {
             ImGui::EndMainMenuBar();
         }
 
-        canvasA.draw();
-        canvasB.draw();
+        auto drawCanvasPanel = [](DiagramWindow& canvas, const char* title) {
+            ImGui::Begin(title);
+            ImGui::Checkbox("Grid", &canvas.showGrid());
+            ImGui::SameLine();
+            ImGui::Checkbox("Debug", &canvas.showDebug());
+
+            const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+            const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+            const ImVec2 mouse = ImGui::GetIO().MousePos;
+            const bool hovered = ImGui::IsWindowHovered() || ImGui::IsItemHovered();
+
+            DiagramInput input{};
+            input.mouseX = mouse.x - canvasPos.x;
+            input.mouseY = mouse.y - canvasPos.y;
+            input.hovered = hovered;
+            input.leftDown = hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+            input.leftPressed = hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+            input.leftReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+            input.middleDown = hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle);
+            input.mouseDelta = {ImGui::GetIO().MouseDelta.x, ImGui::GetIO().MouseDelta.y};
+            input.scrollDelta = hovered ? ImGui::GetIO().MouseWheel : 0.0F;
+            input.deletePressed = hovered && ImGui::IsKeyPressed(ImGuiKey_Delete);
+
+            const unsigned int texture =
+                canvas.drawToTexture(static_cast<int>(canvasSize.x), static_cast<int>(canvasSize.y), input);
+            ImGui::Image((ImTextureID)(intptr_t)texture, canvasSize, ImVec2(0, 1), ImVec2(1, 0));
+            ImGui::End();
+        };
+
+        drawCanvasPanel(canvasA, "Primary Canvas");
+        drawCanvasPanel(canvasB, "Secondary Canvas");
 
         ImGui::Render();
         int w = 0;

@@ -1,10 +1,17 @@
+#include <ScopeCanvas/core/Connector.h>
+#include <ScopeCanvas/core/Edge.h>
+#include <ScopeCanvas/core/Node.h>
+#include <ScopeCanvas/render/camera/Camera2D.h>
+#include <ScopeCanvas/render/scene/RenderScene.h>
 #include <ScopeCanvas/render/scene/SceneBuilder.h>
+#include <ScopeCanvas/routing/IGraphView.h>
 #include <algorithm>
 #include <glm/vec4.hpp>
 #include <limits>
 #include <unordered_set>
 
 namespace ScopeCanvas::Render::Scene {
+using namespace ScopeCanvas::Core::Ids;
 namespace {
 constexpr std::uint32_t kMaxConsecutiveMissingNodeIds = 128;
 constexpr float kCullPadding = 64.0F;
@@ -47,8 +54,8 @@ bool intersectsBounds(const glm::vec2& position, const glm::vec2& size, const Wo
              position.y > bounds.max.y);
 }
 
-std::vector<Core::CanvasNodeId> collectNodeIds(const Core::GraphDocument& model,
-                                               const std::vector<Routing::EdgeRoute>& edgeRoutes) {
+std::vector<Core::Ids::NodeId> collectNodeIds(const Routing::IGraphView& model,
+                                              const std::vector<Routing::EdgeRoute>& edgeRoutes) {
     std::unordered_set<std::uint32_t> uniqueIds;
 
     for (const Routing::EdgeRoute& route : edgeRoutes) {
@@ -58,31 +65,29 @@ std::vector<Core::CanvasNodeId> collectNodeIds(const Core::GraphDocument& model,
         }
 
         if (const Core::Connector* from = model.getConnector(edge->fromConnector);
-            from != nullptr && from->nodeId.isValid()) {
+            from != nullptr && from->nodeId.isValid())
             uniqueIds.insert(from->nodeId.value());
-        }
-        if (const Core::Connector* to = model.getConnector(edge->toConnector); to != nullptr && to->nodeId.isValid()) {
+
+        if (const Core::Connector* to = model.getConnector(edge->toConnector); to != nullptr && to->nodeId.isValid())
             uniqueIds.insert(to->nodeId.value());
-        }
     }
 
     std::uint32_t missStreak = 0;
     for (std::uint32_t probe = 1; missStreak < kMaxConsecutiveMissingNodeIds; ++probe) {
-        if (model.getNode(Core::CanvasNodeId{probe}) != nullptr) {
+        if (model.getNode(Core::Ids::NodeId{probe}) != nullptr) {
             uniqueIds.insert(probe);
             missStreak = 0;
-        } else {
+        } else
             ++missStreak;
-        }
     }
 
-    std::vector<Core::CanvasNodeId> result;
+    std::vector<Core::Ids::NodeId> result;
     result.reserve(uniqueIds.size());
-    for (const std::uint32_t id : uniqueIds) {
+    for (const std::uint32_t id : uniqueIds)
         result.emplace_back(id);
-    }
+
     std::sort(result.begin(), result.end(),
-              [](Core::CanvasNodeId a, Core::CanvasNodeId b) { return a.value() < b.value(); });
+              [](Core::Ids::NodeId a, Core::Ids::NodeId b) { return a.value() < b.value(); });
     return result;
 }
 
@@ -101,28 +106,27 @@ glm::vec2 computeConnectorAnchor(const Core::Node& node, std::size_t connectorIn
 }
 } // namespace
 
-RenderScene SceneBuilder::build(const Core::GraphDocument& model, const std::vector<Routing::EdgeRoute>& edgeRoutes,
+RenderScene SceneBuilder::build(const Routing::IGraphView& model, const std::vector<Routing::EdgeRoute>& edgeRoutes,
                                 const Camera::Camera2D& camera) const {
     RenderScene scene{};
     const WorldBounds bounds = computeWorldBounds(camera);
 
-    const std::vector<Core::CanvasNodeId> nodeIds = collectNodeIds(model, edgeRoutes);
+    const std::vector<NodeId> nodeIds = collectNodeIds(model, edgeRoutes);
     scene.nodes.reserve(nodeIds.size());
 
     std::unordered_set<std::uint32_t> visibleNodeValues;
 
-    for (Core::CanvasNodeId nodeId : nodeIds) {
+    for (NodeId nodeId : nodeIds) {
         const Core::Node* node = model.getNode(nodeId);
-        if (node == nullptr || !intersectsBounds(node->position, node->size, bounds)) {
+        if (node == nullptr || !intersectsBounds(node->position, node->size, bounds))
             continue;
-        }
 
         visibleNodeValues.insert(node->id.value());
         scene.nodes.push_back(
             {node->id, node->typeId, node->position, node->size, static_cast<std::uint32_t>(node->connectors.size())});
 
         for (std::size_t i = 0; i < node->connectors.size(); ++i) {
-            const Core::CanvasConnectorId connectorId = node->connectors[i];
+            const ConnectorId connectorId = node->connectors[i];
             scene.connectorAnchors.push_back({connectorId, node->id, computeConnectorAnchor(*node, i), (i % 2U) == 1U});
         }
     }
@@ -130,9 +134,8 @@ RenderScene SceneBuilder::build(const Core::GraphDocument& model, const std::vec
     scene.edges.reserve(edgeRoutes.size());
     for (const Routing::EdgeRoute& route : edgeRoutes) {
         const Core::Edge* edge = model.getEdge(route.edgeId);
-        if (edge == nullptr) {
+        if (edge == nullptr)
             continue;
-        }
 
         bool endpointVisible = false;
         if (const Core::Connector* from = model.getConnector(edge->fromConnector);
@@ -141,14 +144,12 @@ RenderScene SceneBuilder::build(const Core::GraphDocument& model, const std::vec
         }
         if (!endpointVisible) {
             if (const Core::Connector* to = model.getConnector(edge->toConnector);
-                to != nullptr && to->nodeId.isValid()) {
+                to != nullptr && to->nodeId.isValid())
                 endpointVisible = visibleNodeValues.contains(to->nodeId.value());
-            }
         }
 
-        if (!endpointVisible) {
+        if (!endpointVisible)
             continue;
-        }
         scene.edges.push_back({route.edgeId, route.points});
     }
 

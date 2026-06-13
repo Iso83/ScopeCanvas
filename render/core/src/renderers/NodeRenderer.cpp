@@ -1,7 +1,5 @@
-#include "ScopeCanvas/render/renderers/NodeRenderer.h"
-
-#include "ScopeCanvas/render/camera/Camera2D.h"
-
+#include <ScopeCanvas/render/camera/Camera2D.h>
+#include <ScopeCanvas/render/renderers/NodeRenderer.h>
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -22,7 +20,9 @@ unsigned int compile(unsigned int type, const char* src) {
     return shader;
 }
 
-bool isSelected(Core::CanvasNodeId nodeId, const std::vector<Core::CanvasNodeId>& selectedNodeIds) {
+using namespace ScopeCanvas::Core::Ids;
+
+bool isSelected(NodeId nodeId, const std::vector<NodeId>& selectedNodeIds) {
     return std::find(selectedNodeIds.begin(), selectedNodeIds.end(), nodeId) != selectedNodeIds.end();
 }
 
@@ -207,9 +207,9 @@ std::vector<glm::vec2> roundedRectPoints(const glm::vec2& pos, const glm::vec2& 
     points.reserve(static_cast<std::size_t>(segments) * 4U + 4U);
     for (std::size_t corner = 0; corner < 4U; ++corner) {
         for (int i = 0; i <= segments; ++i) {
-            if (corner > 0U && i == 0) {
+            if (corner > 0U && i == 0)
                 continue;
-            }
+
             const float t = static_cast<float>(i) / static_cast<float>(segments);
             const float angle = angleStarts[corner] + (angleEnds[corner] - angleStarts[corner]) * t;
             points.push_back(centers[corner] + glm::vec2(std::cos(angle), std::sin(angle)) * clampedRadius);
@@ -256,13 +256,13 @@ std::vector<glm::vec2> topRoundedRectPoints(const glm::vec2& pos, const glm::vec
 
 void appendConvexPolygon(std::vector<ColorVertex>& vertices, const std::vector<glm::vec2>& points,
                          const std::array<glm::vec4, 4>& colors, const glm::vec2& minPoint, const glm::vec2& maxPoint) {
-    if (points.size() < 3U) {
+    if (points.size() < 3U)
         return;
-    }
+
     glm::vec2 center(0.0F);
-    for (const glm::vec2& point : points) {
+    for (const glm::vec2& point : points)
         center += point;
-    }
+
     center /= static_cast<float>(points.size());
     const glm::vec4 centerColor = bilerpColor(colors, center, minPoint, maxPoint);
     for (std::size_t i = 0; i < points.size(); ++i) {
@@ -300,7 +300,7 @@ void appendTextGeometry(std::vector<ColorVertex>& vertices, const std::string& t
     }
 }
 
-std::string defaultTitle(Core::NodeTypeId typeId) {
+std::string defaultTitle(NodeTypeId typeId) {
     switch (typeId.value()) {
     case 1:
         return "NUMBER";
@@ -327,7 +327,7 @@ std::string defaultTitle(Core::NodeTypeId typeId) {
     }
 }
 
-std::string defaultIcon(Core::NodeTypeId typeId) {
+std::string defaultIcon(NodeTypeId typeId) {
     switch (typeId.value()) {
     case 1:
         return "1";
@@ -355,7 +355,7 @@ std::string defaultIcon(Core::NodeTypeId typeId) {
 }
 } // namespace
 
-NodeRenderStyle NodeRenderer::defaultStyle(Core::NodeTypeId typeId) {
+NodeRenderStyle NodeRenderer::defaultStyle(NodeTypeId typeId) {
     switch (typeId.value()) {
     case 10:
         return {{0.12F, 0.14F, 0.18F, 0.96F},
@@ -525,7 +525,7 @@ void NodeRenderer::shutdown() {
 }
 
 void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const Camera::Camera2D& camera,
-                          const std::vector<Core::CanvasNodeId>& selectedNodeIds, const StyleResolver& styleResolver,
+                          const std::vector<NodeId>& selectedNodeIds, const StyleResolver& styleResolver,
                           const TitleResolver& titleResolver, const IconResolver& iconResolver) const {
     if (nodes.empty()) {
         return;
@@ -645,9 +645,8 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
         appendTextGeometry(textVertices, title, titleOrigin + glm::vec2(0.32F, 0.0F), pixelSize, glyphAdvance,
                            withAlpha(brighten(style.textColor, 0.10F), 0.18F));
 
-        if (textVertices.empty()) {
+        if (textVertices.empty())
             continue;
-        }
 
         glBindBuffer(GL_ARRAY_BUFFER, m_textVbo);
         glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(textVertices.size() * sizeof(ColorVertex)),
@@ -664,9 +663,9 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
         const std::vector<glm::vec2> outline = roundedRectPoints(node.position, node.size, cornerRadius, 8);
         std::vector<ColorVertex> outlineVertices;
         outlineVertices.reserve(outline.size());
-        for (const glm::vec2& point : outline) {
+        for (const glm::vec2& point : outline)
             outlineVertices.push_back({point.x, point.y, border.r, border.g, border.b, border.a});
-        }
+
         glBindBuffer(GL_ARRAY_BUFFER, m_lineVbo);
         glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(outlineVertices.size() * sizeof(ColorVertex)),
                      outlineVertices.data(), GL_DYNAMIC_DRAW);

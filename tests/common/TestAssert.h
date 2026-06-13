@@ -9,3 +9,9 @@
             return -1;                                                                                                 \
         }                                                                                                              \
     } while (0)
+
+#define SC_RUN_TEST(func, ...)                                                                                         \
+    do {                                                                                                               \
+        if (func(__VA_ARGS__) != 0)                                                                                    \
+            return -1;                                                                                                 \
+    } while (0)

@@ -1,11 +1,13 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/render/renderers/EdgeRenderer.h>
+#include <ScopeCanvas/routing/EdgeRoute.h>
 #include <algorithm>
 #include <cmath>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 namespace ScopeCanvas::Render::Renderers {
+using namespace ScopeCanvas::Core::Ids;
 EdgeRenderer::EdgeRenderer() = default;
 
 EdgeRenderer::~EdgeRenderer() {
@@ -13,9 +15,8 @@ EdgeRenderer::~EdgeRenderer() {
 }
 
 bool EdgeRenderer::init() {
-    if (!m_shader.load(GL::EdgeVertex, GL::EdgeFragment)) {
+    if (!m_shader.load(GL::EdgeVertex, GL::EdgeFragment))
         return false;
-    }
 
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
@@ -34,11 +35,11 @@ void EdgeRenderer::shutdown() {
 }
 
 void EdgeRenderer::render(const std::vector<Scene::EdgeRenderData>& edges, const Camera::Camera2D& camera,
-                          Core::CanvasEdgeId hoveredEdgeId, Core::CanvasEdgeId selectedEdgeId) const {
+                          EdgeId hoveredEdgeId, Core::Ids::EdgeId selectedEdgeId) const {
     for (const Scene::EdgeRenderData& edge : edges) {
-        if (edge.points.size() < 2U) {
+        if (edge.points.size() < 2U)
             continue;
-        }
+
         Routing::EdgeRoute route{};
         route.edgeId = edge.edgeId;
         route.points = edge.points;
@@ -59,11 +60,10 @@ void EdgeRenderer::render(const std::vector<Scene::EdgeRenderData>& edges, const
 }
 
 void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRenderData>& connectors,
-                                    const Camera::Camera2D& camera, Core::CanvasConnectorId hoveredConnectorId,
-                                    Core::CanvasConnectorId activeConnectorId) const {
-    if (connectors.empty()) {
+                                    const Camera::Camera2D& camera, ConnectorId hoveredConnectorId,
+                                    ConnectorId activeConnectorId) const {
+    if (connectors.empty())
         return;
-    }
 
     m_shader.use();
     const GLuint programId = m_shader.id();
@@ -98,11 +98,10 @@ void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& en
     route.points.push_back(start);
 
     glm::vec2 normal = startNormal;
-    if (glm::dot(normal, normal) <= 0.0001F) {
+    if (glm::dot(normal, normal) <= 0.0001F)
         normal = {1.0F, 0.0F};
-    } else {
+    else
         normal = glm::normalize(normal);
-    }
 
     const glm::vec2 delta = end - start;
     const float forwardDistance = glm::dot(delta, normal);
@@ -110,9 +109,8 @@ void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& en
         const float escapeDistance = std::clamp(std::abs(delta.x) * 0.35F + 28.0F, 48.0F, 96.0F);
         const glm::vec2 breakout = start + normal * escapeDistance;
         route.points.push_back(breakout);
-        if (std::abs(end.y - breakout.y) > 6.0F) {
+        if (std::abs(end.y - breakout.y) > 6.0F)
             route.points.push_back({breakout.x, end.y});
-        }
     }
 
     route.points.push_back(end);
@@ -120,12 +118,8 @@ void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& en
 }
 
 std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute& route, int segmentsPerCurve) const {
-    if (route.points.size() < 2) {
+    if (route.points.size() < 2)
         return route.points;
-    }
-    if (route.preferStraightSegments) {
-        return route.points;
-    }
 
     const int segments = std::max(segmentsPerCurve, 1);
     if (route.points.size() == 2U) {
@@ -160,9 +154,9 @@ std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute&
         const float incomingLength = glm::length(incoming);
         const float outgoingLength = glm::length(outgoing);
         if (incomingLength <= 0.001F || outgoingLength <= 0.001F) {
-            if (glm::distance(geometry.back(), current) > 0.001F) {
+            if (glm::distance(geometry.back(), current) > 0.001F)
                 geometry.push_back(current);
-            }
+
             continue;
         }
 
@@ -170,24 +164,24 @@ std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute&
         const glm::vec2 outgoingDir = outgoing / outgoingLength;
         const float alignment = glm::dot(incomingDir, outgoingDir);
         if (std::abs(alignment) > 0.999F) {
-            if (glm::distance(geometry.back(), current) > 0.001F) {
+            if (glm::distance(geometry.back(), current) > 0.001F)
                 geometry.push_back(current);
-            }
+
             continue;
         }
 
         const float cornerRadius = std::min({24.0F, incomingLength * 0.35F, outgoingLength * 0.35F});
         const glm::vec2 cornerStart = current - incomingDir * cornerRadius;
         const glm::vec2 cornerEnd = current + outgoingDir * cornerRadius;
-        if (glm::distance(geometry.back(), cornerStart) > 0.001F) {
+        if (glm::distance(geometry.back(), cornerStart) > 0.001F)
             geometry.push_back(cornerStart);
-        }
+
         appendQuadraticSamples(geometry, cornerStart, current, cornerEnd, std::max(segments / 2, 6));
     }
 
-    if (glm::distance(geometry.back(), route.points.back()) > 0.001F) {
+    if (glm::distance(geometry.back(), route.points.back()) > 0.001F)
         geometry.push_back(route.points.back());
-    }
+
     return geometry;
 }
 
@@ -200,9 +194,8 @@ void EdgeRenderer::computeBezierControls(const glm::vec2& p0, const glm::vec2& p
 
 void EdgeRenderer::appendBezierSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
                                        const glm::vec2& p2, const glm::vec2& p3, int segments) {
-    if (!points.empty()) {
+    if (!points.empty())
         points.pop_back();
-    }
 
     for (int i = 0; i <= segments; ++i) {
         const float t = static_cast<float>(i) / static_cast<float>(segments);
@@ -219,9 +212,8 @@ void EdgeRenderer::appendBezierSamples(std::vector<glm::vec2>& points, const glm
 
 void EdgeRenderer::appendQuadraticSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
                                           const glm::vec2& p2, int segments) {
-    if (!points.empty()) {
+    if (!points.empty())
         points.pop_back();
-    }
 
     for (int i = 0; i <= segments; ++i) {
         const float t = static_cast<float>(i) / static_cast<float>(segments);
@@ -233,9 +225,8 @@ void EdgeRenderer::appendQuadraticSamples(std::vector<glm::vec2>& points, const 
 
 void EdgeRenderer::renderPolyline(const std::vector<glm::vec2>& points, const Camera::Camera2D& camera,
                                   const glm::vec3& color, float thickness, GLenum primitive) const {
-    if (points.size() < 2U && primitive != GL_POINTS) {
+    if (points.size() < 2U && primitive != GL_POINTS)
         return;
-    }
 
     m_shader.use();
 

@@ -14,8 +14,8 @@ add_executable(ScopeCanvasDemoGL
 #set_target_properties(ScopeCanvasDemoGL PROPERTIES WIN32_EXECUTABLE TRUE)
 
 target_link_libraries(ScopeCanvasDemoGL
-    ScopeCanvasRender
-    ScopeCanvasWidget
+    ScopeCanvasDemoCommon
+    glfw
 )
 
 target_include_directories(ScopeCanvasDemoGL PRIVATE

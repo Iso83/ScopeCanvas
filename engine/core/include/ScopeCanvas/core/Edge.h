@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ids/CanvasIds.h"
+#include <ScopeCanvas/core/ids/CanvasIds.h>
 
 namespace ScopeCanvas::Core {
 struct Edge {
-    CanvasEdgeId id{};
-    CanvasConnectorId fromConnector{};
-    CanvasConnectorId toConnector{};
+    Ids::EdgeId id{};
+    Ids::ConnectorId fromConnector{};
+    Ids::ConnectorId toConnector{};
 };
 } // namespace ScopeCanvas::Core

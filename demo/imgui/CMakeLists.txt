@@ -14,8 +14,7 @@ add_executable(ScopeCanvasDemoImGui
 set_target_properties(ScopeCanvasDemoImGui PROPERTIES WIN32_EXECUTABLE TRUE)
 
 target_link_libraries(ScopeCanvasDemoImGui
-    ScopeCanvasRender
-    ScopeCanvasWidget
+    ScopeCanvasDemoCommon
     SC_ImGui
 )
 

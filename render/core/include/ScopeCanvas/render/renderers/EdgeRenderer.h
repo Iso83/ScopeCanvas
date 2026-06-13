@@ -3,10 +3,13 @@
 #include <ScopeCanvas/core/ids/CanvasIds.h>
 #include <ScopeCanvas/render/gl/Shader.h>
 #include <ScopeCanvas/render/scene/RenderScene.h>
-#include <ScopeCanvas/routing/EdgeRoute.h>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
+
+namespace ScopeCanvas::Routing {
+struct EdgeRoute;
+}
 
 namespace ScopeCanvas::Render::Camera {
 class Camera2D;
@@ -14,6 +17,11 @@ class Camera2D;
 
 namespace ScopeCanvas::Render::Renderers {
 class EdgeRenderer {
+  private:
+    GL::Shader m_shader{};
+    GLuint m_vao{0};
+    GLuint m_vbo{0};
+
   public:
     EdgeRenderer();
     ~EdgeRenderer();
@@ -25,10 +33,10 @@ class EdgeRenderer {
     void shutdown();
 
     void render(const std::vector<Scene::EdgeRenderData>& edges, const Camera::Camera2D& camera,
-                Core::CanvasEdgeId hoveredEdgeId = {}, Core::CanvasEdgeId selectedEdgeId = {}) const;
+                Core::Ids::EdgeId hoveredEdgeId = {}, Core::Ids::EdgeId selectedEdgeId = {}) const;
     void renderConnectors(const std::vector<Scene::ConnectorAnchorRenderData>& connectors,
-                          const Camera::Camera2D& camera, Core::CanvasConnectorId hoveredConnectorId = {},
-                          Core::CanvasConnectorId activeConnectorId = {}) const;
+                          const Camera::Camera2D& camera, Core::Ids::ConnectorId hoveredConnectorId = {},
+                          Core::Ids::ConnectorId activeConnectorId = {}) const;
     void renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const glm::vec2& startNormal,
                            const Camera::Camera2D& camera) const;
 
@@ -36,10 +44,6 @@ class EdgeRenderer {
                                                            int segmentsPerCurve = 20) const;
 
   private:
-    GL::Shader m_shader{};
-    GLuint m_vao{0};
-    GLuint m_vbo{0};
-
     static void computeBezierControls(const glm::vec2& p0, const glm::vec2& p3, glm::vec2& p1, glm::vec2& p2);
     static void appendBezierSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
                                     const glm::vec2& p2, const glm::vec2& p3, int segments);
