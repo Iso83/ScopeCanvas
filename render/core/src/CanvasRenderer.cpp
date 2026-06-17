@@ -36,12 +36,22 @@ void CanvasRenderer::render(const Routing::IGraphView& document, const std::vect
                                       camera);
     }
     if (options.showNodes)
-        m_nodes.render(scene.nodes, camera, options.selectedNodeIds, options.nodeStyleResolver,
-                       options.nodeTitleResolver, options.nodeIconResolver);
+        m_nodes.render(scene.nodes, camera, options.selectedNodeIds, options.nodeStyleResolver);
     if (options.showConnectors)
         m_edges.renderConnectors(scene.connectorAnchors, camera, options.hoveredConnectorId, options.activeConnectorId);
     if (options.selectionRectActive)
         renderSelectionRect(camera, options.selectionRectStart, options.selectionRectEnd);
+}
+
+void CanvasRenderer::renderNodeSelectionBorders(const Routing::IGraphView& document,
+                                                const std::vector<Routing::EdgeRoute>& routes,
+                                                const Camera::Camera2D& camera,
+                                                const CanvasRenderOptions& options) const {
+    if (!options.showNodes || options.selectedNodeIds.empty())
+        return;
+
+    const Scene::RenderScene scene = m_sceneBuilder.build(document, routes, camera);
+    m_nodes.renderSelectionBorders(scene.nodes, camera, options.selectedNodeIds, options.nodeStyleResolver);
 }
 
 void CanvasRenderer::renderSelectionRect(const Camera::Camera2D& camera, const glm::vec2& start,

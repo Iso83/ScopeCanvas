@@ -43,8 +43,6 @@ struct CanvasRenderOptions {
     glm::vec2 selectionRectEnd{};
 
     Renderers::NodeRenderer::StyleResolver nodeStyleResolver{};
-    Renderers::NodeRenderer::TitleResolver nodeTitleResolver{};
-    Renderers::NodeRenderer::IconResolver nodeIconResolver{};
 };
 
 class CanvasRenderer {
@@ -61,6 +59,8 @@ class CanvasRenderer {
 
     void render(const Routing::IGraphView& document, const std::vector<Routing::EdgeRoute>& routes,
                 const Camera::Camera2D& camera, const CanvasRenderOptions& options) const;
+    void renderNodeSelectionBorders(const Routing::IGraphView& document, const std::vector<Routing::EdgeRoute>& routes,
+                                    const Camera::Camera2D& camera, const CanvasRenderOptions& options) const;
     void renderSelectionRect(const Camera::Camera2D& camera, const glm::vec2& start, const glm::vec2& end) const;
 };
 

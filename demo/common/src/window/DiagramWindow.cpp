@@ -1,5 +1,6 @@
 #include <ScopeCanvas/demo/window/DiagramWindow.h>
 #include <ScopeCanvas/routing/Geometry.h>
+#include <ScopeCanvas/render/scene/SceneBuilder.h>
 #include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
 #include <algorithm>
 #include <cmath>
@@ -17,6 +18,8 @@ DiagramWindow::DiagramWindow(std::string title, DiagramBasics* basics) : m_title
 DiagramWindow::~DiagramWindow() {
     releaseRenderTarget();
 
+    if (m_nodeInfoRendererInitialized)
+        m_nodeInfoRenderer.shutdown();
     if (m_rendererInitialized)
         m_renderer.shutdown();
 }
@@ -52,6 +55,8 @@ void DiagramWindow::renderContent(int width, int height, const DiagramInput& inp
 
     if (!m_rendererInitialized)
         m_rendererInitialized = m_renderer.init();
+    if (!m_nodeInfoRendererInitialized)
+        m_nodeInfoRendererInitialized = m_nodeInfoRenderer.init();
 
     width = std::max(width, 1);
     height = std::max(height, 1);
@@ -96,15 +101,7 @@ void DiagramWindow::renderContent(int width, int height, const DiagramInput& inp
     }
     options.nodeStyleResolver = [](NodeTypeId typeId) {
         static const Render::Theme::NodeVisualRegistry registry{};
-        return registry.getVisual(typeId).toRenderStyle();
-    };
-    options.nodeTitleResolver = [](NodeTypeId typeId) {
-        static const Render::Theme::NodeVisualRegistry registry{};
-        return registry.getVisual(typeId).title;
-    };
-    options.nodeIconResolver = [](NodeTypeId typeId) {
-        static const Render::Theme::NodeVisualRegistry registry{};
-        return registry.getVisual(typeId).icon;
+        return registry.getVisual(typeId).style;
     };
     const float edgePickThresholdSquared = 100.0F / (m_camera.zoom() * m_camera.zoom());
     for (const auto& route : routes) {
@@ -120,6 +117,13 @@ void DiagramWindow::renderContent(int width, int height, const DiagramInput& inp
     }
 
     m_renderer.render(m_basics->model(), routes, m_camera, options);
+    if (m_nodeInfoRendererInitialized) {
+        static const Render::Theme::NodeVisualRegistry registry{};
+        const Render::Scene::SceneBuilder sceneBuilder{};
+        const Render::Scene::RenderScene scene = sceneBuilder.build(m_basics->model(), routes, m_camera);
+        m_nodeInfoRenderer.render(scene.nodes, m_camera, registry);
+    }
+    m_renderer.renderNodeSelectionBorders(m_basics->model(), routes, m_camera, options);
 
     if (input.hovered && input.scrollDelta != 0.0F)
         m_camera.setZoom(std::max(0.05F, m_camera.zoom() + input.scrollDelta * 0.1F));

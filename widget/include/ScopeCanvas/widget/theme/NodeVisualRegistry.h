@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ScopeCanvas/core/helper/Attributes.h>
 #include <ScopeCanvas/core/ids/TypeIds.h>
 #include <ScopeCanvas/render/renderers/NodeRenderer.h>
 #include <cstdint>
@@ -8,34 +7,27 @@
 #include <unordered_map>
 
 namespace ScopeCanvas::Render::Theme {
-struct ColorRgba8 {
-    std::uint8_t r{0};
-    std::uint8_t g{0};
-    std::uint8_t b{0};
-    std::uint8_t a{255};
+enum class NodeIconShape {
+    Circle,
+    Square,
+    Triangle,
+    Diamond,
+    Chevrons,
 };
 
-SC_DEPRECATED("Render::Renderers::NodeRenderStyle")
 struct NodeVisual {
     std::string title{};
+    std::string subtitle{};
     std::string icon{};
-
-    ColorRgba8 headerColor{30, 34, 44, 185};
-    ColorRgba8 headerAccentColor{58, 78, 110, 215};
-    ColorRgba8 bodyColor{130, 130, 130, 95};
-    ColorRgba8 borderColor{235, 235, 240, 180};
-    ColorRgba8 textColor{245, 245, 245, 255};
-    ColorRgba8 iconColor{245, 245, 245, 255};
-    ColorRgba8 connectorInputColor{215, 215, 230, 255};
-    ColorRgba8 connectorOutputColor{225, 225, 240, 255};
-    ColorRgba8 selectionColor{255, 210, 120, 220};
-
-    float cornerRadius{4.0F};
-    float borderThickness{1.0F};
-    float headerHeight{22.0F};
-
-  public:
-    Render::Renderers::NodeRenderStyle toRenderStyle() const;
+    NodeIconShape iconShape{NodeIconShape::Circle};
+    Render::Renderers::NodeRenderStyle style{};
+    glm::vec4 headerColor{0.12F, 0.14F, 0.18F, 0.95F};
+    glm::vec4 headerAccentColor{0.28F, 0.38F, 0.52F, 0.95F};
+    glm::vec4 textColor{0.95F, 0.96F, 0.98F, 1.0F};
+    glm::vec4 iconColor{0.95F, 0.96F, 0.98F, 1.0F};
+    glm::vec4 connectorInputColor{0.84F, 0.86F, 0.92F, 1.0F};
+    glm::vec4 connectorOutputColor{0.88F, 0.88F, 0.94F, 1.0F};
+    float headerHeight{28.0F};
 };
 
 class NodeVisualRegistry {

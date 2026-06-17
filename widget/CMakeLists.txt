@@ -18,6 +18,7 @@ add_library(ScopeCanvasWidget
 
 target_link_libraries(ScopeCanvasWidget PUBLIC
     ScopeCanvasRender
+    ${SC_FREETYPE_TARGET}
 )
 
 target_include_directories(ScopeCanvasWidget PUBLIC

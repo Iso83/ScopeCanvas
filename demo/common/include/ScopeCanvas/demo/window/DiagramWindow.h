@@ -2,6 +2,7 @@
 
 #include <ScopeCanvas/demo/diagram/DiagramBasics.h>
 #include <ScopeCanvas/render/CanvasRenderer.h>
+#include <ScopeCanvas/widget/NodeInfo.h>
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <string>
 #include <vector>
@@ -27,7 +28,9 @@ class DiagramWindow {
     DiagramBasics* m_basics{};
 
     Render::CanvasRenderer m_renderer{};
+    Widget::NodeInfoRenderer m_nodeInfoRenderer{};
     bool m_rendererInitialized{false};
+    bool m_nodeInfoRendererInitialized{false};
 
     Render::Camera::Camera2D m_camera{};
 

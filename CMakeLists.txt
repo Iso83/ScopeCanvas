@@ -43,6 +43,10 @@ if(SC_BUILD_TESTS)
     include(cmake/ScopeCanvasTests.cmake)
 endif()
 
+
+include(cmake/ScopeCanvasDependencies.cmake)
+sc_setup_freetype(SC_FREETYPE_TARGET)
+
 # =========================================================
 # GLFW Configuration
 # =========================================================
