@@ -1,3 +1,6 @@
+#ifdef SC_BUILD_DEMO_BENCHMARK
+#include <ScopeCanvas/render/RenderBenchmark.h>
+#endif
 #include <ScopeCanvas/render/window/Viewport.h>
 #include <ScopeCanvas/demo/DiagramDrawContext.h>
 #include <glad/glad.h>
@@ -59,7 +62,9 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
+#ifndef SC_BUILD_DEMO_BENCHMARK
     glfwSwapInterval(1);
+#endif
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
         std::cerr << "Failed to initialize OpenGL loader\n";
@@ -78,6 +83,11 @@ int main() {
     Viewport view{};
     view.setViewPosition({120.0F, 0.0F});
 
+#ifdef SC_BUILD_DEMO_BENCHMARK
+    ScopeCanvas::Render::RenderBenchmark benchmark{};
+    benchmark.registerViewport(&view);
+#endif
+   
     float lastTime = static_cast<float>(glfwGetTime());
     while (!glfwWindowShouldClose(window)) {
         const float now = static_cast<float>(glfwGetTime());
@@ -140,7 +150,19 @@ int main() {
         input.deletePressed = inputState.deletePressed;
         drawCtx.updateInput(input);
 
+#ifdef SC_BUILD_DEMO_BENCHMARK
+        benchmark.draw(view, drawCtx);
+
+        if (benchmark.updated()) {
+            const auto& stats = benchmark.statistics();
+            std::cout << "Render benchmark: frames=" << stats.renderedFrames
+                      << " elapsed=" << stats.elapsedSeconds << "s"
+                      << " fps=" << stats.framesPerSecond
+                      << " avg=" << stats.averageFrameTimeMs << "ms\n";
+        }
+#else
         view.draw(&drawCtx);
+#endif
 
         inputState.previousMouseX = inputState.mouseX;
         inputState.previousMouseY = inputState.mouseY;

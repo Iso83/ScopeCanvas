@@ -22,6 +22,10 @@ target_link_libraries(ScopeCanvasDemoCommon PUBLIC
     glm
 )
 
+if(SC_BUILD_DEMO_BENCHMARK)
+    target_compile_definitions(ScopeCanvasDemoCommon PUBLIC SC_BUILD_DEMO_BENCHMARK=1)
+endif()
+
 target_include_directories(ScopeCanvasDemoCommon PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

@@ -1,3 +1,6 @@
+#ifdef SC_BUILD_DEMO_BENCHMARK
+#include <ScopeCanvas/render/RenderBenchmark.h>
+#endif
 #include <ScopeCanvas/render/window/Canvas.h>
 #include <ScopeCanvas/demo/DiagramDrawContext.h>
 
@@ -38,7 +41,9 @@ int main() {
         return -1;
     }
 
+#ifndef SC_BUILD_DEMO_BENCHMARK
     glfwSwapInterval(1);
+#endif
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -52,7 +57,13 @@ int main() {
     DiagramDrawCtx drawCtx{};
     Canvas canvasA;
     Canvas canvasB;
-    
+
+#ifdef SC_BUILD_DEMO_BENCHMARK
+    ScopeCanvas::Render::RenderBenchmark benchmark{};
+    benchmark.registerViewport(&canvasA);
+    benchmark.registerViewport(&canvasB);
+#endif
+
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -87,7 +98,11 @@ int main() {
             ImGui::EndMainMenuBar();
         }
 
-        auto drawCanvasPanel = [&drawCtx](Canvas& canvas, const char *title) {
+        auto drawCanvasPanel = [&drawCtx
+#ifdef SC_BUILD_DEMO_BENCHMARK
+                                , &benchmark
+#endif
+        ](Canvas& canvas, const char *title) {
             ImGui::Begin(title);
             /*ImGui::Checkbox("Grid", &canvas.showGrid());
             ImGui::SameLine();
@@ -112,7 +127,12 @@ int main() {
             drawCtx.updateInput(input);
 
             canvas.setViewportSize(canvasSize.x, canvasSize.y);
+
+#ifdef SC_BUILD_DEMO_BENCHMARK
+            benchmark.draw(canvas, drawCtx);
+#else
             canvas.draw(&drawCtx);
+#endif
 
             ImGui::Image(static_cast<ImTextureID>(canvas.colorTexture()), canvasSize, ImVec2(0, 1), ImVec2(1, 0));
             ImGui::End();
@@ -121,6 +141,16 @@ int main() {
         drawCanvasPanel(canvasA, "Primary Canvas");
         drawCanvasPanel(canvasB, "Secondary Canvas");
 
+#ifdef SC_BUILD_DEMO_BENCHMARK
+        const auto& stats = benchmark.statistics();
+        ImGui::Begin("Render Benchmark");
+        ImGui::Text("Frames: %llu", static_cast<unsigned long long>(stats.renderedFrames));
+        ImGui::Text("Elapsed: %.3f s", stats.elapsedSeconds);
+        ImGui::Text("FPS: %.2f", stats.framesPerSecond);
+        ImGui::Text("Average frame: %.3f ms", stats.averageFrameTimeMs);
+        ImGui::End();
+
+#endif
         ImGui::Render();
         glfwGetFramebufferSize(window, &width, &height);
 

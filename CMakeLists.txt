@@ -12,6 +12,9 @@ project(
 
 option(SC_BUILD_TESTS "Build tests" ON)
 option(SC_BUILD_DEMOS "Build demos" ON)
+if(SC_BUILD_DEMOS)
+    option(SC_BUILD_DEMO_BENCHMARK "Enable render benchmarking in demo applications" OFF)
+endif()
 set(
     SC_THIRDPARTY_FOLDER
     "third_party"
