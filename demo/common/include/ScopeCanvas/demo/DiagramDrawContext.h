@@ -1,14 +1,12 @@
 #pragma once
 
-#include <ScopeCanvas/demo/diagram/DiagramBasics.h>
-#include <ScopeCanvas/render/CanvasRenderer.h>
-#include <ScopeCanvas/widget/NodeInfo.h>
+#include <ScopeCanvas/demo/DiagramBasics.h>
 #include <ScopeCanvas/render/camera/Camera2D.h>
-#include <string>
-#include <vector>
+#include <ScopeCanvas/render/CanvasRenderer.h>
+#include <ScopeCanvas/render/window/DrawContext.h>
+#include <ScopeCanvas/widget/NodeInfo.h>
 
 namespace ScopeCanvas::Demo {
-
 struct DiagramInput {
     float mouseX{0.0F};
     float mouseY{0.0F};
@@ -22,23 +20,14 @@ struct DiagramInput {
     bool deletePressed{false};
 };
 
-class DiagramWindow {
+class DiagramDrawCtx : public Render::Window::DrawContext {
   private:
-    std::string m_title{};
-    DiagramBasics* m_basics{};
+    DiagramBasics m_basics{};
 
     Render::CanvasRenderer m_renderer{};
     Widget::NodeInfoRenderer m_nodeInfoRenderer{};
     bool m_rendererInitialized{false};
     bool m_nodeInfoRendererInitialized{false};
-
-    Render::Camera::Camera2D m_camera{};
-
-    unsigned int m_framebuffer{0};
-    unsigned int m_colorTexture{0};
-    unsigned int m_depthStencilRenderbuffer{0};
-    int m_renderWidth{0};
-    int m_renderHeight{0};
 
     Core::Ids::NodeId m_dragNode{};
     glm::vec2 m_dragOffset{};
@@ -63,12 +52,25 @@ class DiagramWindow {
     bool m_showGrid{true};
     bool m_showDebug{false};
 
-  public:
-    DiagramWindow(std::string title, DiagramBasics* basics);
-    ~DiagramWindow();
+    DiagramInput m_input{};
 
-    void draw(int width, int height, const DiagramInput& input);
-    unsigned int drawToTexture(int width, int height, const DiagramInput& input);
+  public:
+    ~DiagramDrawCtx();
+
+    inline DiagramBasics& Doc() {
+        return m_basics;
+    }
+
+    void draw(Render::Window::Viewport* view);
+
+    inline bool updateInput(DiagramInput input) {
+        m_input = input;
+        return true;
+    }
+
+    inline bool needsRender() {
+        return true;
+    }
 
     [[nodiscard]] Core::Ids::EdgeId selectedEdge() const {
         return m_selectedEdge;
@@ -76,31 +78,26 @@ class DiagramWindow {
     void clearSelectedEdge() {
         m_selectedEdge = {};
     }
+
     void deleteSelection();
-    Core::Ids::NodeId createNodeAtCenter(Core::Ids::NodeTypeId typeId);
+
+    Core::Ids::NodeId createNodeAtCenter(const Render::Camera::Camera2D& cam, Core::Ids::NodeTypeId typeId);
 
     bool& showGrid() {
         return m_showGrid;
     }
+
     bool& showDebug() {
         return m_showDebug;
     }
-    Render::Camera::Camera2D& camera() {
-        return m_camera;
-    }
 
   private:
-    void renderContent(int width, int height, const DiagramInput& input);
-    void ensureRenderTarget(int width, int height);
-    void releaseRenderTarget();
     glm::vec2 snapToGrid(glm::vec2 position) const;
-    glm::vec2 screenToWorld(float sx, float sy, float w, float h) const;
     glm::vec2 connectorWorld(const Core::Node& node, std::size_t index) const;
 
     Core::Ids::NodeId pickNode(const glm::vec2& world) const;
-    Core::Ids::ConnectorId pickConnector(const glm::vec2& world) const;
+    Core::Ids::ConnectorId pickConnector(const Render::Camera::Camera2D& cam, const glm::vec2& world) const;
 
     void applySelectionRect();
 };
-
 } // namespace ScopeCanvas::Demo

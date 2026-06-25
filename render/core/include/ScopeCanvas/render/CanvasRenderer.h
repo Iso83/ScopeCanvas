@@ -1,10 +1,10 @@
 #pragma once
 
 #include <ScopeCanvas/core/ids/CanvasIds.h>
-#include <ScopeCanvas/render/renderers/EdgeRenderer.h>
-#include <ScopeCanvas/render/renderers/GridRenderer.h>
-#include <ScopeCanvas/render/renderers/NodeRenderer.h>
-#include <ScopeCanvas/render/renderers/SelectionRectRenderer.h>
+#include <ScopeCanvas/render/EdgeRenderer.h>
+#include <ScopeCanvas/render/GridRenderer.h>
+#include <ScopeCanvas/render/NodeRenderer.h>
+#include <ScopeCanvas/render/SelectionRectRenderer.h>
 #include <ScopeCanvas/render/scene/SceneBuilder.h>
 #include <glm/vec2.hpp>
 #include <vector>
@@ -42,15 +42,15 @@ struct CanvasRenderOptions {
     glm::vec2 selectionRectStart{};
     glm::vec2 selectionRectEnd{};
 
-    Renderers::NodeRenderer::StyleResolver nodeStyleResolver{};
+    NodeRenderer::StyleResolver nodeStyleResolver{};
 };
 
 class CanvasRenderer {
   private:
-    Renderers::GridRenderer m_grid{};
-    Renderers::NodeRenderer m_nodes{};
-    Renderers::EdgeRenderer m_edges{};
-    Renderers::SelectionRectRenderer m_selection{};
+    GridRenderer m_grid{};
+    NodeRenderer m_nodes{};
+    EdgeRenderer m_edges{};
+    SelectionRectRenderer m_selection{};
     Scene::SceneBuilder m_sceneBuilder{};
 
   public:

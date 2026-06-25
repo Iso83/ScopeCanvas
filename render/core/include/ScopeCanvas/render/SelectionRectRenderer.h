@@ -4,7 +4,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/vec2.hpp>
 
-namespace ScopeCanvas::Render::Renderers {
+namespace ScopeCanvas::Render {
 class SelectionRectRenderer {
   private:
     GL::Shader m_shader;
@@ -27,4 +27,4 @@ class SelectionRectRenderer {
   private:
     void destroy();
 };
-} // namespace ScopeCanvas::Render::Renderers
+} // namespace ScopeCanvas::Render

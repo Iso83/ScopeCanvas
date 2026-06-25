@@ -15,7 +15,7 @@ namespace ScopeCanvas::Render::Camera {
 class Camera2D;
 }
 
-namespace ScopeCanvas::Render::Renderers {
+namespace ScopeCanvas::Render {
 class EdgeRenderer {
   private:
     GL::Shader m_shader{};
@@ -53,4 +53,4 @@ class EdgeRenderer {
                         float thickness, GLenum primitive = GL_LINE_STRIP) const;
     void destroy();
 };
-} // namespace ScopeCanvas::Render::Renderers
+} // namespace ScopeCanvas::Render

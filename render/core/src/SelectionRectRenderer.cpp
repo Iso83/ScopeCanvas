@@ -1,8 +1,8 @@
-#include <ScopeCanvas/render/renderers/SelectionRectRenderer.h>
+#include <ScopeCanvas/render/SelectionRectRenderer.h>
 #include <glm/common.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace ScopeCanvas::Render::Renderers {
+namespace ScopeCanvas::Render {
 SelectionRectRenderer::SelectionRectRenderer() : m_vao(0), m_vbo(0), m_fillEbo(0), m_outlineEbo(0) {}
 
 SelectionRectRenderer::~SelectionRectRenderer() {
@@ -107,4 +107,4 @@ void SelectionRectRenderer::destroy() {
         m_vao = 0;
     }
 }
-} // namespace ScopeCanvas::Render::Renderers
+} // namespace ScopeCanvas::Render

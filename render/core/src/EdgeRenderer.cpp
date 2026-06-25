@@ -1,12 +1,12 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
-#include <ScopeCanvas/render/renderers/EdgeRenderer.h>
+#include <ScopeCanvas/render/EdgeRenderer.h>
 #include <ScopeCanvas/routing/EdgeRoute.h>
 #include <algorithm>
 #include <cmath>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace ScopeCanvas::Render::Renderers {
+namespace ScopeCanvas::Render {
 using namespace ScopeCanvas::Core::Ids;
 EdgeRenderer::EdgeRenderer() = default;
 
@@ -258,4 +258,4 @@ void EdgeRenderer::destroy() {
         m_vao = 0;
     }
 }
-} // namespace ScopeCanvas::Render::Renderers
+} // namespace ScopeCanvas::Render

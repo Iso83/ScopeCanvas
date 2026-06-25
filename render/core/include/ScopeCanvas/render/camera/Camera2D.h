@@ -7,15 +7,14 @@
 namespace ScopeCanvas::Render::Camera {
 class Camera2D {
   private:
-    glm::vec2 m_position;
-    float m_zoom;
-    int m_viewportWidth;
-    int m_viewportHeight;
-    glm::mat4 m_projection;
+    glm::vec2 m_position{};
+    float m_zoom{1.0F};
+    int m_viewportWidth{1};
+    int m_viewportHeight{1};
+    glm::mat4 m_projection{1.0F};
 
   public:
-    Camera2D()
-        : m_position(0.0F, 0.0F), m_zoom(1.0F), m_viewportWidth(1280), m_viewportHeight(720), m_projection(1.0F) {
+    Camera2D() {
         updateProjection();
     }
 
@@ -25,17 +24,27 @@ class Camera2D {
         updateProjection();
     }
 
+    int getViewportWidth() const noexcept {
+        return m_viewportWidth;
+    }
+
+    int getViewportHeight() const noexcept {
+        return m_viewportHeight;
+    }
+
+    const glm::vec2& position() const noexcept {
+        return m_position;
+    }
+
     void setPosition(const glm::vec2& position) {
         m_position = position;
     }
-    const glm::vec2& position() const {
-        return m_position;
-    }
+
     void move(const glm::vec2& delta) {
         m_position += delta;
     }
 
-    float zoom() const {
+    float zoom() const noexcept {
         return m_zoom;
     }
 
@@ -44,17 +53,17 @@ class Camera2D {
         updateProjection();
     }
 
-    const glm::mat4& projection() const {
+    const glm::mat4& projection() const noexcept {
         return m_projection;
     }
 
     glm::mat4 view() const;
 
-    glm::mat4 viewProjection() const {
+    glm::mat4 viewProjection() const noexcept {
         return m_projection * view();
     }
 
-    glm::mat4 invViewProjection() const {
+    glm::mat4 invViewProjection() const noexcept {
         return glm::inverse(viewProjection());
     }
 

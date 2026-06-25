@@ -6,7 +6,7 @@ namespace ScopeCanvas::Render::Camera {
 class Camera2D;
 }
 
-namespace ScopeCanvas::Render::Renderers {
+namespace ScopeCanvas::Render {
 class GridRenderer {
   private:
     GL::Shader m_shader;
@@ -27,4 +27,4 @@ class GridRenderer {
   private:
     void destroy();
 };
-} // namespace ScopeCanvas::Render::Renderers
+} // namespace ScopeCanvas::Render

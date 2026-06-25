@@ -1,9 +1,9 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
-#include <ScopeCanvas/render/renderers/GridRenderer.h>
+#include <ScopeCanvas/render/GridRenderer.h>
 #include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace ScopeCanvas::Render::Renderers {
+namespace ScopeCanvas::Render {
 namespace {
 unsigned int compile(unsigned int type, const char* src) {
     const unsigned int shader = glCreateShader(type);
@@ -156,4 +156,4 @@ void GridRenderer::destroy() {
         m_vao = 0;
     }
 }
-} // namespace ScopeCanvas::Render::Renderers
+} // namespace ScopeCanvas::Render

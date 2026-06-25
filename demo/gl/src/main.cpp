@@ -1,9 +1,11 @@
-#include <ScopeCanvas/demo/window/DiagramWindow.h>
+#include <ScopeCanvas/render/window/Viewport.h>
+#include <ScopeCanvas/demo/DiagramDrawContext.h>
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+using namespace ScopeCanvas::Render::Window;
 using namespace ScopeCanvas::Demo;
 
 namespace {
@@ -72,9 +74,9 @@ int main() {
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetScrollCallback(window, scrollCallback);
 
-    DiagramBasics basics;
-    DiagramWindow diagram("ScopeCanvas OpenGL Demo", &basics);
-    diagram.camera().setPosition({120.0F, 0.0F});
+    DiagramDrawCtx drawCtx{};
+    Viewport view{};
+    view.setViewPosition({120.0F, 0.0F});
 
     float lastTime = static_cast<float>(glfwGetTime());
     while (!glfwWindowShouldClose(window)) {
@@ -95,12 +97,12 @@ int main() {
             panDelta.y += panSpeed * deltaTime;
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
             panDelta.y -= panSpeed * deltaTime;
-        diagram.camera().move(panDelta);
+        view.moveView(panDelta);
 
         if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-            diagram.showGrid() = true;
+            drawCtx.showGrid() = true;
         if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS)
-            diagram.showDebug() = true;
+            drawCtx.showDebug() = true;
 
         static bool createHandled[4]{};
         const int keys[] = {GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3, GLFW_KEY_4};
@@ -110,7 +112,7 @@ int main() {
         for (int i = 0; i < 4; ++i) {
             const bool down = glfwGetKey(window, keys[i]) == GLFW_PRESS;
             if (down && !createHandled[i])
-                (void)diagram.createNodeAtCenter(types[i]);
+                (void)drawCtx.createNodeAtCenter(view.camera(), types[i]);
             createHandled[i] = down;
         }
 
@@ -121,6 +123,8 @@ int main() {
         int width = 1;
         int height = 1;
         glfwGetFramebufferSize(window, &width, &height);
+        view.setViewportSize(width, height);
+        
 
         DiagramInput input{};
         input.mouseX = static_cast<float>(inputState.mouseX);
@@ -134,8 +138,9 @@ int main() {
                             static_cast<float>(inputState.mouseY - inputState.previousMouseY)};
         input.scrollDelta = inputState.scrollDelta;
         input.deletePressed = inputState.deletePressed;
+        drawCtx.updateInput(input);
 
-        diagram.draw(width, height, input);
+        view.draw(&drawCtx);
 
         inputState.previousMouseX = inputState.mouseX;
         inputState.previousMouseY = inputState.mouseY;

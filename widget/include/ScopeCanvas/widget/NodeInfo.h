@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ScopeCanvas/render/renderers/NodeRenderer.h>
+#include <ScopeCanvas/render/NodeRenderer.h>
 #include <ScopeCanvas/render/scene/RenderScene.h>
 #include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
 #include <string>

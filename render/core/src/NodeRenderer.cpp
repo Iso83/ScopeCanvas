@@ -1,13 +1,13 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/render/geometry/RoundedRect.h>
-#include <ScopeCanvas/render/renderers/NodeRenderer.h>
+#include <ScopeCanvas/render/NodeRenderer.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <glad/glad.h>
 #include <vector>
 
-namespace ScopeCanvas::Render::Renderers {
+namespace ScopeCanvas::Render {
 namespace {
 unsigned int compile(unsigned int type, const char* src) {
     const unsigned int shader = glCreateShader(type);
@@ -313,4 +313,4 @@ void NodeRenderer::renderSelectionBorders(const std::vector<Scene::NodeRenderDat
     glBindVertexArray(0);
 }
 
-} // namespace ScopeCanvas::Render::Renderers
+} // namespace ScopeCanvas::Render

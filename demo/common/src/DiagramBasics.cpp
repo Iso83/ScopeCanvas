@@ -1,6 +1,5 @@
-#include <ScopeCanvas/demo/diagram/DiagramBasics.h>
+#include <ScopeCanvas/demo/DiagramBasics.h>
 #include <algorithm>
-// #include <glm/geometric.hpp>
 
 using namespace ScopeCanvas::Core;
 using namespace ScopeCanvas::Core::Ids;

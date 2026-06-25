@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ScopeCanvas/core/ids/CanvasIds.h>
-#include <ScopeCanvas/routing/EdgeRouter.h>
 #include <ScopeCanvas/widget/GraphDocument.h>
 #include <vector>
 
@@ -28,11 +27,23 @@ class DiagramBasics {
         return m_model;
     }
 
+    const Core::GraphDocument& model() const {
+        return m_model;
+    }
+
     GridSnapper& gridSettings() {
         return m_grid;
     }
 
+    const GridSnapper& gridSettings() const {
+        return m_grid;
+    }
+
     std::vector<Core::Ids::NodeId>& nodeIds() {
+        return m_nodeIds;
+    }
+
+    const std::vector<Core::Ids::NodeId>& nodeIds() const {
         return m_nodeIds;
     }
 
