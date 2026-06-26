@@ -40,8 +40,8 @@ class EdgeRenderer {
     void renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const glm::vec2& startNormal,
                            const Camera::Camera2D& camera) const;
 
-    [[nodiscard]] std::vector<glm::vec2> buildEdgeGeometry(const Routing::EdgeRoute& route,
-                                                           int segmentsPerCurve = 20) const;
+    [[nodiscard]] static std::vector<glm::vec2> buildEdgeGeometry(const Routing::EdgeRoute& route,
+                                                                  int segmentsPerCurve = 20);
 
   private:
     static void computeBezierControls(const glm::vec2& p0, const glm::vec2& p3, glm::vec2& p1, glm::vec2& p2);

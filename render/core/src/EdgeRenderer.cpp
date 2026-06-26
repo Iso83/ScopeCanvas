@@ -117,7 +117,7 @@ void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& en
     renderPolyline(buildEdgeGeometry(route, 20), camera, {0.92F, 0.94F, 1.0F}, 2.0F);
 }
 
-std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute& route, int segmentsPerCurve) const {
+std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute& route, int segmentsPerCurve) {
     if (route.points.size() < 2)
         return route.points;
 

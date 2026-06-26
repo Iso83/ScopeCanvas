@@ -70,8 +70,9 @@ void DiagramDrawCtx::draw(Viewport* view) {
     };
     const float edgePickThresholdSquared = 100.0F / (cam.zoom() * cam.zoom());
     for (const auto& route : routes) {
-        for (std::size_t i = 0; i + 1 < route.points.size(); ++i) {
-            if (distanceToSegmentSquared(mouseWorld, route.points[i], route.points[i + 1]) <=
+        const std::vector<glm::vec2> edgeGeometry = Render::EdgeRenderer::buildEdgeGeometry(route, 18);
+        for (std::size_t i = 0; i + 1 < edgeGeometry.size(); ++i) {
+            if (distanceToSegmentSquared(mouseWorld, edgeGeometry[i], edgeGeometry[i + 1]) <=
                 edgePickThresholdSquared) {
                 options.hoveredEdgeId = route.edgeId;
                 break;
@@ -81,7 +82,10 @@ void DiagramDrawCtx::draw(Viewport* view) {
             break;
     }
 
-    m_renderer.render(m_basics.model(), routes, cam, options);
+    Render::CanvasRenderOptions baseOptions = options;
+    baseOptions.selectionRectActive = false;
+
+    m_renderer.render(m_basics.model(), routes, cam, baseOptions);
     if (m_nodeInfoRendererInitialized) {
         static const Render::Theme::NodeVisualRegistry registry{};
         const Render::Scene::SceneBuilder sceneBuilder{};
@@ -89,6 +93,8 @@ void DiagramDrawCtx::draw(Viewport* view) {
         m_nodeInfoRenderer.render(scene.nodes, cam, registry);
     }
     m_renderer.renderNodeSelectionBorders(m_basics.model(), routes, cam, options);
+    if (options.selectionRectActive)
+        m_renderer.renderSelectionRect(cam, options.selectionRectStart, options.selectionRectEnd);
 
     if (m_input.hovered && m_input.scrollDelta != 0.0F)
         view->setViewZoom(std::max(0.05F, cam.zoom() + m_input.scrollDelta * 0.1F));
