@@ -6,7 +6,7 @@ using namespace ScopeCanvas::Render;
 
 namespace ScopeCanvas::Render::Window {
 void Canvas::draw(DrawContext* ctx) {
-    auto cam = camera();
+    auto cam = m_states[m_activeState].m_camera;
     ensureRenderTarget(cam.getViewportWidth(), cam.getViewportHeight());
 
     GLint oldFb = 0;

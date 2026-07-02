@@ -17,7 +17,7 @@ class Canvas : public Viewport {
         releaseRenderTarget();
     }
 
-    virtual void draw(DrawContext* ctx);
+    Viewport::draw;
 
     GLuint colorTexture() const noexcept {
         return m_colorTexture;
@@ -26,5 +26,6 @@ class Canvas : public Viewport {
   protected:
     void ensureRenderTarget(int width, int height);
     void releaseRenderTarget();
+    virtual void draw(DrawContext* ctx);
 };
 } // namespace ScopeCanvas::Render::Window

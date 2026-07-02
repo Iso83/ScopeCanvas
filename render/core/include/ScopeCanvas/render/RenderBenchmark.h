@@ -2,7 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
-#include <vector>
+#include <ScopeCanvas/render/window/ViewportHandler.h>
 
 namespace ScopeCanvas::Render::Window {
 class DrawContext;
@@ -26,21 +26,15 @@ class RenderBenchmark {
     Clock::time_point m_intervalStart{};
     std::uint64_t m_intervalFrames{0};
     double m_intervalFrameTimeMs{0.0};
-    mutable bool m_updated{false};
-    std::vector<const Window::Viewport*> m_viewports{};
+    bool m_updated{false};
 
   public:
-    void registerViewport(Window::Viewport* viewport);
-    void unregisterViewport(Window::Viewport* viewport);
-
-    void draw(Window::Viewport& viewport, Window::DrawContext& drawContext);
+    void draw(Window::ViewportHandler& viewHandlert);
 
     [[nodiscard]] const Statistics &statistics() const noexcept {
         return m_latest;
     }
-    [[nodiscard]] bool updated() const noexcept;
-    [[nodiscard]] const std::vector<const Window::Viewport *> &viewports() const noexcept {
-        return m_viewports;
-    }
+
+    [[nodiscard]] bool updated() noexcept;
 };
 } // namespace ScopeCanvas::Render

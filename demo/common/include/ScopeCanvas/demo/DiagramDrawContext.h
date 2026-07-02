@@ -7,19 +7,6 @@
 #include <ScopeCanvas/widget/NodeInfo.h>
 
 namespace ScopeCanvas::Demo {
-struct DiagramInput {
-    float mouseX{0.0F};
-    float mouseY{0.0F};
-    bool hovered{true};
-    bool leftDown{false};
-    bool leftPressed{false};
-    bool leftReleased{false};
-    bool middleDown{false};
-    glm::vec2 mouseDelta{0.0F, 0.0F};
-    float scrollDelta{0.0F};
-    bool deletePressed{false};
-};
-
 class DiagramDrawCtx : public Render::Window::DrawContext {
   private:
     DiagramBasics m_basics{};
@@ -52,8 +39,6 @@ class DiagramDrawCtx : public Render::Window::DrawContext {
     bool m_showGrid{true};
     bool m_showDebug{false};
 
-    DiagramInput m_input{};
-
   public:
     ~DiagramDrawCtx();
 
@@ -62,11 +47,6 @@ class DiagramDrawCtx : public Render::Window::DrawContext {
     }
 
     void draw(Render::Window::Viewport* view);
-
-    inline bool updateInput(DiagramInput input) {
-        m_input = input;
-        return true;
-    }
 
     inline bool needsRender() {
         return true;
@@ -96,7 +76,7 @@ class DiagramDrawCtx : public Render::Window::DrawContext {
     glm::vec2 connectorWorld(const Core::Node& node, std::size_t index) const;
 
     Core::Ids::NodeId pickNode(const glm::vec2& world) const;
-    Core::Ids::ConnectorId pickConnector(const Render::Camera::Camera2D& cam, const glm::vec2& world) const;
+    Core::Ids::ConnectorId pickConnector(const float camZoom, const glm::vec2& world) const;
 
     void applySelectionRect();
 };

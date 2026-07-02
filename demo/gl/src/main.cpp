@@ -1,9 +1,10 @@
 #ifdef SC_BUILD_DEMO_BENCHMARK
 #include <ScopeCanvas/render/RenderBenchmark.h>
 #endif
-#include <ScopeCanvas/render/window/Viewport.h>
-#include <ScopeCanvas/demo/DiagramDrawContext.h>
 #include <glad/glad.h>
+#include <ScopeCanvas/demo/DiagramDrawContext.h>
+#include <ScopeCanvas/render/window/Viewport.h>
+#include <ScopeCanvas/render/window/ViewportHandler.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -11,41 +12,41 @@
 using namespace ScopeCanvas::Render::Window;
 using namespace ScopeCanvas::Demo;
 
-namespace {
-struct GlInputState {
-    double mouseX{0.0};
-    double mouseY{0.0};
-    double previousMouseX{0.0};
-    double previousMouseY{0.0};
-    bool leftDown{false};
-    bool previousLeftDown{false};
-    bool middleDown{false};
-    float scrollDelta{0.0F};
-    bool deletePressed{false};
-    bool previousDeleteDown{false};
-};
+ViewportHandler viewHandler;
 
 void cursorPosCallback(GLFWwindow* window, double x, double y) {
-    auto* input = static_cast<GlInputState*>(glfwGetWindowUserPointer(window));
-    input->mouseX = x;
-    input->mouseY = y;
+    viewHandler.processMouseMove({x, y});
 }
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    (void)mods;
-    auto* input = static_cast<GlInputState*>(glfwGetWindowUserPointer(window));
-    if (button == GLFW_MOUSE_BUTTON_LEFT)
-        input->leftDown = action == GLFW_PRESS;
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE)
-        input->middleDown = action == GLFW_PRESS;
+    if (action == GLFW_REPEAT)
+        return;
+
+    bool pressed{action == GLFW_PRESS};
+
+    switch (button) {
+    case GLFW_MOUSE_BUTTON_LEFT:
+        viewHandler.processMouseButton(SC_MOUSE_BUTTON_LEFT, pressed);
+        break;
+
+    case GLFW_MOUSE_BUTTON_MIDDLE:
+        viewHandler.processMouseButton(SC_MOUSE_BUTTON_MIDDLE, pressed);
+        break;
+
+    case GLFW_MOUSE_BUTTON_RIGHT:
+        viewHandler.processMouseButton(SC_MOUSE_BUTTON_RIGHT, pressed);
+        break;
+    }
 }
 
 void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
-    (void)xOffset;
-    auto* input = static_cast<GlInputState*>(glfwGetWindowUserPointer(window));
-    input->scrollDelta += static_cast<float>(yOffset);
+    viewHandler.processScroll(xOffset, yOffset);
 }
-} // namespace
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if(action == GLFW_REPEAT) return;
+    viewHandler.processKey(key, action == GLFW_PRESS);
+}
 
 int main() {
     if (!glfwInit())
@@ -73,23 +74,33 @@ int main() {
         return -1;
     }
 
-    GlInputState inputState{};
-    glfwSetWindowUserPointer(window, &inputState);
+
+    DiagramDrawCtx drawCtx{};
+
+    Viewport view{};
+    view.registerDrawContext(&drawCtx);
+    view.setViewPosition({120.0F, 0.0F});
+    
+    viewHandler.registerViewport(&view);
+
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetScrollCallback(window, scrollCallback);
-
-    DiagramDrawCtx drawCtx{};
-    Viewport view{};
-    view.setViewPosition({120.0F, 0.0F});
+    glfwSetKeyCallback(window, keyCallback);
 
 #ifdef SC_BUILD_DEMO_BENCHMARK
     ScopeCanvas::Render::RenderBenchmark benchmark{};
-    benchmark.registerViewport(&view);
 #endif
-   
+
+    bool needsPresent{true};
     float lastTime = static_cast<float>(glfwGetTime());
     while (!glfwWindowShouldClose(window)) {
+        if (!needsPresent) {
+            glfwWaitEvents();
+            needsPresent = true;
+        } else
+            glfwPollEvents();
+
         const float now = static_cast<float>(glfwGetTime());
         const float deltaTime = now - lastTime;
         lastTime = now;
@@ -99,19 +110,22 @@ int main() {
 
         constexpr float panSpeed = 500.0F;
         glm::vec2 panDelta{0.0F, 0.0F};
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+
+
+        if (viewHandler.keyState(GLFW_KEY_A).down)
             panDelta.x -= panSpeed * deltaTime;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        if (viewHandler.keyState(GLFW_KEY_D).down)
             panDelta.x += panSpeed * deltaTime;
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        if (viewHandler.keyState(GLFW_KEY_W).down)
             panDelta.y += panSpeed * deltaTime;
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        if (viewHandler.keyState(GLFW_KEY_S).down)
             panDelta.y -= panSpeed * deltaTime;
         view.moveView(panDelta);
+        
 
-        if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-            drawCtx.showGrid() = true;
-        if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS)
+        if (viewHandler.keyState(GLFW_KEY_G).pressed())
+            drawCtx.showGrid() = !drawCtx.showGrid();
+        if (viewHandler.keyState(GLFW_KEY_F1).pressed())
             drawCtx.showDebug() = true;
 
         static bool createHandled[4]{};
@@ -126,52 +140,28 @@ int main() {
             createHandled[i] = down;
         }
 
-        const bool deleteDown = glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS;
-        inputState.deletePressed = deleteDown && !inputState.previousDeleteDown;
-        inputState.previousDeleteDown = deleteDown;
-
         int width = 1;
         int height = 1;
         glfwGetFramebufferSize(window, &width, &height);
         view.setViewportSize(width, height);
-        
-
-        DiagramInput input{};
-        input.mouseX = static_cast<float>(inputState.mouseX);
-        input.mouseY = static_cast<float>(inputState.mouseY);
-        input.hovered = true;
-        input.leftDown = inputState.leftDown;
-        input.leftPressed = inputState.leftDown && !inputState.previousLeftDown;
-        input.leftReleased = !inputState.leftDown && inputState.previousLeftDown;
-        input.middleDown = inputState.middleDown;
-        input.mouseDelta = {static_cast<float>(inputState.mouseX - inputState.previousMouseX),
-                            static_cast<float>(inputState.mouseY - inputState.previousMouseY)};
-        input.scrollDelta = inputState.scrollDelta;
-        input.deletePressed = inputState.deletePressed;
-        drawCtx.updateInput(input);
 
 #ifdef SC_BUILD_DEMO_BENCHMARK
-        benchmark.draw(view, drawCtx);
+        benchmark.draw(viewHandler);
 
         if (benchmark.updated()) {
             const auto& stats = benchmark.statistics();
-            std::cout << "Render benchmark: frames=" << stats.renderedFrames
-                      << " elapsed=" << stats.elapsedSeconds << "s"
-                      << " fps=" << stats.framesPerSecond
-                      << " avg=" << stats.averageFrameTimeMs << "ms\n";
+            std::cout << "Render benchmark: frames=" << stats.renderedFrames << " elapsed=" << stats.elapsedSeconds
+                      << "s"
+                      << " fps=" << stats.framesPerSecond << " avg=" << stats.averageFrameTimeMs << "ms\n";
         }
 #else
-        view.draw(&drawCtx);
+        view.draw();
 #endif
 
-        inputState.previousMouseX = inputState.mouseX;
-        inputState.previousMouseY = inputState.mouseY;
-        inputState.previousLeftDown = inputState.leftDown;
-        inputState.scrollDelta = 0.0F;
-        inputState.deletePressed = false;
+        viewHandler.updatePrevInteraction();
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
+        needsPresent = false;
     }
 
     glfwDestroyWindow(window);

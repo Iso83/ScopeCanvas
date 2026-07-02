@@ -3,6 +3,9 @@
 #include <ScopeCanvas/routing/EdgeRouter.h>
 #include <ScopeCanvas/routing/Geometry.h>
 #include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
+#include <ScopeCanvas/render/window/ViewportHandler.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 using namespace ScopeCanvas::Render;
 using namespace ScopeCanvas::Render::Window;
@@ -22,19 +25,24 @@ void DiagramDrawCtx::draw(Viewport* view) {
     if (view == nullptr)
         return;
 
+    auto handler = view->handler();
+    const bool isActiveView = handler && handler->activeViewport() == view;
+
     if (!m_rendererInitialized)
         m_rendererInitialized = m_renderer.init();
     if (!m_nodeInfoRendererInitialized)
         m_nodeInfoRendererInitialized = m_nodeInfoRenderer.init();
 
-    const auto cam = view->camera();
-    const auto mouseWorld = view->screenToWorld(m_input.mouseX, m_input.mouseY);
-
+    const auto viewZoom = view->viewZoom();
+    auto cam = view->camera();
+    auto mousePos = handler->mousePosition();
+    const auto mouseWorld = view->screenToWorld(mousePos.x, mousePos.y);
+    
     EdgeRouter router;
     const std::vector<EdgeRoute> routes = router.routeAll(&m_basics.model());
 
-    if (m_input.hovered)
-        m_hoveredConnector = pickConnector(cam, mouseWorld);
+    if (isActiveView)
+        m_hoveredConnector = pickConnector(viewZoom, mouseWorld);
     else
         m_hoveredConnector = {};
 
@@ -68,7 +76,7 @@ void DiagramDrawCtx::draw(Viewport* view) {
         static const Render::Theme::NodeVisualRegistry registry{};
         return registry.getVisual(typeId).style;
     };
-    const float edgePickThresholdSquared = 100.0F / (cam.zoom() * cam.zoom());
+    const float edgePickThresholdSquared = 100.0F / (viewZoom * viewZoom);
     for (const auto& route : routes) {
         const std::vector<glm::vec2> edgeGeometry = Render::EdgeRenderer::buildEdgeGeometry(route, 18);
         for (std::size_t i = 0; i + 1 < edgeGeometry.size(); ++i) {
@@ -96,17 +104,15 @@ void DiagramDrawCtx::draw(Viewport* view) {
     if (options.selectionRectActive)
         m_renderer.renderSelectionRect(cam, options.selectionRectStart, options.selectionRectEnd);
 
-    if (m_input.hovered && m_input.scrollDelta != 0.0F)
-        view->setViewZoom(std::max(0.05F, cam.zoom() + m_input.scrollDelta * 0.1F));
-
-    if (m_input.hovered && m_input.middleDown) {
+    if (isActiveView && handler->mouseState(SC_MOUSE_BUTTON_MIDDLE).down) {
         auto pos = cam.position();
-        pos.x -= m_input.mouseDelta.x / cam.zoom();
-        pos.y += m_input.mouseDelta.y / cam.zoom();
+        auto mouse = handler->mouseDeltaPosition();
+        pos.x -= mouse.x / cam.zoom();
+        pos.y += mouse.y / cam.zoom();
         view->setViewPosition(pos);
     }
 
-    if (m_input.hovered && m_input.leftPressed) {
+    if (isActiveView && handler->mouseState(SC_MOUSE_BUTTON_LEFT).pressed()) {
         m_dragNode = {};
         m_selectionRectActive = false;
         if (m_hoveredConnector.isValid()) {
@@ -161,21 +167,21 @@ void DiagramDrawCtx::draw(Viewport* view) {
         }
     }
 
-    if (m_input.leftDown && m_dragNode.isValid()) {
+    if (handler->mouseState(SC_MOUSE_BUTTON_LEFT).down && m_dragNode.isValid()) {
         const glm::vec2 base = snapToGrid(mouseWorld - m_dragOffset);
         const glm::vec2 delta = base - m_dragAnchorStartPosition;
         for (std::size_t i = 0; i < m_dragSelection.size() && i < m_dragSelectionStartPositions.size(); ++i) {
             if (Node* node = m_basics.model().getNode(m_dragSelection[i]); node != nullptr)
                 node->position = snapToGrid(m_dragSelectionStartPositions[i] + delta);
         }
-    } else if (m_input.leftDown && m_selectionRectActive) {
+    } else if (handler->mouseState(SC_MOUSE_BUTTON_LEFT).down && m_selectionRectActive) {
         m_selectionRectEnd = mouseWorld;
         applySelectionRect();
     }
 
-    if (m_input.leftReleased) {
+    if (handler->mouseState(SC_MOUSE_BUTTON_LEFT).released()) {
         if (m_pendingConnector.isValid()) {
-            const ConnectorId target = m_input.hovered ? pickConnector(cam, mouseWorld) : ConnectorId{};
+            const ConnectorId target = isActiveView ? pickConnector(viewZoom, mouseWorld) : ConnectorId{};
             EdgeId newEdge{};
             if (target.isValid() && target != m_pendingConnector && m_basics.canConnect(m_pendingConnector, target)) {
                 newEdge = m_reconnectingEdge
@@ -200,7 +206,7 @@ void DiagramDrawCtx::draw(Viewport* view) {
         m_dragSelectionStartPositions.clear();
     }
 
-    if (m_input.hovered && m_input.deletePressed)
+    if (isActiveView && handler->keyState(GLFW_KEY_DELETE).down)
         deleteSelection();
 }
 
@@ -262,8 +268,8 @@ NodeId DiagramDrawCtx::pickNode(const glm::vec2& world) const {
     return {};
 }
 
-ConnectorId DiagramDrawCtx::pickConnector(const Render::Camera::Camera2D& cam, const glm::vec2& world) const {
-    const float pickRadiusSquared = 100.0F / (cam.zoom() * cam.zoom());
+ConnectorId DiagramDrawCtx::pickConnector(const float camZoom, const glm::vec2& world) const {
+    const float pickRadiusSquared = 100.0F / (camZoom * camZoom);
     for (auto it = m_basics.nodeIds().rbegin(); it != m_basics.nodeIds().rend(); ++it) {
         const Core::Node* node = m_basics.model().getNode(*it);
         if (node == nullptr)

@@ -20,6 +20,7 @@ target_link_libraries(ScopeCanvasDemoCommon PUBLIC
     ScopeCanvasWidget
     glad
     glm
+    glfw
 )
 
 if(SC_BUILD_DEMO_BENCHMARK)

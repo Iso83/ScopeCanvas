@@ -1,17 +1,26 @@
 #ifdef SC_BUILD_DEMO_BENCHMARK
 #include <ScopeCanvas/render/RenderBenchmark.h>
 #endif
-#include <ScopeCanvas/render/window/Canvas.h>
-#include <ScopeCanvas/demo/DiagramDrawContext.h>
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+
+#include <ScopeCanvas/demo/DiagramDrawContext.h>
+#include <ScopeCanvas/render/window/Canvas.h>
+#include <ScopeCanvas/render/window/ViewportHandler.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 using namespace ScopeCanvas::Render::Window;
 using namespace ScopeCanvas::Demo;
+
+ViewportHandler viewHandler;
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_REPEAT)
+        return;
+    viewHandler.processKey(key, action == GLFW_PRESS);
+}
 
 #ifdef _WIN32
 #include <windows.h>
@@ -55,17 +64,30 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 130");
 
     DiagramDrawCtx drawCtx{};
-    Canvas canvasA;
-    Canvas canvasB;
+
+    Canvas viewA;
+    viewA.registerDrawContext(&drawCtx);
+    Canvas viewB;
+    viewB.registerDrawContext(&drawCtx);
+
+    
+    viewHandler.registerViewport(&viewA);
+    viewHandler.registerViewport(&viewB);
+
+     glfwSetKeyCallback(window, keyCallback);
+
 
 #ifdef SC_BUILD_DEMO_BENCHMARK
     ScopeCanvas::Render::RenderBenchmark benchmark{};
-    benchmark.registerViewport(&canvasA);
-    benchmark.registerViewport(&canvasB);
 #endif
 
+    bool needsPresent{true};
     while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
+        if (!needsPresent) {
+            glfwWaitEvents();
+            needsPresent = true;
+        } else
+            glfwPollEvents();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -98,11 +120,17 @@ int main() {
             ImGui::EndMainMenuBar();
         }
 
-        auto drawCanvasPanel = [&drawCtx
+     
+
+        // TODO: Remove after ViewportInteraction refactor.
+        // Benchmark::draw(viewHandler) renders every registered viewport.
+        // Calling it from the per-canvas lambda causes redundant renders.
+        auto drawCanvasPanel = [ &drawCtx, &needsPresent
 #ifdef SC_BUILD_DEMO_BENCHMARK
-                                , &benchmark
+                                ,
+                                &benchmark
 #endif
-        ](Canvas& canvas, const char *title) {
+        ](Canvas& canvas, const char* title) {
             ImGui::Begin(title);
             /*ImGui::Checkbox("Grid", &canvas.showGrid());
             ImGui::SameLine();
@@ -113,33 +141,49 @@ int main() {
             const ImVec2 mouse = ImGui::GetIO().MousePos;
             const bool hovered = ImGui::IsWindowHovered() || ImGui::IsItemHovered();
 
-            DiagramInput input{};
-            input.mouseX = mouse.x - canvasPos.x;
-            input.mouseY = mouse.y - canvasPos.y;
-            input.hovered = hovered;
-            input.leftDown = hovered && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-            input.leftPressed = hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left);
-            input.leftReleased = ImGui::IsMouseReleased(ImGuiMouseButton_Left);
-            input.middleDown = hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Middle);
-            input.mouseDelta = {ImGui::GetIO().MouseDelta.x, ImGui::GetIO().MouseDelta.y};
-            input.scrollDelta = hovered ? ImGui::GetIO().MouseWheel : 0.0F;
-            input.deletePressed = hovered && ImGui::IsKeyPressed(ImGuiKey_Delete);
-            drawCtx.updateInput(input);
+            if (hovered) {
+                if (viewHandler.activeViewport() != &canvas) {
+                    auto viewports = viewHandler.viewports(); 
+                    for (int i = 0; i < viewports.size(); i++) {
+                        if (viewports[i] == &canvas) {
+                            viewHandler.setActiveViewport(i);
+                            break;
+                        }
+                    }
+                }
+
+                viewHandler.processMouseMove({mouse.x - canvasPos.x, mouse.y - canvasPos.y});
+                
+                viewHandler.processMouseButton(SC_MOUSE_BUTTON_LEFT, ImGui::IsMouseDown(ImGuiMouseButton_Left));
+                viewHandler.processMouseButton(SC_MOUSE_BUTTON_MIDDLE, ImGui::IsMouseDown(ImGuiMouseButton_Middle));
+                viewHandler.processMouseButton(SC_MOUSE_BUTTON_RIGHT, ImGui::IsMouseDown(ImGuiMouseButton_Right));
+
+                auto mouseWheel = ImGui::GetIO().MouseWheel;
+                if (mouseWheel != 0.0F)
+                    viewHandler.processScroll(0, mouseWheel);
+            }
 
             canvas.setViewportSize(canvasSize.x, canvasSize.y);
 
+            //if (canvas.needsRender()) {
 #ifdef SC_BUILD_DEMO_BENCHMARK
-            benchmark.draw(canvas, drawCtx);
+                benchmark.draw(viewHandler);
 #else
-            canvas.draw(&drawCtx);
+                canvas.draw();
 #endif
+                needsPresent = true;
+            //}
+                
 
             ImGui::Image(static_cast<ImTextureID>(canvas.colorTexture()), canvasSize, ImVec2(0, 1), ImVec2(1, 0));
             ImGui::End();
         };
 
-        drawCanvasPanel(canvasA, "Primary Canvas");
-        drawCanvasPanel(canvasB, "Secondary Canvas");
+        drawCanvasPanel(viewA, "Primary Canvas");
+        //drawCanvasPanel(viewB, "Secondary Canvas");
+
+        viewHandler.updatePrevInteraction();
+        
 
 #ifdef SC_BUILD_DEMO_BENCHMARK
         const auto& stats = benchmark.statistics();
@@ -151,12 +195,14 @@ int main() {
         ImGui::End();
 
 #endif
+
         ImGui::Render();
         glfwGetFramebufferSize(window, &width, &height);
 
         glViewport(0, 0, width, height);
         glClearColor(0.1F, 0.1F, 0.1F, 1.0F);
         glClear(GL_COLOR_BUFFER_BIT);
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
@@ -167,6 +213,7 @@ int main() {
         }
 
         glfwSwapBuffers(window);
+        needsPresent = false;
     }
 
     ImGui_ImplOpenGL3_Shutdown();
