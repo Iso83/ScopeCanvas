@@ -18,9 +18,9 @@ add_library(ScopeCanvasDemoCommon
 
 target_link_libraries(ScopeCanvasDemoCommon PUBLIC
     ScopeCanvasWidget
+    ScopeCanvasGLFWIntegration
     glad
     glm
-    glfw
 )
 
 if(SC_BUILD_DEMO_BENCHMARK)

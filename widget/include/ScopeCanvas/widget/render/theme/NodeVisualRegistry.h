@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace ScopeCanvas::Render::Theme {
+namespace ScopeCanvas::Widget::Render::Theme {
 enum class NodeIconShape {
     Circle,
     Square,
@@ -20,7 +20,7 @@ struct NodeVisual {
     std::string subtitle{};
     std::string icon{};
     NodeIconShape iconShape{NodeIconShape::Circle};
-    Render::NodeRenderStyle style{};
+    ScopeCanvas::Render::NodeRenderStyle style{};
     glm::vec4 headerColor{0.12F, 0.14F, 0.18F, 0.95F};
     glm::vec4 headerAccentColor{0.28F, 0.38F, 0.52F, 0.95F};
     glm::vec4 textColor{0.95F, 0.96F, 0.98F, 1.0F};
@@ -41,4 +41,4 @@ class NodeVisualRegistry {
     void registerVisual(Core::Ids::NodeTypeId typeId, const NodeVisual& visual);
     [[nodiscard]] const NodeVisual& getVisual(Core::Ids::NodeTypeId typeId) const;
 };
-} // namespace ScopeCanvas::Render::Theme
+} // namespace ScopeCanvas::Widget::Render::Theme

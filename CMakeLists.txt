@@ -159,6 +159,7 @@ add_subdirectory(engine/core)
 add_subdirectory(engine/routing)
 add_subdirectory(render/core)
 add_subdirectory(widget)
+add_subdirectory(integration/glfw)
 
 # =========================================================
 # ScopeCanvas Demos

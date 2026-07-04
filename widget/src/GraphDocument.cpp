@@ -1,8 +1,11 @@
 #include <ScopeCanvas/widget/GraphDocument.h>
 #include <algorithm>
 
-namespace ScopeCanvas::Core {
-using namespace Ids;
+namespace ScopeCanvas::Widget {
+
+using namespace Core;
+using namespace Core::Ids;
+
 NodeId GraphDocument::createNode(NodeTypeId typeId) {
     const NodeId newNodeId = m_nodes.ids.createId();
     const ConnectorId firstConnectorId = m_connectors.ids.createId();
@@ -109,4 +112,4 @@ void GraphDocument::eraseValue(std::vector<EdgeId>& values, EdgeId value) {
     values.erase(std::remove(values.begin(), values.end(), value), values.end());
 }
 
-} // namespace ScopeCanvas::Core
+} // namespace ScopeCanvas::Widget

@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <vector>
 
-namespace ScopeCanvas::Core {
+namespace ScopeCanvas::Widget {
 template <typename TGraph, typename TGraphId> struct GraphInstanceRegistry {
     std::vector<TGraph> instances{};
-    Ids::GraphRegistry<TGraphId> ids{};
+    Core::Ids::GraphRegistry<TGraphId> ids{};
 
   public:
     TGraph* get(TGraphId id) {
@@ -36,36 +36,36 @@ template <typename TGraph, typename TGraphId> struct GraphInstanceRegistry {
 
 class GraphDocument : public Routing::IGraphView {
   private:
-    GraphInstanceRegistry<Node, Ids::NodeId> m_nodes{};
-    GraphInstanceRegistry<Connector, Ids::ConnectorId> m_connectors{};
-    GraphInstanceRegistry<Edge, Ids::EdgeId> m_edges{};
+    GraphInstanceRegistry<Core::Node, Core::Ids::NodeId> m_nodes{};
+    GraphInstanceRegistry<Core::Connector, Core::Ids::ConnectorId> m_connectors{};
+    GraphInstanceRegistry<Core::Edge, Core::Ids::EdgeId> m_edges{};
 
   public:
     GraphDocument() = default;
 
-    Ids::NodeId createNode(Ids::NodeTypeId typeId);
-    void removeNode(Ids::NodeId nodeId);
-    Node* getNode(Ids::NodeId nodeId) {
+    Core::Ids::NodeId createNode(Core::Ids::NodeTypeId typeId);
+    void removeNode(Core::Ids::NodeId nodeId);
+    Core::Node* getNode(Core::Ids::NodeId nodeId) {
         return m_nodes.get(nodeId);
     }
-    const Node* getNode(Ids::NodeId nodeId) const {
+    const Core::Node* getNode(Core::Ids::NodeId nodeId) const {
         return m_nodes.get(nodeId);
     }
 
-    Connector* getConnector(Ids::ConnectorId connectorId) {
+    Core::Connector* getConnector(Core::Ids::ConnectorId connectorId) {
         return m_connectors.get(connectorId);
     }
-    const Connector* getConnector(Ids::ConnectorId connectorId) const {
+    const Core::Connector* getConnector(Core::Ids::ConnectorId connectorId) const {
         return m_connectors.get(connectorId);
     }
-    glm::vec2 connectorWorld(const Node& node, std::size_t index) const;
+    glm::vec2 connectorWorld(const Core::Node& node, std::size_t index) const;
 
-    Ids::EdgeId connect(Ids::ConnectorId a, Ids::ConnectorId b);
-    void disconnect(Ids::EdgeId edgeId);
-    Edge* getEdge(Ids::EdgeId edgeId) {
+    Core::Ids::EdgeId connect(Core::Ids::ConnectorId a, Core::Ids::ConnectorId b);
+    void disconnect(Core::Ids::EdgeId edgeId);
+    Core::Edge* getEdge(Core::Ids::EdgeId edgeId) {
         return m_edges.get(edgeId);
     }
-    const Edge* getEdge(Ids::EdgeId edgeId) const {
+    const Core::Edge* getEdge(Core::Ids::EdgeId edgeId) const {
         return m_edges.get(edgeId);
     }
 
@@ -75,7 +75,7 @@ class GraphDocument : public Routing::IGraphView {
     }
 
   private:
-    static bool contains(const std::vector<Ids::EdgeId>& values, Ids::EdgeId value);
-    static void eraseValue(std::vector<Ids::EdgeId>& values, Ids::EdgeId value);
+    static bool contains(const std::vector<Core::Ids::EdgeId>& values, Core::Ids::EdgeId value);
+    static void eraseValue(std::vector<Core::Ids::EdgeId>& values, Core::Ids::EdgeId value);
 };
-} // namespace ScopeCanvas::Core
+} // namespace ScopeCanvas::Widget

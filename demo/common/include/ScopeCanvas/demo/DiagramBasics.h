@@ -14,7 +14,7 @@ struct GridSnapper {
 
 class DiagramBasics {
   private:
-    Core::GraphDocument m_model{};
+    Widget::GraphDocument m_model{};
     GridSnapper m_grid{};
     std::vector<Core::Ids::NodeId> m_nodeIds{};
     std::vector<Core::Ids::EdgeId> m_edgeIds{};
@@ -23,11 +23,11 @@ class DiagramBasics {
   public:
     DiagramBasics();
 
-    Core::GraphDocument& model() {
+    Widget::GraphDocument& model() {
         return m_model;
     }
 
-    const Core::GraphDocument& model() const {
+    const Widget::GraphDocument& model() const {
         return m_model;
     }
 

@@ -1,6 +1,6 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/render/geometry/RoundedRect.h>
-#include <ScopeCanvas/widget/NodeInfo.h>
+#include <ScopeCanvas/widget/render/NodeInfo.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -9,7 +9,7 @@
 #include <glad/glad.h>
 #include <utility>
 
-namespace ScopeCanvas::Widget {
+namespace ScopeCanvas::Widget::Render {
 using namespace ScopeCanvas::Render;
 
 namespace {
@@ -339,8 +339,8 @@ bool NodeInfoRenderer::loadFont() {
     }
 
     const float atlasScale = std::max(m_fontOptions.atlasScale, 1.0F);
-    const auto atlasPixelSize = static_cast<unsigned int>(
-        std::ceil(std::max(m_fontOptions.titleSize, m_fontOptions.iconSize) * atlasScale));
+    const auto atlasPixelSize =
+        static_cast<unsigned int>(std::ceil(std::max(m_fontOptions.titleSize, m_fontOptions.iconSize) * atlasScale));
     FT_Set_Pixel_Sizes(face, 0, atlasPixelSize);
     m_fontAtlasSize = static_cast<float>(atlasPixelSize);
     m_fontAscent = static_cast<float>(face->size->metrics.ascender >> 6);
@@ -480,7 +480,6 @@ void NodeInfoRenderer::render(const std::vector<Render::Scene::NodeRenderData>& 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-
 void NodeInfoRenderer::render(const std::vector<NodeInfo>& nodes, const Render::Camera::Camera2D& camera) const {
     auto appendText = [this](std::vector<TextQuad>& textVertices, const std::string& value, glm::vec2 rectPosition,
                              glm::vec2 rectSize, float size, glm::vec4 color) {
@@ -577,4 +576,4 @@ void NodeInfoRenderer::render(const std::vector<NodeInfo>& nodes, const Render::
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-} // namespace ScopeCanvas::Widget
+} // namespace ScopeCanvas::Widget::Render

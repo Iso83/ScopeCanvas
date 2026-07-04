@@ -2,7 +2,7 @@
 
 #include <ScopeCanvas/render/NodeRenderer.h>
 #include <ScopeCanvas/render/scene/RenderScene.h>
-#include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
+#include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -11,7 +11,7 @@ namespace ScopeCanvas::Render::Camera {
 class Camera2D;
 }
 
-namespace ScopeCanvas::Widget {
+namespace ScopeCanvas::Widget::Render {
 
 struct NodeInfo {
     Core::Ids::NodeId id{};
@@ -53,13 +53,14 @@ class NodeInfoRenderer {
     explicit NodeInfoRenderer(NodeInfoFontOptions fontOptions = {});
     bool init();
     void shutdown();
-    void render(const std::vector<Render::Scene::NodeRenderData>& nodes, const Render::Camera::Camera2D& camera,
+    void render(const std::vector<ScopeCanvas::Render::Scene::NodeRenderData>& nodes,
+                const ScopeCanvas::Render::Camera::Camera2D& camera,
                 const Render::Theme::NodeVisualRegistry& registry) const;
-    void render(const std::vector<NodeInfo>& nodes, const Render::Camera::Camera2D& camera) const;
+    void render(const std::vector<NodeInfo>& nodes, const ScopeCanvas::Render::Camera::Camera2D& camera) const;
 
   private:
     bool loadFont();
     void releaseFont();
 };
 
-} // namespace ScopeCanvas::Widget
+} // namespace ScopeCanvas::Widget::Render

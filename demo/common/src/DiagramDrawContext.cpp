@@ -2,7 +2,7 @@
 #include <ScopeCanvas/render/scene/SceneBuilder.h>
 #include <ScopeCanvas/routing/EdgeRouter.h>
 #include <ScopeCanvas/routing/Geometry.h>
-#include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
+#include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
 #include <ScopeCanvas/render/window/ViewportHandler.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -73,7 +73,7 @@ void DiagramDrawCtx::draw(Viewport* view) {
         }
     }
     options.nodeStyleResolver = [](NodeTypeId typeId) {
-        static const Render::Theme::NodeVisualRegistry registry{};
+        static const Widget::Render::Theme::NodeVisualRegistry registry{};
         return registry.getVisual(typeId).style;
     };
     const float edgePickThresholdSquared = 100.0F / (viewZoom * viewZoom);
@@ -95,7 +95,7 @@ void DiagramDrawCtx::draw(Viewport* view) {
 
     m_renderer.render(m_basics.model(), routes, cam, baseOptions);
     if (m_nodeInfoRendererInitialized) {
-        static const Render::Theme::NodeVisualRegistry registry{};
+        static const Widget::Render::Theme::NodeVisualRegistry registry{};
         const Render::Scene::SceneBuilder sceneBuilder{};
         const Render::Scene::RenderScene scene = sceneBuilder.build(m_basics.model(), routes, cam);
         m_nodeInfoRenderer.render(scene.nodes, cam, registry);

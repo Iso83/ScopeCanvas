@@ -1,6 +1,6 @@
-#include <ScopeCanvas/widget/theme/NodeVisualRegistry.h>
+#include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
 
-namespace ScopeCanvas::Render::Theme {
+namespace ScopeCanvas::Widget::Render::Theme {
 namespace {
 glm::vec4 rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a = 255) {
     return {static_cast<float>(r) / 255.0F, static_cast<float>(g) / 255.0F, static_cast<float>(b) / 255.0F,
@@ -86,4 +86,5 @@ const NodeVisual& NodeVisualRegistry::getVisual(Core::Ids::NodeTypeId typeId) co
     const auto it = m_visuals.find(typeId.value());
     return it == m_visuals.end() ? m_defaultVisual : it->second;
 }
-} // namespace ScopeCanvas::Render::Theme
+
+} // namespace ScopeCanvas::Widget::Render::Theme

@@ -4,7 +4,7 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/render/CanvasRenderer.h>
 #include <ScopeCanvas/render/window/DrawContext.h>
-#include <ScopeCanvas/widget/NodeInfo.h>
+#include <ScopeCanvas/widget/render/NodeInfo.h>
 
 namespace ScopeCanvas::Demo {
 class DiagramDrawCtx : public Render::Window::DrawContext {
@@ -12,7 +12,7 @@ class DiagramDrawCtx : public Render::Window::DrawContext {
     DiagramBasics m_basics{};
 
     Render::CanvasRenderer m_renderer{};
-    Widget::NodeInfoRenderer m_nodeInfoRenderer{};
+    Widget::Render::NodeInfoRenderer m_nodeInfoRenderer{};
     bool m_rendererInitialized{false};
     bool m_nodeInfoRendererInitialized{false};
 
@@ -48,8 +48,8 @@ class DiagramDrawCtx : public Render::Window::DrawContext {
 
     void draw(Render::Window::Viewport* view);
 
-    inline bool needsRender() {
-        return true;
+    inline virtual bool needsRender() {
+        return false;
     }
 
     [[nodiscard]] Core::Ids::EdgeId selectedEdge() const {
@@ -65,10 +65,6 @@ class DiagramDrawCtx : public Render::Window::DrawContext {
 
     bool& showGrid() {
         return m_showGrid;
-    }
-
-    bool& showDebug() {
-        return m_showDebug;
     }
 
   private:
