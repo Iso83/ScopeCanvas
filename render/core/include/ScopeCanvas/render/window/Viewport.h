@@ -18,6 +18,8 @@ class Viewport : protected ViewportInteraction {
     };
 
   protected:
+    glm::vec2 m_screenPosition{};
+
     //-------------------------------------------------------------------------
     // State
     //-------------------------------------------------------------------------
@@ -32,6 +34,10 @@ class Viewport : protected ViewportInteraction {
     ViewportHandler* m_handler{};
 
   public:
+    inline virtual void setScreenPosition(const glm::vec2& position) {
+        m_screenPosition = position;
+    }
+
     //-------------------------------------------------------------------------
     // State
     //-------------------------------------------------------------------------
@@ -106,7 +112,8 @@ class Viewport : protected ViewportInteraction {
 
     inline [[nodiscard]] glm::vec2 screenToWorld(float sx, float sy) const {
         auto cam = activeState().m_camera;
-        return screenToWorld(sx, sy, cam.getViewportWidth(), cam.getViewportHeight());
+        return screenToWorld(sx - m_screenPosition.x, sy - m_screenPosition.y, cam.getViewportWidth(),
+                             cam.getViewportHeight());
     }
 
   protected:
