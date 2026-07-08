@@ -12,8 +12,8 @@ void RenderBenchmark::draw(Window::ViewportHandler& viewHandler) {
 
         const auto frameStart = Clock::now();
 
-        for (auto viewport : viewHandler.viewports()) 
-                viewport->draw();
+        for (auto* viewport : viewHandler.viewports())
+            viewport->draw();
 
         const auto now = Clock::now();
 
@@ -26,12 +26,21 @@ void RenderBenchmark::draw(Window::ViewportHandler& viewHandler) {
 
         const double elapsedSeconds = std::chrono::duration<double>(elapsed).count();
 
+        const double averageFrameTimeMs =
+            m_intervalFrames > 0 ? m_intervalFrameTimeMs / static_cast<double>(m_intervalFrames) : 0.0;
+
         m_latest.renderedFrames = m_intervalFrames;
         m_latest.elapsedSeconds = elapsedSeconds;
         m_latest.framesPerSecond = elapsedSeconds > 0.0 ? static_cast<double>(m_intervalFrames) / elapsedSeconds : 0.0;
 
-        m_latest.averageFrameTimeMs =
-            m_intervalFrames > 0 ? m_intervalFrameTimeMs / static_cast<double>(m_intervalFrames) : 0.0;
+        m_latest.averageFrameTimeMs = averageFrameTimeMs;
+
+        m_latest.estimatedFramesPerSecond = averageFrameTimeMs > 0.0 ? 1000.0 / averageFrameTimeMs : 0.0;
+
+        m_latest.renderLoadPercent =
+            elapsedSeconds > 0.0 ? (m_intervalFrameTimeMs / (elapsedSeconds * 1000.0)) * 100.0 : 0.0;
+
+        m_latest.idleTimeMs = elapsedSeconds * 1000.0 - m_intervalFrameTimeMs;
 
         m_intervalStart = now;
         m_intervalFrames = 0;

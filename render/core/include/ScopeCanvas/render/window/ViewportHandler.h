@@ -22,6 +22,8 @@ struct State {
 };
 } // namespace ScopeCanvas::Input
 
+namespace ScopeCanvas::Render { class RenderBenchmark; }
+
 namespace ScopeCanvas::Render::Window {
 class Viewport;
 
@@ -48,10 +50,10 @@ class ViewportHandler {
     //-------------------------------------------------------------------------
     void registerViewport(Viewport* viewport);
     void unregisterViewport(Viewport* viewport);
-
-    inline void setActiveViewport(std::size_t index) {
-        assert(index < m_viewports.size());
-        m_activeView = index;
+    void setActiveViewport(std::size_t index);
+    bool setActiveViewport(Viewport* viewport);
+    void clearActiveViewport() {
+        m_activeView = InvalidView;
     }
 
     inline [[nodiscard]] Viewport* activeViewport() noexcept {
@@ -73,9 +75,14 @@ class ViewportHandler {
     }
 
     //-------------------------------------------------------------------------
+    // Render
+    //-------------------------------------------------------------------------
+    [[nodiscard]] virtual bool needsRender();
+    void draw(ScopeCanvas::Render::RenderBenchmark* benchmark = nullptr);
+
+    //-------------------------------------------------------------------------
     // Interaction
     //-------------------------------------------------------------------------
-
     virtual bool processMouseMove(glm::vec2 pos);
     inline const glm::vec2& mousePosition() const {
         return m_mousePosition;
@@ -101,7 +108,6 @@ class ViewportHandler {
 
         return m_keys[key];
     }
-
 
     virtual void updatePrevInteraction();
 

@@ -1,31 +1,18 @@
-#ifdef SC_BUILD_DEMO_BENCHMARK
-#include <ScopeCanvas/render/RenderBenchmark.h>
-#endif
-
-#include "ImGuiInputListener.h"
-#include "ImGuiPlatformWindowHooks.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "ImGuiInputListener.h"
+#include "ImGuiPlatformWindowHooks.h"
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
 #include <ScopeCanvas/demo/DiagramDrawContext.h>
 #include <ScopeCanvas/glfw/GlfwBootstrap.h>
-#include <ScopeCanvas/glfw/GlfwViewportBindings.h>
+#include <ScopeCanvas/render/RenderBenchmark.h>
 #include <ScopeCanvas/render/window/Canvas.h>
-#include <ScopeCanvas/render/window/ViewportHandler.h>
 
 using namespace ScopeCanvas::Render;
 using namespace ScopeCanvas::Render::Window;
 using namespace ScopeCanvas::Demo;
 using namespace ScopeCanvas::GLFW;
-
-#ifdef SC_BUILD_DEMO_BENCHMARK
-#define SWAPINTERVAL 0
-#else
-#define SWAPINTERVAL 1
-#endif
 
 static void initializeImGui(GLFWwindow* window) {
     IMGUI_CHECKVERSION();
@@ -44,16 +31,16 @@ static void drawMainMenu(DiagramDrawCtx& drawCtx) {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Create")) {
             if (ImGui::MenuItem("Number"))
-                drawCtx.Doc().createNode(ScopeCanvas::Core::Ids::NodeTypeId{1}, {-120.0F, 0.0F});
+                drawCtx.document().createNode(ScopeCanvas::Core::Ids::NodeTypeId{1}, {-120.0F, 0.0F});
 
             if (ImGui::MenuItem("Add"))
-                drawCtx.Doc().createNode(ScopeCanvas::Core::Ids::NodeTypeId{2}, {80.0F, 0.0F});
+                drawCtx.document().createNode(ScopeCanvas::Core::Ids::NodeTypeId{2}, {80.0F, 0.0F});
 
             if (ImGui::MenuItem("Multiply"))
-                drawCtx.Doc().createNode(ScopeCanvas::Core::Ids::NodeTypeId{3}, {280.0F, 0.0F});
+                drawCtx.document().createNode(ScopeCanvas::Core::Ids::NodeTypeId{3}, {280.0F, 0.0F});
 
             if (ImGui::MenuItem("Output"))
-                drawCtx.Doc().createNode(ScopeCanvas::Core::Ids::NodeTypeId{4}, {480.0F, 0.0F});
+                drawCtx.document().createNode(ScopeCanvas::Core::Ids::NodeTypeId{4}, {480.0F, 0.0F});
 
             ImGui::EndMenu();
         }
@@ -68,15 +55,90 @@ static void drawMainMenu(DiagramDrawCtx& drawCtx) {
         if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem("Show Grid", nullptr, &drawCtx.showGrid());
 
-            ImGui::Separator();
-            ImGui::TextUnformatted("Use the per-canvas panel for grid/debug toggles.");
-
             ImGui::EndMenu();
         }
 
         ImGui::EndMainMenuBar();
     }
 }
+
+static void beginImGuiFrame() {
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::DockSpaceOverViewport();
+}
+
+static void endImGuiFrame(GLFWwindow* window) {
+    ImGui::Render();
+
+    prepareFramebuffer(window);
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        GLFWwindow* backup = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup);
+    }
+}
+
+static void shutdownImGui() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
+static void drawCanvasPanel(Canvas& canvas, const char* title, GLFWwindow* window, ViewportHandler& viewHandler,
+                            bool focusOnOpen = false) {
+    static int startupFocusFrames = 2;
+
+    if (focusOnOpen && startupFocusFrames > 0) {
+        ImGui::SetNextWindowFocus();
+        --startupFocusFrames;
+    }
+
+    ImGui::Begin(title);
+
+    GLFWwindow* currentWindow = window;
+    if (auto* imguiViewport = ImGui::GetWindowViewport()) {
+        if (auto* viewportWindow = static_cast<GLFWwindow*>(imguiViewport->PlatformHandle))
+            currentWindow = viewportWindow;
+    }
+
+    int wx, wy;
+    glfwGetWindowPos(currentWindow, &wx, &wy);
+    ImVec2 screen = ImGui::GetCursorScreenPos();
+    canvas.setScreenPosition({screen.x - wx, screen.y - wy});
+
+    const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+    canvas.setViewportSize(canvasSize.x, canvasSize.y);
+    
+    if (ImGui::IsWindowFocused())
+        viewHandler.setActiveViewport(&canvas);
+    else if (viewHandler.activeViewport() == &canvas)
+        viewHandler.clearActiveViewport();
+
+    ImGui::Image(static_cast<ImTextureID>(canvas.colorTexture()), canvasSize, ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::End();
+}
+
+#ifdef SC_BUILD_DEMO_BENCHMARK
+static void drawBenchmarkWindow(const RenderBenchmark& benchmark) {
+    const auto& stats = benchmark.statistics();
+
+    ImGui::Begin("Render Benchmark");
+    ImGui::Text("Frames: %llu", stats.renderedFrames);
+    ImGui::Text("Elapsed: %.3f s", stats.elapsedSeconds);
+    ImGui::Text("FPS: %.2f", stats.framesPerSecond);
+    ImGui::Text("Estimated: %.2f", stats.estimatedFramesPerSecond);
+    ImGui::Text("Average frame: %.3f ms", stats.averageFrameTimeMs);
+    ImGui::Text("Render load: %.1f %%", stats.renderLoadPercent);
+    ImGui::Text("Idle: %.1f ms", stats.idleTimeMs);
+    ImGui::End();
+}
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -85,7 +147,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 int main() {
 #endif
 
-    GLFWwindow* window = createOpenGLWindow(1280, 720, "ScopeCanvas Docking Demo", true, SWAPINTERVAL);
+    GLFWwindow* window = createOpenGLWindow(1280, 720, "ScopeCanvas Docking Demo", true, SC_SWAPINTERVAL);
     if (window == nullptr)
         return -1;
 
@@ -96,6 +158,7 @@ int main() {
     Canvas viewA, viewB;
     viewA.registerDrawContext(&drawCtx);
     viewA.setViewPosition({120.0F, 0.0F});
+
     viewB.registerDrawContext(&drawCtx);
 
     ViewportHandler viewHandler;
@@ -109,114 +172,27 @@ int main() {
     RenderBenchmark benchmark{};
 #endif
 
-    bool needsPresent{true};
     while (!glfwWindowShouldClose(window)) {
-        if (!needsPresent) {
-            glfwWaitEvents();
-            needsPresent = true;
-        } else
-            glfwPollEvents();
+        viewHandler.needsRender() ? glfwPollEvents() : glfwWaitEvents();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGui::DockSpaceOverViewport();
-
+        beginImGuiFrame();
         drawMainMenu(drawCtx);
+        drawCanvasPanel(viewA, "Primary Canvas", window, viewHandler, true);
+        drawCanvasPanel(viewB, "Secondary Canvas", window, viewHandler);
 
-        // TODO: Remove after ViewportInteraction refactor.
-        // Benchmark::draw(viewHandler) renders every registered viewport.
-        // Calling it from the per-canvas lambda causes redundant renders.
-        auto drawCanvasPanel = [&drawCtx, &needsPresent, &viewHandler, &window
 #ifdef SC_BUILD_DEMO_BENCHMARK
-                                ,
-                                &benchmark
-#endif
-        ](Canvas& canvas, const char* title) {
-            ImGui::Begin(title);
-            /*ImGui::Checkbox("Grid", &canvas.showGrid());
-            ImGui::SameLine();
-            ImGui::Checkbox("Debug", &canvas.showDebug());*/
-
-            GLFWwindow* currentWindow = window;
-            if (ImGuiViewport* imguiViewport = ImGui::GetWindowViewport()) {
-                if (auto* viewportWindow = static_cast<GLFWwindow*>(imguiViewport->PlatformHandle))
-                    currentWindow = viewportWindow;
-            }
-
-            int wx, wy;
-            glfwGetWindowPos(currentWindow, &wx, &wy);
-
-            ImVec2 screen = ImGui::GetCursorScreenPos();
-            glm::vec2 local{screen.x - wx, screen.y - wy};
-            canvas.setScreenPosition(local);
-
-            const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-            const bool hovered = ImGui::IsWindowHovered() || ImGui::IsItemHovered();
-
-            if (hovered) {
-                if (viewHandler.activeViewport() != &canvas) {
-                    auto viewports = viewHandler.viewports();
-                    for (int i = 0; i < viewports.size(); i++) {
-                        if (viewports[i] == &canvas) {
-                            viewHandler.setActiveViewport(i);
-                            break;
-                        }
-                    }
-                }
-            }
-            canvas.setViewportSize(canvasSize.x, canvasSize.y);
-
-            // if (canvas.needsRender()) {
-#ifdef SC_BUILD_DEMO_BENCHMARK
-            benchmark.draw(viewHandler);
+        viewHandler.draw(&benchmark);
+        drawBenchmarkWindow(benchmark);
 #else
-            if (hovered)
-                canvas.draw();
-#endif
-            needsPresent = true;
-            //}
-
-            ImGui::Image(static_cast<ImTextureID>(canvas.colorTexture()), canvasSize, ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::End();
-        };
-
-        drawCanvasPanel(viewA, "Primary Canvas");
-        drawCanvasPanel(viewB, "Secondary Canvas");
-
-#ifdef SC_BUILD_DEMO_BENCHMARK
-        const auto& stats = benchmark.statistics();
-        ImGui::Begin("Render Benchmark");
-        ImGui::Text("Frames: %llu", stats.renderedFrames);
-        ImGui::Text("Elapsed: %.3f s", stats.elapsedSeconds);
-        ImGui::Text("FPS: %.2f", stats.framesPerSecond);
-        ImGui::Text("Average frame: %.3f ms", stats.averageFrameTimeMs);
-        ImGui::End();
-
+        viewHandler.draw();
 #endif
 
-        ImGui::Render();
-
-        prepareFramebuffer(window);
-
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-            GLFWwindow* backup = glfwGetCurrentContext();
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(backup);
-        }
-
+        endImGuiFrame(window);
         viewHandler.updatePrevInteraction();
         glfwSwapBuffers(window);
-        needsPresent = false;
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
+    shutdownImGui();
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
