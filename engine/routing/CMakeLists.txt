@@ -42,4 +42,5 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
 
 if(SC_BUILD_TESTS)
     sc_add_module_test(ScopeCanvasRouting routing SC_Routing_EdgeRouter)
+    sc_add_module_test(ScopeCanvasRouting routing SC_Routing_FlowLayout)
 endif()

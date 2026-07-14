@@ -19,6 +19,7 @@ add_library(ScopeCanvasRender
 target_link_libraries(ScopeCanvasRender PUBLIC
     ScopeCanvasRouting
     glad
+    ${SC_FREETYPE_TARGET}
     #opengl32
 )
 

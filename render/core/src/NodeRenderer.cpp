@@ -65,6 +65,12 @@ std::vector<glm::vec2> roundedRectPoints(const glm::vec2& pos, const glm::vec2& 
     return ScopeCanvas::Render::Geometry::roundedRectOutline(pos, size, radius, segments);
 }
 
+float safeCornerRadius(float requestedRadius, const glm::vec2& size) {
+    const float maxRadius = std::max(std::min(size.x, size.y) * 0.22F, 0.0F);
+    const float minRadius = std::min(4.0F, maxRadius);
+    return std::clamp(requestedRadius, minRadius, maxRadius);
+}
+
 void appendConvexPolygon(std::vector<ColorVertex>& vertices, const std::vector<glm::vec2>& points,
                          const std::array<glm::vec4, 4>& colors, const glm::vec2& minPoint, const glm::vec2& maxPoint) {
     if (points.size() < 3U)
@@ -212,7 +218,7 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
         const bool selected = isSelected(node.id, selectedNodeIds);
         const float borderThickness =
             std::clamp(selected ? style.borderThickness + 1.1F : style.borderThickness, 1.0F, 3.5F);
-        const float cornerRadius = std::clamp(style.cornerRadius, 4.0F, std::min(node.size.x, node.size.y) * 0.22F);
+        const float cornerRadius = safeCornerRadius(style.cornerRadius, node.size);
         const glm::vec4 border = selected ? style.selectionColor : style.borderColor;
 
         std::vector<ColorVertex> fillVertices;
@@ -247,7 +253,7 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
     for (const Scene::NodeRenderData& node : nodes) {
         const NodeRenderStyle style = styleResolver ? styleResolver(node.typeId) : defaultStyle(node.typeId);
         const bool selected = isSelected(node.id, selectedNodeIds);
-        const float cornerRadius = std::clamp(style.cornerRadius, 4.0F, std::min(node.size.x, node.size.y) * 0.22F);
+        const float cornerRadius = safeCornerRadius(style.cornerRadius, node.size);
         const glm::vec4 border = selected ? brighten(style.selectionColor, 0.08F) : brighten(style.borderColor, 0.04F);
         const std::vector<glm::vec2> outline = roundedRectPoints(node.position, node.size, cornerRadius, 8);
         std::vector<ColorVertex> outlineVertices;
@@ -286,7 +292,7 @@ void NodeRenderer::renderSelectionBorders(const std::vector<Scene::NodeRenderDat
 
         const NodeRenderStyle style = styleResolver ? styleResolver(node.typeId) : defaultStyle(node.typeId);
         const float borderThickness = std::clamp(style.borderThickness + 1.1F, 1.0F, 3.5F);
-        const float cornerRadius = std::clamp(style.cornerRadius, 4.0F, std::min(node.size.x, node.size.y) * 0.22F);
+        const float cornerRadius = safeCornerRadius(style.cornerRadius, node.size);
 
         std::vector<ColorVertex> fillVertices;
         fillVertices.reserve(256U);
