@@ -1,5 +1,6 @@
 #include <ScopeCanvas/demo/DiagramBasics.h>
 #include <algorithm>
+#include <cmath>
 
 using namespace ScopeCanvas::Core;
 using namespace ScopeCanvas::Core::Ids;

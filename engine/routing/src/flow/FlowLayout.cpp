@@ -13,6 +13,23 @@ struct SubtreeResult {
     glm::vec2 anchor{};
 };
 
+float estimatedTextWidth(const std::string& text, float averageGlyphWidth) {
+    return static_cast<float>(text.size()) * averageGlyphWidth;
+}
+
+glm::vec2 stepSize(const FlowStep& step, const FlowLayoutOptions& options) {
+    constexpr float horizontalPadding = 32.0F;
+    constexpr float titleAverageGlyphWidth = 9.5F;
+    constexpr float detailAverageGlyphWidth = 7.0F;
+
+    const std::string titlePrefix = step.children.empty() ? "" : "- ";
+    const float titleWidth = estimatedTextWidth(titlePrefix + step.title, titleAverageGlyphWidth);
+    const float descriptionWidth = estimatedTextWidth(step.description, detailAverageGlyphWidth);
+    const float statusWidth = estimatedTextWidth(step.status, detailAverageGlyphWidth);
+    const float contentWidth = std::max({titleWidth, descriptionWidth, statusWidth});
+    return {std::max(options.stepSize.x, contentWidth + horizontalPadding), options.stepSize.y};
+}
+
 SubtreeResult layoutStep(const FlowStep& step, Core::Flow::FlowRowId rowId, Core::Ids::NodeId parentStepId,
                          glm::vec2 position, std::uint32_t depth, const FlowLayoutOptions& options,
                          FlowLayoutResult& result) {
@@ -21,20 +38,20 @@ SubtreeResult layoutStep(const FlowStep& step, Core::Flow::FlowRowId rowId, Core
     layout.rowId = rowId;
     layout.parentStepId = parentStepId;
     layout.position = position;
-    layout.size = options.stepSize;
-    layout.railAnchor = {position.x + options.stepSize.x * 0.5F, position.y + options.stepSize.y * 0.5F};
+    layout.size = stepSize(step, options);
+    layout.railAnchor = {position.x + layout.size.x * 0.5F, position.y + layout.size.y * 0.5F};
     layout.hasChildren = !step.children.empty();
     layout.collapsed = step.collapsed;
     layout.depth = depth;
 
     float minX = position.x;
-    float maxX = position.x + options.stepSize.x;
+    float maxX = position.x + layout.size.x;
     float minY = position.y;
-    float maxY = position.y + options.stepSize.y;
+    float maxY = position.y + layout.size.y;
 
     if (!step.collapsed && !step.children.empty()) {
         float childX = position.x + options.childIndent;
-        float childY = position.y - options.stepSize.y - options.childGap;
+        float childY = position.y - layout.size.y - options.childGap;
         for (const FlowStep& child : step.children) {
             const SubtreeResult childResult = layoutStep(child, rowId, step.id, {childX, childY}, depth + 1U, options, result);
             childX += childResult.size.x + options.stepGap;
@@ -75,6 +92,9 @@ FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, con
             for (const FlowRow& row : group.rows) {
                 float stepX = options.origin.x + options.rowStartPadding;
                 std::vector<glm::vec2> anchors;
+                float rowStepLeft = options.origin.x;
+                float rowStepRight = options.origin.x + options.stepSize.x;
+                bool hasRowSteps = false;
                 float rowTop = rowY + options.stepSize.y * 0.5F;
                 float rowBottom = rowY - options.stepSize.y * 0.5F;
 
@@ -82,6 +102,11 @@ FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, con
                     const SubtreeResult subtree =
                         layoutStep(step, row.id, {}, {stepX, rowY - options.stepSize.y * 0.5F}, 0U, options, result);
                     anchors.push_back(subtree.anchor);
+                    if (!hasRowSteps) {
+                        rowStepLeft = subtree.position.x + options.parentPadding;
+                        hasRowSteps = true;
+                    }
+                    rowStepRight = subtree.position.x + subtree.size.x - options.parentPadding;
                     stepX += subtree.size.x + options.stepGap;
                     contentLeft = std::min(contentLeft, subtree.position.x);
                     contentRight = std::max(contentRight, subtree.position.x + subtree.size.x);
@@ -90,9 +115,9 @@ FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, con
                 }
 
                 const float railStartX =
-                    anchors.empty() ? options.origin.x : anchors.front().x - options.stepSize.x * 0.5F - options.railOuterPadding;
+                    anchors.empty() ? options.origin.x : rowStepLeft - options.railOuterPadding;
                 const float railEndX =
-                    anchors.empty() ? options.origin.x + options.stepSize.x : anchors.back().x + options.stepSize.x * 0.5F + options.railOuterPadding;
+                    anchors.empty() ? options.origin.x + options.stepSize.x : rowStepRight + options.railOuterPadding;
                 result.rows.push_back({row.id, {railStartX, rowY}, {railEndX, rowY}, rowTop, rowBottom});
                 contentLeft = std::min(contentLeft, railStartX);
                 contentRight = std::max(contentRight, railEndX);

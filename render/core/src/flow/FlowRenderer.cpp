@@ -111,8 +111,12 @@ struct FlowRenderer::Impl {
                        const ScopeCanvas::Render::Camera::Camera2D& camera) const;
     void shutdownText();
     bool loadFont();
+    [[nodiscard]] float textWidth(const std::string& text, float size) const;
+    [[nodiscard]] std::string elideText(const std::string& text, float size, float maxWidth) const;
     void renderText(const std::string& text, glm::vec2 position, float size, glm::vec4 color,
                     const ScopeCanvas::Render::Camera::Camera2D& camera) const;
+    void renderTextClipped(const std::string& text, glm::vec2 position, float size, float maxWidth, glm::vec4 color,
+                           const ScopeCanvas::Render::Camera::Camera2D& camera) const;
     void render(const Core::Flow::FlowDocument& document, const Routing::Flow::FlowLayoutResult& layout,
                 const ScopeCanvas::Render::Camera::Camera2D& camera, const FlowRenderOptions& options) const;
     void renderParentContainers(const Routing::Flow::FlowLayoutResult& layout,
@@ -510,6 +514,45 @@ bool FlowRenderer::Impl::loadFont() {
     return !glyphs.empty();
 }
 
+float FlowRenderer::Impl::textWidth(const std::string& text, float size) const {
+    const float scale = size / fontAtlasSize;
+    float width = 0.0F;
+    for (char c : text) {
+        const auto it = glyphs.find(c);
+        if (it == glyphs.end())
+            continue;
+        width += static_cast<float>(it->second.advance >> 6U) * scale;
+    }
+    return width;
+}
+
+std::string FlowRenderer::Impl::elideText(const std::string& text, float size, float maxWidth) const {
+    if (maxWidth <= 0.0F || text.empty())
+        return {};
+    if (textWidth(text, size) <= maxWidth)
+        return text;
+
+    constexpr const char* ellipsis = "...";
+    const float ellipsisWidth = textWidth(ellipsis, size);
+    if (ellipsisWidth > maxWidth)
+        return {};
+
+    std::string result;
+    result.reserve(text.size());
+    float width = 0.0F;
+    for (char c : text) {
+        const auto it = glyphs.find(c);
+        if (it == glyphs.end())
+            continue;
+        const float glyphWidth = static_cast<float>(it->second.advance >> 6U) * (size / fontAtlasSize);
+        if (width + glyphWidth + ellipsisWidth > maxWidth)
+            break;
+        result.push_back(c);
+        width += glyphWidth;
+    }
+    return result + ellipsis;
+}
+
 void FlowRenderer::Impl::renderText(const std::string& text, glm::vec2 position, float size, glm::vec4 color,
                                     const ScopeCanvas::Render::Camera::Camera2D& camera) const {
     const float scale = size / fontAtlasSize;
@@ -560,6 +603,66 @@ void FlowRenderer::Impl::renderText(const std::string& text, glm::vec2 position,
                      GL_DYNAMIC_DRAW);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         vertexOffset += 6U;
+    }
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void FlowRenderer::Impl::renderTextClipped(const std::string& text, glm::vec2 position, float size, float maxWidth,
+                                           glm::vec4 color,
+                                           const ScopeCanvas::Render::Camera::Camera2D& camera) const {
+    const std::string clippedText = elideText(text, size, maxWidth);
+    if (clippedText.empty() || maxWidth <= 0.0F)
+        return;
+
+    const float scale = size / fontAtlasSize;
+    const float baselineY = position.y;
+    const float maxX = position.x + maxWidth;
+    float x = position.x;
+
+    glUseProgram(textProgram);
+    const glm::mat4 vp = camera.viewProjection();
+    glUniformMatrix4fv(glGetUniformLocation(textProgram, "uVP"), 1, GL_FALSE, &vp[0][0]);
+    glUniform1i(glGetUniformLocation(textProgram, "uGlyph"), 0);
+    glBindVertexArray(textVao);
+    glBindBuffer(GL_ARRAY_BUFFER, textVbo);
+
+    for (char c : clippedText) {
+        const auto it = glyphs.find(c);
+        if (it == glyphs.end())
+            continue;
+
+        const GlyphInfo& glyph = it->second;
+        const glm::vec2 glyphPosition{x + glyph.bearing.x * scale,
+                                      baselineY - (glyph.size.y - glyph.bearing.y) * scale};
+        const glm::vec2 glyphSize = glyph.size * scale;
+        const float x0 = glyphPosition.x;
+        const float y0 = glyphPosition.y;
+        const float unclippedX1 = glyphPosition.x + glyphSize.x;
+        const float y1 = glyphPosition.y + glyphSize.y;
+        x += static_cast<float>(glyph.advance >> 6U) * scale;
+
+        if (x0 >= maxX)
+            break;
+        const float x1 = std::min(unclippedX1, maxX);
+        if (x1 <= x0 || glyphSize.x <= 0.0F || glyphSize.y <= 0.0F)
+            continue;
+
+        const float u1 = (x1 - x0) / glyphSize.x;
+        const TextVertex vertices[] = {
+            {x0, y0, 0.0F, 1.0F, color.r, color.g, color.b, color.a},
+            {x1, y0, u1, 1.0F, color.r, color.g, color.b, color.a},
+            {x1, y1, u1, 0.0F, color.r, color.g, color.b, color.a},
+            {x0, y0, 0.0F, 1.0F, color.r, color.g, color.b, color.a},
+            {x1, y1, u1, 0.0F, color.r, color.g, color.b, color.a},
+            {x0, y1, 0.0F, 0.0F, color.r, color.g, color.b, color.a},
+        };
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, glyph.texture);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     glBindVertexArray(0);
@@ -732,13 +835,15 @@ void FlowRenderer::Impl::renderStepNodes(const Core::Flow::FlowDocument& documen
         if (step == nullptr)
             continue;
         const std::string prefix = stepLayout.hasChildren ? (stepLayout.collapsed ? "+ " : "- ") : "";
-        renderText(prefix + step->title, stepLayout.position + glm::vec2{16.0F, 52.0F}, 15.0F,
-                   {0.96F, 0.98F, 1.0F, 1.0F}, camera);
-        renderText(step->description, stepLayout.position + glm::vec2{16.0F, 31.0F}, 12.0F, {0.76F, 0.84F, 0.94F, 1.0F},
-                   camera);
+        constexpr float horizontalPadding = 16.0F;
+        const float textWidth = std::max(1.0F, stepLayout.size.x - horizontalPadding * 2.0F);
+        renderTextClipped(prefix + step->title, stepLayout.position + glm::vec2{horizontalPadding, 52.0F}, 15.0F,
+                          textWidth, {0.96F, 0.98F, 1.0F, 1.0F}, camera);
+        renderTextClipped(step->description, stepLayout.position + glm::vec2{horizontalPadding, 31.0F}, 12.0F,
+                          textWidth, {0.76F, 0.84F, 0.94F, 1.0F}, camera);
         if (!step->status.empty())
-            renderText(step->status, stepLayout.position + glm::vec2{16.0F, 13.0F}, 11.0F, {0.58F, 0.92F, 0.68F, 1.0F},
-                       camera);
+            renderTextClipped(step->status, stepLayout.position + glm::vec2{horizontalPadding, 13.0F}, 11.0F, textWidth,
+                              {0.58F, 0.92F, 0.68F, 1.0F}, camera);
     }
 
     renderSelectedStepProperties(document, layout, camera, options.selectedStep);

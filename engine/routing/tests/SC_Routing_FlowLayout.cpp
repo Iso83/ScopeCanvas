@@ -69,6 +69,20 @@ int test_subtree_bounds_include_visible_children() {
     return 0;
 }
 
+int test_step_width_expands_for_long_labels() {
+    FlowDocument document{};
+    FlowGroup& group = document.createGroup("Root");
+    FlowRow& row = document.createRow(group, "Main");
+    const NodeId stepId = document.insertStep(row, 0, NodeTypeId{1}, "A very long customer import title", "Details").id;
+
+    const FlowLayoutResult layout = FlowLayout{}.build(document);
+
+    const FlowStepLayout* step = layout.step(stepId);
+    SC_TEST(step != nullptr);
+    SC_TEST(step->size.x > FlowLayoutOptions{}.stepSize.x);
+    return 0;
+}
+
 int test_insertion_index_uses_top_level_steps_for_row() {
     Fixture fixture = makeFixture();
     const FlowLayoutResult layout = FlowLayout{}.build(fixture.document);
@@ -88,6 +102,7 @@ int main() {
     SC_RUN_TEST(test_collapsed_parent_excludes_children);
     SC_RUN_TEST(test_collapsed_group_excludes_rows_and_steps);
     SC_RUN_TEST(test_subtree_bounds_include_visible_children);
+    SC_RUN_TEST(test_step_width_expands_for_long_labels);
     SC_RUN_TEST(test_insertion_index_uses_top_level_steps_for_row);
     return 0;
 }

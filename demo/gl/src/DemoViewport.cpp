@@ -84,7 +84,7 @@ void DemoViewport::draw(ScopeCanvas::Render::Window::DrawContext* ctx) {
     m_nowTime = glfwGetTime();
 
     bool keyStroked = processOnDraw_KeyStroke();
-    __super::draw(ctx);
+    Viewport::draw(ctx);
 
     m_needsRender = keyStroked || ctx->needsRender();
     m_lastTime = m_nowTime;

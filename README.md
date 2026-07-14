@@ -7,6 +7,7 @@ It started as a project I've wanted to build for years, a reusable canvas and vi
 The engine focuses on rendering and interaction. Applications remain responsible for their own document model, node logic, widgets, and behavior.
 
 ![ScopeCanvas Demo](demo/images/screenshot.png)
+![ScopeCanvas Flow-Demo](demo/images/screenshotFlow.jpg)
 
 Typical use cases include:
 
@@ -58,7 +59,59 @@ Typical use cases include:
 
 ---
 
-## Build
+## Supported Platforms
+
+| Platform | Compiler | Status |
+|----------|----------|--------|
+| Windows | Visual Studio 2026 (MSVC) | ✅ Supported |
+| Linux (Ubuntu) | GCC / Clang | ✅ Supported |
+
+---
+
+## Building on Linux (Ubuntu)
+
+### Install dependencies
+
+```bash
+sudo apt update
+
+sudo apt install \
+    build-essential \
+    cmake \
+    ninja-build \
+    git \
+    gdb \
+    clang \
+    clang-format \
+    pkg-config \
+    libx11-dev \
+    libxrandr-dev \
+    libxinerama-dev \
+    libxcursor-dev \
+    libxi-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev
+```
+
+### Clone the repository
+
+```bash
+git clone https://github.com/Iso83/ScopeCanvas.git
+cd ScopeCanvas
+```
+
+### Configure and build
+
+```bash
+rm -rf build
+
+cmake -S . -B build
+cmake --build build -j$(nproc)
+```
+
+---
+
+## Building on Windows
 
 ```bash
 mkdir build
