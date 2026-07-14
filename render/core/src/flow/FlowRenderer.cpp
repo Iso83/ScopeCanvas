@@ -1,10 +1,12 @@
-#include <ScopeCanvas/render/flow/FlowRenderer.h>
 #include <ScopeCanvas/render/EdgeRenderer.h>
 #include <ScopeCanvas/render/GridRenderer.h>
 #include <ScopeCanvas/render/NodeRenderer.h>
 #include <ScopeCanvas/render/camera/Camera2D.h>
+#include <ScopeCanvas/render/flow/FlowRenderer.h>
+#include <ScopeCanvas/render/geometry/RoundedRect.h>
 #include <ScopeCanvas/render/scene/RenderScene.h>
 #include <algorithm>
+#include <cmath>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <glad/glad.h>
@@ -12,12 +14,12 @@
 
 namespace ScopeCanvas::Render::Flow {
 namespace {
-using ScopeCanvas::Core::Ids::EdgeId;
-using ScopeCanvas::Core::Ids::NodeId;
-using ScopeCanvas::Core::Ids::NodeTypeId;
 using ScopeCanvas::Core::Flow::FlowGroup;
 using ScopeCanvas::Core::Flow::FlowGroupId;
 using ScopeCanvas::Core::Flow::FlowStep;
+using ScopeCanvas::Core::Ids::EdgeId;
+using ScopeCanvas::Core::Ids::NodeId;
+using ScopeCanvas::Core::Ids::NodeTypeId;
 using ScopeCanvas::Routing::Flow::FlowGroupLayout;
 using ScopeCanvas::Routing::Flow::FlowLayoutResult;
 using ScopeCanvas::Routing::Flow::FlowRowLayout;
@@ -103,6 +105,10 @@ struct FlowRenderer::Impl {
     void shutdownRect();
     void renderRect(glm::vec2 position, glm::vec2 size, glm::vec4 color,
                     const ScopeCanvas::Render::Camera::Camera2D& camera) const;
+    void renderTopRoundedRect(glm::vec2 position, glm::vec2 size, float radius, glm::vec4 color,
+                              const ScopeCanvas::Render::Camera::Camera2D& camera) const;
+    void renderChevron(glm::vec2 center, float size, bool expanded, glm::vec4 color,
+                       const ScopeCanvas::Render::Camera::Camera2D& camera) const;
     void shutdownText();
     bool loadFont();
     void renderText(const std::string& text, glm::vec2 position, float size, glm::vec4 color,
@@ -117,6 +123,10 @@ struct FlowRenderer::Impl {
                      const ScopeCanvas::Render::Camera::Camera2D& camera) const;
     void renderStepNodes(const Core::Flow::FlowDocument& document, const Routing::Flow::FlowLayoutResult& layout,
                          const ScopeCanvas::Render::Camera::Camera2D& camera, const FlowRenderOptions& options) const;
+    void renderSelectedStepProperties(const Core::Flow::FlowDocument& document,
+                                      const Routing::Flow::FlowLayoutResult& layout,
+                                      const ScopeCanvas::Render::Camera::Camera2D& camera,
+                                      Core::Ids::NodeId selectedStep) const;
 };
 
 FlowGroupHeaderGeometry groupHeaderGeometry(const FlowGroupLayout& group, float visibleCenterX, float labelWidth) {
@@ -128,17 +138,24 @@ FlowGroupHeaderGeometry groupHeaderGeometry(const FlowGroupLayout& group, float 
     const float textX = minX > maxX ? group.boundsPosition.x + (group.boundsSize.x - labelWidth) * 0.5F
                                     : std::clamp(desiredX, minX, maxX);
     const float headerBottom = group.boundsPosition.y + group.boundsSize.y - group.headerSize.y;
-    return {{textX, headerBottom - 6.0F}, {textX - 10.0F, headerBottom + 2.0F},
+    return {{textX, headerBottom - 6.0F},
+            {textX - 10.0F, headerBottom + 2.0F},
             {labelWidth + 20.0F, std::max(group.headerSize.y - 4.0F, 1.0F)}};
 }
 
 FlowRenderer::FlowRenderer() : m_impl(std::make_unique<Impl>()) {}
 
-FlowRenderer::~FlowRenderer() { shutdown(); }
+FlowRenderer::~FlowRenderer() {
+    shutdown();
+}
 
-bool FlowRenderer::init() { return m_impl->init(); }
+bool FlowRenderer::init() {
+    return m_impl->init();
+}
 
-void FlowRenderer::shutdown() { m_impl->shutdown(); }
+void FlowRenderer::shutdown() {
+    m_impl->shutdown();
+}
 
 bool FlowRenderer::Impl::init() {
     if (initialized)
@@ -266,7 +283,7 @@ void FlowRenderer::Impl::shutdownRect() {
 }
 
 void FlowRenderer::Impl::renderRect(glm::vec2 position, glm::vec2 size, glm::vec4 color,
-                              const ScopeCanvas::Render::Camera::Camera2D& camera) const {
+                                    const ScopeCanvas::Render::Camera::Camera2D& camera) const {
     const float x0 = position.x;
     const float y0 = position.y;
     const float x1 = position.x + size.x;
@@ -283,6 +300,157 @@ void FlowRenderer::Impl::renderRect(glm::vec2 position, glm::vec2 size, glm::vec
     glBindBuffer(GL_ARRAY_BUFFER, rectVbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+void FlowRenderer::Impl::renderTopRoundedRect(glm::vec2 position, glm::vec2 size, float radius, glm::vec4 color,
+                                              const ScopeCanvas::Render::Camera::Camera2D& camera) const {
+    const float x0 = position.x;
+    const float y0 = position.y;
+    const float x1 = position.x + size.x;
+    const float y1 = position.y + size.y;
+    const float r = std::clamp(radius, 0.0F, std::min(size.x, size.y) * 0.5F);
+    constexpr int segments = 8;
+
+    std::vector<glm::vec2> outline;
+    outline.reserve(static_cast<std::size_t>((segments + 1) * 2 + 2));
+    outline.push_back({x0, y0});
+    outline.push_back({x1, y0});
+
+    const auto appendArc = [&outline, r](glm::vec2 center, float start, float end) {
+        for (int i = 0; i <= segments; ++i) {
+            const float t = static_cast<float>(i) / static_cast<float>(segments);
+            const float angle = start + (end - start) * t;
+            outline.push_back(center + glm::vec2{std::cos(angle), std::sin(angle)} * r);
+        }
+    };
+
+    if (r <= 0.01F) {
+        outline.push_back({x1, y1});
+        outline.push_back({x0, y1});
+    } else {
+        appendArc({x1 - r, y1 - r}, 0.0F, ScopeCanvas::Render::Geometry::kPi * 0.5F);
+        appendArc({x0 + r, y1 - r}, ScopeCanvas::Render::Geometry::kPi * 0.5F, ScopeCanvas::Render::Geometry::kPi);
+    }
+
+    glm::vec2 center{0.0F, 0.0F};
+    for (const glm::vec2& point : outline)
+        center += point;
+    center /= static_cast<float>(outline.size());
+
+    std::vector<float> vertices;
+    vertices.reserve(outline.size() * 18U);
+    const auto appendVertex = [&vertices, color](glm::vec2 point) {
+        vertices.insert(vertices.end(), {point.x, point.y, color.r, color.g, color.b, color.a});
+    };
+    for (std::size_t i = 0; i < outline.size(); ++i) {
+        appendVertex(center);
+        appendVertex(outline[i]);
+        appendVertex(outline[(i + 1U) % outline.size()]);
+    }
+
+    glUseProgram(rectProgram);
+    const glm::mat4 vp = camera.viewProjection();
+    glUniformMatrix4fv(glGetUniformLocation(rectProgram, "uVP"), 1, GL_FALSE, &vp[0][0]);
+    glBindVertexArray(rectVao);
+    glBindBuffer(GL_ARRAY_BUFFER, rectVbo);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.size() * sizeof(float)), vertices.data(),
+                 GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 6U));
+    glBindVertexArray(0);
+}
+
+void FlowRenderer::Impl::renderChevron(glm::vec2 center, float size, bool expanded, glm::vec4 color,
+                                       const Camera::Camera2D& camera) const {
+    constexpr std::size_t capSegments = 12U;
+    constexpr float twoPi = 6.28318530718F;
+
+    const float half = size * 0.5F;
+    const float thickness = std::max(size * 0.085F, 1.5F);
+    const float radius = thickness * 0.5F;
+
+    glm::vec2 start{};
+    glm::vec2 tip{};
+    glm::vec2 end{};
+
+    if (expanded) {
+        start = {center.x - half, center.y + half};
+        tip = {center.x, center.y - half};
+        end = {center.x + half, center.y + half};
+    } else {
+        start = {center.x - half, center.y + half};
+        tip = {center.x + half, center.y};
+        end = {center.x - half, center.y - half};
+    }
+
+    std::vector<float> vertices;
+    vertices.reserve((12U + capSegments * 3U * 3U) * 6U);
+
+    const auto appendVertex = [&vertices, color](glm::vec2 position) {
+        vertices.insert(vertices.end(),
+                        {position.x, position.y, color.r, color.g, color.b, color.a});
+    };
+
+    const auto appendSegment = [&](glm::vec2 from, glm::vec2 to) {
+        const glm::vec2 direction = glm::normalize(to - from);
+        const glm::vec2 normal{-direction.y * radius, direction.x * radius};
+
+        const glm::vec2 a = from + normal;
+        const glm::vec2 b = from - normal;
+        const glm::vec2 c = to - normal;
+        const glm::vec2 d = to + normal;
+
+        appendVertex(a);
+        appendVertex(b);
+        appendVertex(c);
+
+        appendVertex(a);
+        appendVertex(c);
+        appendVertex(d);
+    };
+
+    const auto appendRoundCap = [&](glm::vec2 capCenter) {
+        for (std::size_t index = 0; index < capSegments; ++index) {
+            const float angleA =
+                twoPi * static_cast<float>(index) / static_cast<float>(capSegments);
+            const float angleB =
+                twoPi * static_cast<float>(index + 1U) / static_cast<float>(capSegments);
+
+            const glm::vec2 edgeA{
+                std::cos(angleA) * radius,
+                std::sin(angleA) * radius,
+            };
+
+            const glm::vec2 edgeB{
+                std::cos(angleB) * radius,
+                std::sin(angleB) * radius,
+            };
+
+            appendVertex(capCenter);
+            appendVertex(capCenter + edgeA);
+            appendVertex(capCenter + edgeB);
+        }
+    };
+
+    appendSegment(start, tip);
+    appendSegment(tip, end);
+
+    appendRoundCap(start);
+    appendRoundCap(tip);
+    appendRoundCap(end);
+
+    glUseProgram(rectProgram);
+
+    const glm::mat4 vp = camera.viewProjection();
+    glUniformMatrix4fv(glGetUniformLocation(rectProgram, "uVP"), 1, GL_FALSE, &vp[0][0]);
+
+    glBindVertexArray(rectVao);
+    glBindBuffer(GL_ARRAY_BUFFER, rectVbo);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.size() * sizeof(float)),
+                 vertices.data(), GL_DYNAMIC_DRAW);
+
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 6U));
+
     glBindVertexArray(0);
 }
 
@@ -330,12 +498,11 @@ bool FlowRenderer::Impl::loadFont() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glyphs[static_cast<char>(c)] = {texture,
-                                          {static_cast<float>(face->glyph->bitmap.width),
-                                           static_cast<float>(face->glyph->bitmap.rows)},
-                                          {static_cast<float>(face->glyph->bitmap_left),
-                                           static_cast<float>(face->glyph->bitmap_top)},
-                                          static_cast<unsigned int>(face->glyph->advance.x)};
+        glyphs[static_cast<char>(c)] = {
+            texture,
+            {static_cast<float>(face->glyph->bitmap.width), static_cast<float>(face->glyph->bitmap.rows)},
+            {static_cast<float>(face->glyph->bitmap_left), static_cast<float>(face->glyph->bitmap_top)},
+            static_cast<unsigned int>(face->glyph->advance.x)};
     }
 
     FT_Done_Face(face);
@@ -344,7 +511,7 @@ bool FlowRenderer::Impl::loadFont() {
 }
 
 void FlowRenderer::Impl::renderText(const std::string& text, glm::vec2 position, float size, glm::vec4 color,
-                              const ScopeCanvas::Render::Camera::Camera2D& camera) const {
+                                    const ScopeCanvas::Render::Camera::Camera2D& camera) const {
     const float scale = size / fontAtlasSize;
     const float baselineY = position.y;
     float x = position.x;
@@ -423,12 +590,12 @@ void FlowRenderer::Impl::render(const Core::Flow::FlowDocument& document, const 
     renderStepNodes(document, layout, camera, options);
 }
 
-
 void FlowRenderer::Impl::renderParentContainers(const FlowLayoutResult& layout,
-                                          const ScopeCanvas::Render::Camera::Camera2D& camera) const {
+                                                const ScopeCanvas::Render::Camera::Camera2D& camera) const {
     std::vector<ScopeCanvas::Render::Scene::NodeRenderData> containers;
     for (const FlowGroupLayout& group : layout.groups) {
-        containers.push_back({NodeId{group.groupId.value()}, NodeTypeId{83}, group.boundsPosition, group.boundsSize, 0});
+        containers.push_back(
+            {NodeId{group.groupId.value()}, NodeTypeId{83}, group.boundsPosition, group.boundsSize, 0});
     }
     for (const FlowStepLayout& step : layout.steps) {
         if (!step.hasChildren || step.collapsed)
@@ -453,7 +620,7 @@ void FlowRenderer::Impl::renderParentContainers(const FlowLayoutResult& layout,
 }
 
 void FlowRenderer::Impl::renderGroupHeaders(const Core::Flow::FlowDocument& document, const FlowLayoutResult& layout,
-                                      const ScopeCanvas::Render::Camera::Camera2D& camera) const {
+                                            const ScopeCanvas::Render::Camera::Camera2D& camera) const {
     const float visibleCenterX = camera.position().x;
 
     std::vector<ScopeCanvas::Render::Scene::EdgeRenderData> dividers;
@@ -473,13 +640,16 @@ void FlowRenderer::Impl::renderGroupHeaders(const Core::Flow::FlowDocument& docu
         const float headerBottom = groupLayout.boundsPosition.y + groupLayout.boundsSize.y - headerHeight;
 
         if (!group->collapsed) {
-            constexpr float cornerInset = 12.0F;
-            const glm::vec2 headerPosition{groupLayout.boundsPosition.x + cornerInset, headerBottom};
-            const glm::vec2 headerSize{std::max(groupLayout.boundsSize.x - cornerInset * 2.0F, 1.0F),
-                                       std::max(headerHeight - 1.0F, 1.0F)};
-            renderRect(headerPosition, headerSize, {0.08F, 0.12F, 0.18F, 0.88F}, camera);
-            dividers.push_back({EdgeId{lineId++}, {{groupLayout.boundsPosition.x, headerBottom},
-                                                   {groupLayout.boundsPosition.x + groupLayout.boundsSize.x, headerBottom}}});
+            constexpr float borderInset = 1.5F;
+            constexpr float cornerRadius = 10.0F;
+            const glm::vec2 headerPosition{groupLayout.boundsPosition.x + borderInset, headerBottom};
+            const glm::vec2 headerSize{std::max(groupLayout.boundsSize.x - borderInset * 2.0F, 1.0F),
+                                       std::max(headerHeight - borderInset, 1.0F)};
+            renderTopRoundedRect(headerPosition, headerSize, cornerRadius - borderInset, {0.08F, 0.12F, 0.18F, 0.88F},
+                                 camera);
+            dividers.push_back({EdgeId{lineId++},
+                                {{groupLayout.boundsPosition.x, headerBottom},
+                                 {groupLayout.boundsPosition.x + groupLayout.boundsSize.x, headerBottom}}});
         }
 
         headerTexts.push_back({group, groupHeaderGeometry(groupLayout, visibleCenterX).textPosition});
@@ -488,16 +658,21 @@ void FlowRenderer::Impl::renderGroupHeaders(const Core::Flow::FlowDocument& docu
     lines.render(dividers, camera);
 
     for (const HeaderText& header : headerTexts) {
-        const std::string title = std::string(header.group->collapsed ? "[+] " : "[-] ") + header.group->title;
-        renderText(title, header.position + glm::vec2{0.0F, 28.0F}, 17.0F, {0.92F, 0.95F, 1.0F, 1.0F}, camera);
-        if (!header.group->summary.empty())
+        renderChevron(header.position + glm::vec2{8.0F, 35.0F}, 9.0F, !header.group->collapsed,
+                      {0.92F, 0.95F, 1.0F, 1.0F}, camera);
+
+        renderText(header.group->title, header.position + glm::vec2{23.0F, 28.0F}, 17.0F, {0.92F, 0.95F, 1.0F, 1.0F},
+                   camera);
+
+        if (!header.group->summary.empty()) {
             renderText(header.group->summary, header.position + glm::vec2{0.0F, 10.0F}, 11.0F,
                        {0.72F, 0.82F, 0.94F, 1.0F}, camera);
+        }
     }
 }
 
 void FlowRenderer::Impl::renderRails(const FlowLayoutResult& layout,
-                                    const ScopeCanvas::Render::Camera::Camera2D& camera) const {
+                                     const ScopeCanvas::Render::Camera::Camera2D& camera) const {
     std::vector<ScopeCanvas::Render::Scene::EdgeRenderData> lineSegments;
     std::uint32_t lineId = 1;
 
@@ -506,9 +681,8 @@ void FlowRenderer::Impl::renderRails(const FlowLayoutResult& layout,
         for (const FlowStepLayout& step : layout.steps)
             if (step.rowId == row.rowId && step.depth == 0U)
                 rowSteps.push_back(&step);
-        std::sort(rowSteps.begin(), rowSteps.end(), [](const FlowStepLayout* a, const FlowStepLayout* b) {
-            return a->position.x < b->position.x;
-        });
+        std::sort(rowSteps.begin(), rowSteps.end(),
+                  [](const FlowStepLayout* a, const FlowStepLayout* b) { return a->position.x < b->position.x; });
         if (rowSteps.empty())
             continue;
 
@@ -540,8 +714,8 @@ void FlowRenderer::Impl::renderRails(const FlowLayoutResult& layout,
 }
 
 void FlowRenderer::Impl::renderStepNodes(const Core::Flow::FlowDocument& document, const FlowLayoutResult& layout,
-                                   const ScopeCanvas::Render::Camera::Camera2D& camera,
-                                   const FlowRenderOptions& options) const {
+                                         const ScopeCanvas::Render::Camera::Camera2D& camera,
+                                         const FlowRenderOptions& options) const {
     std::vector<ScopeCanvas::Render::Scene::NodeRenderData> nodeParts;
     for (const FlowStepLayout& step : layout.steps) {
         const FlowStep* documentStep = findStep(document, step.stepId);
@@ -549,8 +723,8 @@ void FlowRenderer::Impl::renderStepNodes(const Core::Flow::FlowDocument& documen
             {step.stepId, documentStep != nullptr ? documentStep->typeId : NodeTypeId{1}, step.position, step.size, 0});
     }
 
-    const std::vector<NodeId> selected = options.selectedStep.isValid() ? std::vector<NodeId>{options.selectedStep}
-                                                                        : std::vector<NodeId>{};
+    const std::vector<NodeId> selected =
+        options.selectedStep.isValid() ? std::vector<NodeId>{options.selectedStep} : std::vector<NodeId>{};
     nodes.render(nodeParts, camera, selected, [](NodeTypeId typeId) { return stepStyle(typeId); });
 
     for (const FlowStepLayout& stepLayout : layout.steps) {
@@ -560,11 +734,69 @@ void FlowRenderer::Impl::renderStepNodes(const Core::Flow::FlowDocument& documen
         const std::string prefix = stepLayout.hasChildren ? (stepLayout.collapsed ? "+ " : "- ") : "";
         renderText(prefix + step->title, stepLayout.position + glm::vec2{16.0F, 52.0F}, 15.0F,
                    {0.96F, 0.98F, 1.0F, 1.0F}, camera);
-        renderText(step->description, stepLayout.position + glm::vec2{16.0F, 31.0F}, 12.0F,
-                   {0.76F, 0.84F, 0.94F, 1.0F}, camera);
+        renderText(step->description, stepLayout.position + glm::vec2{16.0F, 31.0F}, 12.0F, {0.76F, 0.84F, 0.94F, 1.0F},
+                   camera);
         if (!step->status.empty())
-            renderText(step->status, stepLayout.position + glm::vec2{16.0F, 13.0F}, 11.0F,
-                       {0.58F, 0.92F, 0.68F, 1.0F}, camera);
+            renderText(step->status, stepLayout.position + glm::vec2{16.0F, 13.0F}, 11.0F, {0.58F, 0.92F, 0.68F, 1.0F},
+                       camera);
+    }
+
+    renderSelectedStepProperties(document, layout, camera, options.selectedStep);
+}
+
+void FlowRenderer::Impl::renderSelectedStepProperties(const Core::Flow::FlowDocument& document,
+                                                      const FlowLayoutResult& layout, const Camera::Camera2D& camera,
+                                                      NodeId selectedStep) const {
+    if (!selectedStep.isValid())
+        return;
+
+    const FlowStepLayout* selectedLayout = layout.step(selectedStep);
+    const FlowStep* selected = findStep(document, selectedStep);
+    if (selectedLayout == nullptr || selected == nullptr)
+        return;
+
+    const float pixelScale = 1.0F / camera.zoom();
+
+    constexpr glm::vec2 panelSizePixels{320.0F, 150.0F};
+    constexpr glm::vec2 viewportMarginPixels{24.0F, 24.0F};
+
+    const glm::vec2 panelSize = panelSizePixels * pixelScale;
+    const glm::vec2 viewportMargin = viewportMarginPixels * pixelScale;
+
+    const float viewportHalfWidth = static_cast<float>(camera.getViewportWidth()) * 0.5F * pixelScale;
+    const float viewportHalfHeight = static_cast<float>(camera.getViewportHeight()) * 0.5F * pixelScale;
+
+    const glm::vec2 visibleTopRight = camera.position() + glm::vec2{viewportHalfWidth, viewportHalfHeight};
+
+    const glm::vec2 panelPosition = visibleTopRight - panelSize - viewportMargin;
+
+    const std::vector<ScopeCanvas::Render::Scene::NodeRenderData> panel{
+        {NodeId{900000U}, NodeTypeId{91}, panelPosition, panelSize, 0},
+    };
+
+    nodes.render(panel, camera, {}, [pixelScale](NodeTypeId /*typeId*/) {
+        ScopeCanvas::Render::NodeRenderStyle style{};
+        style.bodyColor = {0.10F, 0.13F, 0.18F, 0.96F};
+        style.borderColor = {0.72F, 0.80F, 0.92F, 0.90F};
+        style.cornerRadius = 9.0F * pixelScale;
+        style.borderThickness = 1.4F * pixelScale;
+        return style;
+    });
+
+    const glm::vec2 textInset = glm::vec2{18.0F, 0.0F} * pixelScale;
+
+    renderText("Properties", panelPosition + textInset + glm::vec2{0.0F, 118.0F} * pixelScale, 16.0F * pixelScale,
+               {0.92F, 0.95F, 1.0F, 1.0F}, camera);
+
+    renderText(selected->title, panelPosition + textInset + glm::vec2{0.0F, 88.0F} * pixelScale, 14.0F * pixelScale,
+               {0.96F, 0.98F, 1.0F, 1.0F}, camera);
+
+    renderText(selected->description, panelPosition + textInset + glm::vec2{0.0F, 59.0F} * pixelScale,
+               12.5F * pixelScale, {0.76F, 0.84F, 0.94F, 1.0F}, camera);
+
+    if (!selected->status.empty()) {
+        renderText(selected->status, panelPosition + textInset + glm::vec2{0.0F, 31.0F} * pixelScale,
+                   12.5F * pixelScale, {0.58F, 0.92F, 0.68F, 1.0F}, camera);
     }
 }
 
