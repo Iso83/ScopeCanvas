@@ -1,5 +1,7 @@
 #include <ScopeCanvas/render/gl/Shader.h>
+#include <ScopeCanvas/render/gl/ShaderSource.h>
 #include <iostream>
+#include <string>
 
 namespace ScopeCanvas::Render::GL {
 Shader& Shader::operator=(Shader&& other) noexcept {
@@ -60,74 +62,85 @@ bool Shader::compileShader(GLuint shaderId, const char* source) const {
     return true;
 }
 
-const char GridVertex[] = R"(
-    #version 330 core
-    layout(location = 0) in vec2 aWorldPos;
 
-    uniform mat4 uViewProjection;
+namespace {
+const std::string& gridVertexStorage() {
+    static const std::string source = std::string(ShaderVersionPrefix) + R"(layout(location = 0) in vec2 aWorldPos;
 
-    void main()
-    {
-        gl_Position = uViewProjection * vec4(aWorldPos, 0.0, 1.0);
-    }
+uniform mat4 uViewProjection;
+
+void main()
+{
+    gl_Position = uViewProjection * vec4(aWorldPos, 0.0, 1.0);
+}
 )";
+    return source;
+}
+const std::string& gridFragmentStorage() {
+    static const std::string source = std::string(ShaderVersionPrefix) + R"(out vec4 FragColor;
 
-const char GridFragment[] = R"(
-    #version 330 core
-    out vec4 FragColor;
+uniform vec3 uColor;
 
-    uniform vec3 uColor;
-
-    void main()
-    {
-        FragColor = vec4(uColor, 1.0);
-    }
+void main()
+{
+    FragColor = vec4(uColor, 1.0);
+}
 )";
+    return source;
+}
+const std::string& edgeVertexStorage() {
+    static const std::string source = std::string(ShaderVersionPrefix) + R"(layout(location = 0) in vec2 aPosition;
 
-const char EdgeVertex[] = R"(
-    #version 330 core
-    layout(location = 0) in vec2 aPosition;
+uniform mat4 uViewProjection;
 
-    uniform mat4 uViewProjection;
-
-    void main() {
-        gl_Position = uViewProjection * vec4(aPosition, 0.0, 1.0);
-    }
+void main() {
+    gl_Position = uViewProjection * vec4(aPosition, 0.0, 1.0);
+}
 )";
+    return source;
+}
+const std::string& edgeFragmentStorage() {
+    static const std::string source = std::string(ShaderVersionPrefix) + R"(out vec4 FragColor;
 
-const char EdgeFragment[] = R"(
-    #version 330 core
-    out vec4 FragColor;
+uniform vec3 uColor;
 
-    uniform vec3 uColor;
-
-    void main() {
-        FragColor = vec4(uColor, 1.0);
-    }
+void main() {
+    FragColor = vec4(uColor, 1.0);
+}
 )";
+    return source;
+}
+const std::string& selectionRectVertexStorage() {
+    static const std::string source = std::string(ShaderVersionPrefix) + R"(layout (location = 0) in vec2 aLocalPos;
 
-const char SelectionRectVertex[] = R"(
-	#version 330 core
-	layout (location = 0) in vec2 aLocalPos;
+uniform mat4 uViewProjection;
+uniform vec2 uRectPosition;
+uniform vec2 uRectSize;
 
-	uniform mat4 uViewProjection;
-	uniform vec2 uRectPosition;
-	uniform vec2 uRectSize;
-
-	void main() {
-		vec2 worldPos = uRectPosition + (aLocalPos * uRectSize);
-		gl_Position = uViewProjection * vec4(worldPos, 0.0, 1.0);
-	}
+void main() {
+    vec2 worldPos = uRectPosition + (aLocalPos * uRectSize);
+    gl_Position = uViewProjection * vec4(worldPos, 0.0, 1.0);
+}
 )";
+    return source;
+}
+const std::string& selectionRectFragmentStorage() {
+    static const std::string source = std::string(ShaderVersionPrefix) + R"(out vec4 FragColor;
 
-const char SelectionRectFragment[] = R"(
-	#version 330 core
-	out vec4 FragColor;
+uniform vec4 uColor;
 
-	uniform vec4 uColor;
-
-	void main() {
-		FragColor = uColor;
-	}
+void main() {
+    FragColor = uColor;
+}
 )";
+    return source;
+}
+} // namespace
+
+const char* gridVertexSource() { return gridVertexStorage().c_str(); }
+const char* gridFragmentSource() { return gridFragmentStorage().c_str(); }
+const char* edgeVertexSource() { return edgeVertexStorage().c_str(); }
+const char* edgeFragmentSource() { return edgeFragmentStorage().c_str(); }
+const char* selectionRectVertexSource() { return selectionRectVertexStorage().c_str(); }
+const char* selectionRectFragmentSource() { return selectionRectFragmentStorage().c_str(); }
 } // namespace ScopeCanvas::Render::GL

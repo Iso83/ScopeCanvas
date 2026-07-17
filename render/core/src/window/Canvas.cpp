@@ -1,6 +1,6 @@
 #include <ScopeCanvas/render/window/DrawContext.h>
 #include <ScopeCanvas/render/window/Canvas.h>
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 
 using namespace ScopeCanvas::Render;
 

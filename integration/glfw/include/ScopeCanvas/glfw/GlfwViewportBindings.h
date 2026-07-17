@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ScopeCanvas/render/window/ViewportHandler.h>
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 
 struct GLFWwindow;
 

@@ -10,7 +10,7 @@ SelectionRectRenderer::~SelectionRectRenderer() {
 }
 
 bool SelectionRectRenderer::init() {
-    if (!m_shader.load(GL::SelectionRectVertex, GL::SelectionRectFragment))
+    if (!m_shader.load(GL::selectionRectVertexSource(), GL::selectionRectFragmentSource()))
         return false;
 
     constexpr float vertices[] = {

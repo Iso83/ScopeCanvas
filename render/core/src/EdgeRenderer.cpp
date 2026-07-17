@@ -15,7 +15,7 @@ EdgeRenderer::~EdgeRenderer() {
 }
 
 bool EdgeRenderer::init() {
-    if (!m_shader.load(GL::EdgeVertex, GL::EdgeFragment))
+    if (!m_shader.load(GL::edgeVertexSource(), GL::edgeFragmentSource()))
         return false;
 
     glGenVertexArrays(1, &m_vao);

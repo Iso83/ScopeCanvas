@@ -12,7 +12,7 @@ class DemoViewport : public ScopeCanvas::Render::Window::Viewport {
     bool handlesKey() const override {
         return true;
     }
-    void onKey(int key, bool pressed) override;
+    void onKey(ScopeCanvas::Input::Key key, bool pressed) override;
 
   private:
     inline double deltaTime() const {

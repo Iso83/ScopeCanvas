@@ -11,6 +11,10 @@ project(
 # =========================================================
 
 option(SC_BUILD_TESTS "Build tests" ON)
+option(SC_BUILD_WEB "Build the Emscripten/WebGL2 browser demo" OFF)
+if(SC_BUILD_WEB AND NOT EMSCRIPTEN)
+    message(FATAL_ERROR "SC_BUILD_WEB=ON requires the Emscripten toolchain (use emcmake cmake).")
+endif()
 option(SC_BUILD_DEMOS "Build demos" ON)
 if(SC_BUILD_DEMOS)
     option(SC_BUILD_DEMO_BENCHMARK "Enable render benchmarking in demo applications" OFF)
@@ -54,10 +58,12 @@ sc_setup_freetype(SC_FREETYPE_TARGET)
 # GLFW Configuration
 # =========================================================
 
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+if(NOT SC_BUILD_WEB)
+    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+endif()
 
 # =========================================================
 # Dependencies
@@ -65,11 +71,13 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 include(FetchContent)
 
-FetchContent_Declare(
-    sc_glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.3.9
-)
+if(NOT SC_BUILD_WEB)
+    FetchContent_Declare(
+        sc_glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG 3.3.9
+    )
+endif()
 
 FetchContent_Declare(
     sc_glm
@@ -89,12 +97,25 @@ FetchContent_Declare(
     GIT_TAG 60d7fb207eeb46d6363dd4bde10b35991bae0ce7 # ImGui docking (pinned) 2026-03
 )
 
-FetchContent_MakeAvailable(
-    sc_glfw
-    sc_glm
-    sc_imgui
-    sc_nlohmann_json
-)
+if(SC_BUILD_WEB)
+    FetchContent_MakeAvailable(
+        sc_glm
+        sc_nlohmann_json
+    )
+elseif(SC_BUILD_DEMOS)
+    FetchContent_MakeAvailable(
+        sc_glfw
+        sc_glm
+        sc_imgui
+        sc_nlohmann_json
+    )
+else()
+    FetchContent_MakeAvailable(
+        sc_glfw
+        sc_glm
+        sc_nlohmann_json
+    )
+endif()
 
 # =========================================================
 # Visual Studio Folder Helper
@@ -119,20 +140,23 @@ sc_set_folder(nlohmann_json   "${SC_THIRDPARTY_FOLDER}/json")
 # GLAD
 # =========================================================
 
-add_library(glad STATIC
-    third_party/glad/src/glad.c
-)
+if(NOT SC_BUILD_WEB)
+    add_library(glad STATIC
+        third_party/glad/src/glad.c
+    )
 
-target_include_directories(glad PUBLIC
-    third_party/glad/include
-)
+    target_include_directories(glad PUBLIC
+        third_party/glad/include
+    )
 
-sc_set_folder(glad "${SC_THIRDPARTY_FOLDER}/glad")
+    sc_set_folder(glad "${SC_THIRDPARTY_FOLDER}/glad")
+endif()
 
 # =========================================================
 # ImGui
 # =========================================================
 
+if(NOT SC_BUILD_WEB AND SC_BUILD_DEMOS)
 add_library(SC_ImGui STATIC
     ${sc_imgui_SOURCE_DIR}/imgui.cpp
     ${sc_imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -150,6 +174,7 @@ target_include_directories(SC_ImGui PUBLIC
 target_link_libraries(SC_ImGui PUBLIC glfw)
 
 sc_set_folder(SC_ImGui "${SC_THIRDPARTY_FOLDER}/imgui")
+endif()
 
 # =========================================================
 # ScopeCanvas Libraries
@@ -159,7 +184,11 @@ add_subdirectory(engine/core)
 add_subdirectory(engine/routing)
 add_subdirectory(render/core)
 add_subdirectory(widget)
-add_subdirectory(integration/glfw)
+if(SC_BUILD_WEB)
+    add_subdirectory(integration/web)
+else()
+    add_subdirectory(integration/glfw)
+endif()
 
 # =========================================================
 # ScopeCanvas Demos
@@ -167,7 +196,11 @@ add_subdirectory(integration/glfw)
 
 if(SC_BUILD_DEMOS)
     add_subdirectory(demo/common)
-    add_subdirectory(demo/gl)
-    add_subdirectory(demo/imgui)
-    add_subdirectory(demo/flow)
+    if(SC_BUILD_WEB)
+        add_subdirectory(demo/web)
+    else()
+        add_subdirectory(demo/gl)
+        add_subdirectory(demo/imgui)
+        add_subdirectory(demo/flow)
+    endif()
 endif()

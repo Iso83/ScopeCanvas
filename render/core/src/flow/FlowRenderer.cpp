@@ -1,5 +1,6 @@
 #include <ScopeCanvas/render/EdgeRenderer.h>
 #include <ScopeCanvas/render/GridRenderer.h>
+#include <ScopeCanvas/render/gl/ShaderSource.h>
 #include <ScopeCanvas/render/NodeRenderer.h>
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/render/flow/FlowRenderer.h>
@@ -9,7 +10,8 @@
 #include <cmath>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
+#include <string>
 #include <unordered_map>
 
 namespace ScopeCanvas::Render::Flow {
@@ -193,8 +195,7 @@ void FlowRenderer::Impl::shutdown() {
 }
 
 bool FlowRenderer::Impl::initText() {
-    const char* vs = R"(#version 330 core
-layout(location = 0) in vec2 aPos;
+    const std::string vs = std::string(ScopeCanvas::Render::GL::ShaderVersionPrefix) + R"(layout(location = 0) in vec2 aPos;
 layout(location = 1) in vec2 aUv;
 layout(location = 2) in vec4 aColor;
 uniform mat4 uVP;
@@ -206,8 +207,7 @@ void main() {
     vColor = aColor;
 })";
 
-    const char* fs = R"(#version 330 core
-in vec2 vUv;
+    const std::string fs = std::string(ScopeCanvas::Render::GL::ShaderVersionPrefix) + R"(in vec2 vUv;
 in vec4 vColor;
 uniform sampler2D uGlyph;
 out vec4 FragColor;
@@ -215,8 +215,8 @@ void main() {
     FragColor = vec4(vColor.rgb, vColor.a * texture(uGlyph, vUv).r);
 })";
 
-    const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs);
-    const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs);
+    const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs.c_str());
+    const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs.c_str());
     textProgram = glCreateProgram();
     glAttachShader(textProgram, vertexShader);
     glAttachShader(textProgram, fragmentShader);
@@ -241,8 +241,7 @@ void main() {
 }
 
 bool FlowRenderer::Impl::initRect() {
-    const char* vs = R"(#version 330 core
-layout(location = 0) in vec2 aPos;
+    const std::string vs = std::string(ScopeCanvas::Render::GL::ShaderVersionPrefix) + R"(layout(location = 0) in vec2 aPos;
 layout(location = 1) in vec4 aColor;
 uniform mat4 uVP;
 out vec4 vColor;
@@ -250,12 +249,11 @@ void main() {
     gl_Position = uVP * vec4(aPos, 0.0, 1.0);
     vColor = aColor;
 })";
-    const char* fs = R"(#version 330 core
-in vec4 vColor;
+    const std::string fs = std::string(ScopeCanvas::Render::GL::ShaderVersionPrefix) + R"(in vec4 vColor;
 out vec4 FragColor;
 void main() { FragColor = vColor; })";
-    const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs);
-    const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs);
+    const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs.c_str());
+    const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs.c_str());
     rectProgram = glCreateProgram();
     glAttachShader(rectProgram, vertexShader);
     glAttachShader(rectProgram, fragmentShader);

@@ -1,7 +1,9 @@
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/render/GridRenderer.h>
+#include <ScopeCanvas/render/gl/ShaderSource.h>
 #include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
 
 namespace ScopeCanvas::Render {
 namespace {
@@ -37,16 +39,14 @@ GridRenderer::~GridRenderer() {
 }
 
 bool GridRenderer::init() {
-    const char* vs = R"(#version 330 core
-layout(location = 0) in vec2 aPos;
+    const std::string vs = std::string(ScopeCanvas::Render::GL::ShaderVersionPrefix) + R"(layout(location = 0) in vec2 aPos;
 out vec2 vUv;
 void main() {
     vUv = aPos * 0.5 + 0.5;
     gl_Position = vec4(aPos, 0.0, 1.0);
 })";
 
-    const char* fs = R"(#version 330 core
-in vec2 vUv;
+    const std::string fs = std::string(ScopeCanvas::Render::GL::ShaderVersionPrefix) + R"(in vec2 vUv;
 out vec4 FragColor;
 
 uniform mat4 uInvViewProjection;
@@ -77,8 +77,8 @@ void main() {
     FragColor = vec4(color, alpha);
 })";
 
-    const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs);
-    const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs);
+    const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs.c_str());
+    const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs.c_str());
 
     const unsigned int program = glCreateProgram();
     glAttachShader(program, vertexShader);
@@ -92,7 +92,7 @@ void main() {
 
     // Borrow the lightweight wrapper for use()/id().
     // Re-load with equivalent sources through the wrapper so ownership stays consistent.
-    if (!m_shader.load(vs, fs)) {
+    if (!m_shader.load(vs.c_str(), fs.c_str())) {
         glDeleteProgram(program);
         return false;
     }

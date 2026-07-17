@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 #include <ScopeCanvas/render/window/DrawContext.h>
 #include <ScopeCanvas/render/window/Viewport.h>
 

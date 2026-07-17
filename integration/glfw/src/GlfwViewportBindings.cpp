@@ -4,11 +4,33 @@
 #include <unordered_map>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 
 namespace ScopeCanvas::GLFW {
 
 using namespace ScopeCanvas::Render::Window;
+
+ScopeCanvas::Input::Key mapGlfwKey(int key) {
+    using ScopeCanvas::Input::Key;
+    switch (key) {
+    case GLFW_KEY_ESCAPE: return Key::Escape;
+    case GLFW_KEY_DELETE: return Key::Delete;
+    case GLFW_KEY_1: return Key::Digit1;
+    case GLFW_KEY_2: return Key::Digit2;
+    case GLFW_KEY_3: return Key::Digit3;
+    case GLFW_KEY_4: return Key::Digit4;
+    case GLFW_KEY_A: return Key::A;
+    case GLFW_KEY_D: return Key::D;
+    case GLFW_KEY_W: return Key::W;
+    case GLFW_KEY_S: return Key::S;
+    case GLFW_KEY_G: return Key::G;
+    case GLFW_KEY_LEFT: return Key::Left;
+    case GLFW_KEY_RIGHT: return Key::Right;
+    case GLFW_KEY_UP: return Key::Up;
+    case GLFW_KEY_DOWN: return Key::Down;
+    default: return Key::Unknown;
+    }
+}
 
 std::unordered_map<GLFWwindow*, Render::Window::ViewportHandler*> s_viewportHandlers;
 std::unordered_map<GLFWwindow*, GlfwInputListener*> s_inputListeners;
@@ -87,7 +109,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         return;
 
     if (auto* handler = viewportHandler(window))
-        handler->processKey(key, action == GLFW_PRESS);
+        handler->processKey(mapGlfwKey(key), action == GLFW_PRESS);
 }
 
 void installCallbacks(GLFWwindow* window) {

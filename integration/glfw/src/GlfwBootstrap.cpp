@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 #include <iostream>
 #include <ScopeCanvas/glfw/GlfwBootstrap.h>
 #define GLFW_INCLUDE_NONE

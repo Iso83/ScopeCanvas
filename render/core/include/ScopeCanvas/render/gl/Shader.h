@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 
 namespace ScopeCanvas::Render::GL {
 class Shader {
@@ -44,10 +44,10 @@ class Shader {
     }
 };
 
-extern const char GridVertex[];
-extern const char GridFragment[];
-extern const char EdgeVertex[];
-extern const char EdgeFragment[];
-extern const char SelectionRectVertex[];
-extern const char SelectionRectFragment[];
+const char* gridVertexSource();
+const char* gridFragmentSource();
+const char* edgeVertexSource();
+const char* edgeFragmentSource();
+const char* selectionRectVertexSource();
+const char* selectionRectFragmentSource();
 } // namespace ScopeCanvas::Render::GL

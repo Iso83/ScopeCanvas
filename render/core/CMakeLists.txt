@@ -18,10 +18,12 @@ add_library(ScopeCanvasRender
 
 target_link_libraries(ScopeCanvasRender PUBLIC
     ScopeCanvasRouting
-    glad
     ${SC_FREETYPE_TARGET}
     #opengl32
 )
+if(NOT SC_BUILD_WEB)
+    target_link_libraries(ScopeCanvasRender PUBLIC glad)
+endif()
 
 target_include_directories(ScopeCanvasRender PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -33,7 +35,7 @@ target_include_directories(ScopeCanvasRender PRIVATE
 
 set_property(TARGET ScopeCanvasRender PROPERTY FOLDER "${SC_FOLDER}/render")
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/render
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas
     PREFIX "Include"
     FILES ${SC_RENDER_PUBLIC_HEADERS}
 )
@@ -42,3 +44,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
     PREFIX "Source"
     FILES ${SC_RENDER_SRC} ${SC_RENDER_PRIVATE_HEADERS}
 )
+
+if(SC_BUILD_TESTS)
+    sc_add_module_test(ScopeCanvasRender render SC_Render_ViewportHandlerInput)
+endif()

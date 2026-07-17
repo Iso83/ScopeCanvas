@@ -15,13 +15,13 @@ bool DemoViewport::processOnDraw_KeyStroke() {
     if (handler) {
         constexpr float panSpeed = 500.0F;
         glm::vec2 panDelta{0.0F, 0.0F};
-        if (handler->keyState(GLFW_KEY_A).down)
+        if (handler->keyState(ScopeCanvas::Input::Key::A).down)
             panDelta.x -= panSpeed * deltaTime;
-        if (handler->keyState(GLFW_KEY_D).down)
+        if (handler->keyState(ScopeCanvas::Input::Key::D).down)
             panDelta.x += panSpeed * deltaTime;
-        if (handler->keyState(GLFW_KEY_W).down)
+        if (handler->keyState(ScopeCanvas::Input::Key::W).down)
             panDelta.y += panSpeed * deltaTime;
-        if (handler->keyState(GLFW_KEY_S).down)
+        if (handler->keyState(ScopeCanvas::Input::Key::S).down)
             panDelta.y -= panSpeed * deltaTime;
 
         if (panDelta.x || panDelta.y) {
@@ -33,13 +33,13 @@ bool DemoViewport::processOnDraw_KeyStroke() {
     return false;
 }
 
-void DemoViewport::onKey(int key, bool pressed) {
+void DemoViewport::onKey(ScopeCanvas::Input::Key key, bool pressed) {
     switch (key) {
-    case GLFW_KEY_A:
-    case GLFW_KEY_D:
-    case GLFW_KEY_W:
-    case GLFW_KEY_S:
-    case GLFW_KEY_G:
+    case ScopeCanvas::Input::Key::A:
+    case ScopeCanvas::Input::Key::D:
+    case ScopeCanvas::Input::Key::W:
+    case ScopeCanvas::Input::Key::S:
+    case ScopeCanvas::Input::Key::G:
         m_needsRender = true;
         break;
     }
@@ -53,23 +53,23 @@ void DemoViewport::onKey(int key, bool pressed) {
         return;
 
     switch (key) {
-    case GLFW_KEY_G:
+    case ScopeCanvas::Input::Key::G:
         ctx->showGrid() = !ctx->showGrid();
         break;
 
-    case GLFW_KEY_1:
+    case ScopeCanvas::Input::Key::Digit1:
         ctx->createNodeAtCenter(camera(), NodeTypeId{1});
         break;
 
-    case GLFW_KEY_2:
+    case ScopeCanvas::Input::Key::Digit2:
         ctx->createNodeAtCenter(camera(), NodeTypeId{2});
         break;
 
-    case GLFW_KEY_3:
+    case ScopeCanvas::Input::Key::Digit3:
         ctx->createNodeAtCenter(camera(), NodeTypeId{3});
         break;
 
-    case GLFW_KEY_4:
+    case ScopeCanvas::Input::Key::Digit4:
         ctx->createNodeAtCenter(camera(), NodeTypeId{4});
         break;
 

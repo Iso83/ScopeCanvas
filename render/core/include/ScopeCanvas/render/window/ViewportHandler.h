@@ -1,14 +1,13 @@
 #pragma once
 
 #include <array>
+#include <ScopeCanvas/input/InputCodes.h>
 #include <glm/vec2.hpp>
 #include <ScopeCanvas/render/window/ViewportInteraction.h>
 #include <stdexcept>
 #include <vector>
 
 namespace ScopeCanvas::Input {
-constexpr std::size_t MaxKeys = 512;
-
 struct State {
     bool down{};
     bool prevDown{};
@@ -101,12 +100,13 @@ class ViewportHandler {
 
     virtual void processScroll(double xOffset, double yOffset);
 
-    virtual void processKey(int key, bool pressed);
-    inline const Input::State keyState(int key) const {
-        if (key < 0 || static_cast<std::size_t>(key) >= m_keys.size())
+    virtual void processKey(ScopeCanvas::Input::Key key, bool pressed);
+    inline const Input::State keyState(ScopeCanvas::Input::Key key) const {
+        const auto index = static_cast<std::size_t>(key);
+        if (index >= m_keys.size())
             throw std::out_of_range("ViewportHandler::keyState(): index outside supported range");
 
-        return m_keys[key];
+        return m_keys[index];
     }
 
     virtual void updatePrevInteraction();

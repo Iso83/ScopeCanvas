@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ScopeCanvas/input/InputCodes.h>
 #include <glm/vec2.hpp>
 
 namespace ScopeCanvas::Render::Window {
@@ -18,7 +19,7 @@ class ViewportInteraction {
     SC_VIEWPORT_EVENT(MouseMove, glm::vec2 pos)
     SC_VIEWPORT_EVENT(MouseButton, MouseButton button, bool pressed)
     SC_VIEWPORT_EVENT(Scroll, double xOffset, double yOffset)
-    SC_VIEWPORT_EVENT(Key, int key, bool pressed)
+    SC_VIEWPORT_EVENT(Key, ScopeCanvas::Input::Key key, bool pressed)
 
 #undef SC_VIEWPORT_EVENT
 };

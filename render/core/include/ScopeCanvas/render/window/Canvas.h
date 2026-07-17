@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ScopeCanvas/render/window/Viewport.h>
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 
 namespace ScopeCanvas::Render::Window {
 class Canvas : public Viewport {

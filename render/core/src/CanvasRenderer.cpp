@@ -1,7 +1,7 @@
 #include <ScopeCanvas/render/CanvasRenderer.h>
 #include <ScopeCanvas/render/camera/Camera2D.h>
 #include <ScopeCanvas/routing/IGraphView.h>
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
 
 namespace ScopeCanvas::Render {
 
