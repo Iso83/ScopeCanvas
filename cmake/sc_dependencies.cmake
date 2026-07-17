@@ -1,6 +1,12 @@
 include(FetchContent)
 
 function(sc_setup_freetype OUT_TARGET)
+    # Emscripten's FreeType port is selected on the consuming render target.  A
+    # host find_package result must never leak a native library into a Wasm link.
+    if(EMSCRIPTEN)
+        set(${OUT_TARGET} "" PARENT_SCOPE)
+        return()
+    endif()
     option(SC_FETCH_FREETYPE
         "Download and build FreeType when no system package is available"
         ON

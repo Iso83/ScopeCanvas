@@ -21,10 +21,6 @@ set_target_properties(ScopeCanvasDemoWeb PROPERTIES
     SUFFIX ".html"
 )
 
-target_compile_options(ScopeCanvasDemoWeb PRIVATE
-    "-sUSE_GLFW=3"
-)
-
 target_link_options(ScopeCanvasDemoWeb PRIVATE
     "--shell-file=${CMAKE_CURRENT_SOURCE_DIR}/shell.html"
     "-sUSE_GLFW=3"
@@ -33,6 +29,8 @@ target_link_options(ScopeCanvasDemoWeb PRIVATE
     "-sALLOW_MEMORY_GROWTH=1"
     "-sNO_DISABLE_EXCEPTION_CATCHING=1"
 )
+
+sc_setup_web_assets(ScopeCanvasDemoWeb)
 
 add_custom_command(TARGET ScopeCanvasDemoWeb POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

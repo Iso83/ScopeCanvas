@@ -23,6 +23,9 @@ target_link_libraries(ScopeCanvasRender PUBLIC
 )
 if(NOT SC_BUILD_WEB)
     target_link_libraries(ScopeCanvasRender PUBLIC glad)
+else()
+    target_compile_options(ScopeCanvasRender PUBLIC "-sUSE_FREETYPE=1")
+    target_link_options(ScopeCanvasRender PUBLIC "-sUSE_FREETYPE=1")
 endif()
 
 target_include_directories(ScopeCanvasRender PUBLIC

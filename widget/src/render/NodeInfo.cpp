@@ -6,7 +6,8 @@
 #include <cmath>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <glad/glad.h>
+#include <ScopeCanvas/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/render/gl/ShaderSource.h>
 #include <utility>
 
 namespace ScopeCanvas::Widget::Render {
@@ -46,7 +47,9 @@ unsigned int compile(unsigned int type, const char* source) {
 }
 
 std::string defaultFontPath() {
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+    return "/assets/DejaVuSans.ttf";
+#elif defined(_WIN32)
     return "C:/Windows/Fonts/segoeui.ttf";
 #elif defined(__APPLE__)
     return "/System/Library/Fonts/Supplemental/Arial.ttf";
@@ -265,18 +268,18 @@ bool NodeInfoRenderer::init() {
     glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(TextVertex), reinterpret_cast<void*>(4 * sizeof(float)));
     glBindVertexArray(0);
 
-    const char* geometryVs = R"(#version 330 core
+    const std::string geometryVs = std::string(GL::ShaderVersionPrefix) + R"(
         layout(location = 0) in vec2 aPos;
         layout(location = 1) in vec4 aColor;
         uniform mat4 uVP;
         out vec4 vColor;
         void main(){ gl_Position = uVP * vec4(aPos, 0.0, 1.0); vColor = aColor; })";
-    const char* geometryFs = R"(#version 330 core
+    const std::string geometryFs = std::string(GL::ShaderVersionPrefix) + R"(
         in vec4 vColor;
         out vec4 FragColor;
         void main(){ FragColor = vColor; })";
-    const unsigned int gv = compile(GL_VERTEX_SHADER, geometryVs);
-    const unsigned int gf = compile(GL_FRAGMENT_SHADER, geometryFs);
+    const unsigned int gv = compile(GL_VERTEX_SHADER, geometryVs.c_str());
+    const unsigned int gf = compile(GL_FRAGMENT_SHADER, geometryFs.c_str());
     m_program = glCreateProgram();
     glAttachShader(m_program, gv);
     glAttachShader(m_program, gf);
@@ -284,7 +287,7 @@ bool NodeInfoRenderer::init() {
     glDeleteShader(gv);
     glDeleteShader(gf);
 
-    const char* textVs = R"(#version 330 core
+    const std::string textVs = std::string(GL::ShaderVersionPrefix) + R"(
         layout(location = 0) in vec2 aPos;
         layout(location = 1) in vec2 aUv;
         layout(location = 2) in vec4 aColor;
@@ -292,14 +295,14 @@ bool NodeInfoRenderer::init() {
         out vec2 vUv;
         out vec4 vColor;
         void main(){ gl_Position = uVP * vec4(aPos, 0.0, 1.0); vUv = aUv; vColor = aColor; })";
-    const char* textFs = R"(#version 330 core
+    const std::string textFs = std::string(GL::ShaderVersionPrefix) + R"(
         in vec2 vUv;
         in vec4 vColor;
         uniform sampler2D uGlyph;
         out vec4 FragColor;
         void main(){ FragColor = vec4(vColor.rgb, vColor.a * texture(uGlyph, vUv).r); })";
-    const unsigned int tv = compile(GL_VERTEX_SHADER, textVs);
-    const unsigned int tf = compile(GL_FRAGMENT_SHADER, textFs);
+    const unsigned int tv = compile(GL_VERTEX_SHADER, textVs.c_str());
+    const unsigned int tf = compile(GL_FRAGMENT_SHADER, textFs.c_str());
     m_textProgram = glCreateProgram();
     glAttachShader(m_textProgram, tv);
     glAttachShader(m_textProgram, tf);
@@ -354,7 +357,7 @@ bool NodeInfoRenderer::loadFont() {
         unsigned int texture = 0;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, static_cast<GLsizei>(face->glyph->bitmap.width),
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, static_cast<GLsizei>(face->glyph->bitmap.width),
                      static_cast<GLsizei>(face->glyph->bitmap.rows), 0, GL_RED, GL_UNSIGNED_BYTE,
                      face->glyph->bitmap.buffer);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

@@ -53,7 +53,9 @@ unsigned int compile(unsigned int type, const char* source) {
 }
 
 std::string defaultFontPath() {
-#if defined(_WIN32)
+#if defined(__EMSCRIPTEN__)
+    return "/assets/DejaVuSans.ttf";
+#elif defined(_WIN32)
     return "C:/Windows/Fonts/segoeui.ttf";
 #elif defined(__APPLE__)
     return "/System/Library/Fonts/Supplemental/Arial.ttf";
@@ -493,7 +495,7 @@ bool FlowRenderer::Impl::loadFont() {
         unsigned int texture = 0;
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, static_cast<GLsizei>(face->glyph->bitmap.width),
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, static_cast<GLsizei>(face->glyph->bitmap.width),
                      static_cast<GLsizei>(face->glyph->bitmap.rows), 0, GL_RED, GL_UNSIGNED_BYTE,
                      face->glyph->bitmap.buffer);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

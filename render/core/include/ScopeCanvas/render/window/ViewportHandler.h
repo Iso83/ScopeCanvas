@@ -55,14 +55,14 @@ class ViewportHandler {
         m_activeView = InvalidView;
     }
 
-    inline [[nodiscard]] Viewport* activeViewport() noexcept {
+    [[nodiscard]] inline Viewport* activeViewport() noexcept {
         if (m_activeView >= m_viewports.size())
             return nullptr;
 
         return m_viewports[m_activeView];
     }
 
-    inline [[nodiscard]] const Viewport* activeViewport() const noexcept {
+    [[nodiscard]] inline const Viewport* activeViewport() const noexcept {
         if (m_activeView >= m_viewports.size())
             return nullptr;
 

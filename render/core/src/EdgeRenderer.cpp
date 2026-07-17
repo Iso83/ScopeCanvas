@@ -69,6 +69,7 @@ void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRend
     const GLuint programId = m_shader.id();
     const GLint vpLoc = glGetUniformLocation(programId, "uViewProjection");
     const GLint colorLoc = glGetUniformLocation(programId, "uColor");
+    const GLint pointSizeLoc = glGetUniformLocation(programId, "uPointSize");
     const glm::mat4 viewProjection = camera.viewProjection();
 
     glUniformMatrix4fv(vpLoc, 1, GL_FALSE, glm::value_ptr(viewProjection));
@@ -85,7 +86,7 @@ void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRend
                                                    : glm::vec3(0.82F, 0.85F, 0.94F);
         glUniform3f(colorLoc, color.x, color.y, color.z);
         glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(sizeof(glm::vec2)), &connector.anchor, GL_DYNAMIC_DRAW);
-        glPointSize(pointSize);
+        glUniform1f(pointSizeLoc, pointSize);
         glDrawArrays(GL_POINTS, 0, 1);
     }
 

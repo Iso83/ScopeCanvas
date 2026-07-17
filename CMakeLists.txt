@@ -47,12 +47,15 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(SC_BUILD_TESTS)
     enable_testing()
-    include(cmake/ScopeCanvasTests.cmake)
+    include(cmake/sc_tests.cmake)
 endif()
 
 
-include(cmake/ScopeCanvasDependencies.cmake)
+include(cmake/sc_dependencies.cmake)
 sc_setup_freetype(SC_FREETYPE_TARGET)
+
+include(cmake/sc_setup_fonts.cmake)
+sc_setup_fonts()
 
 # =========================================================
 # GLFW Configuration

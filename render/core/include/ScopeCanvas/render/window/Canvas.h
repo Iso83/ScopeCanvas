@@ -17,7 +17,7 @@ class Canvas : public Viewport {
         releaseRenderTarget();
     }
 
-    Viewport::draw;
+    using Viewport::draw;
 
     GLuint colorTexture() const noexcept {
         return m_colorTexture;

@@ -11,7 +11,14 @@
 </head>
 <body>
   <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+  <script>
+    // Emscripten's GLFW port obtains its event target from Module.canvas.
+    // A custom shell must provide it before the generated runtime starts.
+    var Module = {
+      canvas: document.getElementById('canvas')
+    };
+    Module.canvas.focus();
+  </script>
   {{{ SCRIPT }}}
-  <script>document.getElementById('canvas').focus();</script>
 </body>
 </html>

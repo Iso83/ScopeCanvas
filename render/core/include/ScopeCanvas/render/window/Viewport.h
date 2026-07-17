@@ -110,7 +110,7 @@ class Viewport : protected ViewportInteraction {
 
     [[nodiscard]] glm::vec2 screenToWorld(float sx, float sy, float w, float h) const;
 
-    inline [[nodiscard]] glm::vec2 screenToWorld(float sx, float sy) const {
+    [[nodiscard]] inline glm::vec2 screenToWorld(float sx, float sy) const {
         auto cam = activeState().m_camera;
         return screenToWorld(sx - m_screenPosition.x, sy - m_screenPosition.y, cam.getViewportWidth(),
                              cam.getViewportHeight());

@@ -7,7 +7,7 @@ class DemoViewport : public ScopeCanvas::Render::Window::Viewport {
     double m_nowTime{}, m_lastTime{};
 
   public:
-    ScopeCanvas::Render::Window::Viewport::draw;
+    using ScopeCanvas::Render::Window::Viewport::draw;
 
     bool handlesKey() const override {
         return true;

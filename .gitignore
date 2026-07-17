@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /build
 /docs/refactor
+build-web/
