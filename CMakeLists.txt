@@ -11,10 +11,6 @@ project(
 # =========================================================
 
 option(SC_BUILD_TESTS "Build tests" ON)
-option(SC_BUILD_WEB "Build the Emscripten/WebGL2 browser demo" OFF)
-if(SC_BUILD_WEB AND NOT EMSCRIPTEN)
-    message(FATAL_ERROR "SC_BUILD_WEB=ON requires the Emscripten toolchain (use emcmake cmake).")
-endif()
 option(SC_BUILD_DEMOS "Build demos" ON)
 if(SC_BUILD_DEMOS)
     option(SC_BUILD_DEMO_BENCHMARK "Enable render benchmarking in demo applications" OFF)
@@ -61,7 +57,7 @@ sc_setup_fonts()
 # GLFW Configuration
 # =========================================================
 
-if(NOT SC_BUILD_WEB)
+if(NOT EMSCRIPTEN)
     set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -74,7 +70,7 @@ endif()
 
 include(FetchContent)
 
-if(NOT SC_BUILD_WEB)
+if(NOT EMSCRIPTEN)
     FetchContent_Declare(
         sc_glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -100,24 +96,15 @@ FetchContent_Declare(
     GIT_TAG 60d7fb207eeb46d6363dd4bde10b35991bae0ce7 # ImGui docking (pinned) 2026-03
 )
 
-if(SC_BUILD_WEB)
-    FetchContent_MakeAvailable(
-        sc_glm
-        sc_nlohmann_json
-    )
-elseif(SC_BUILD_DEMOS)
-    FetchContent_MakeAvailable(
-        sc_glfw
-        sc_glm
-        sc_imgui
-        sc_nlohmann_json
-    )
-else()
-    FetchContent_MakeAvailable(
-        sc_glfw
-        sc_glm
-        sc_nlohmann_json
-    )
+
+FetchContent_MakeAvailable(
+    sc_glm
+    sc_nlohmann_json
+    sc_imgui
+)
+
+if(NOT EMSCRIPTEN)
+    FetchContent_MakeAvailable(sc_glfw)
 endif()
 
 # =========================================================
@@ -143,7 +130,7 @@ sc_set_folder(nlohmann_json   "${SC_THIRDPARTY_FOLDER}/json")
 # GLAD
 # =========================================================
 
-if(NOT SC_BUILD_WEB)
+if(NOT EMSCRIPTEN)
     add_library(glad STATIC
         third_party/glad/src/glad.c
     )
@@ -159,7 +146,6 @@ endif()
 # ImGui
 # =========================================================
 
-if(NOT SC_BUILD_WEB AND SC_BUILD_DEMOS)
 add_library(SC_ImGui STATIC
     ${sc_imgui_SOURCE_DIR}/imgui.cpp
     ${sc_imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -177,7 +163,6 @@ target_include_directories(SC_ImGui PUBLIC
 target_link_libraries(SC_ImGui PUBLIC glfw)
 
 sc_set_folder(SC_ImGui "${SC_THIRDPARTY_FOLDER}/imgui")
-endif()
 
 # =========================================================
 # ScopeCanvas Libraries
@@ -187,7 +172,7 @@ add_subdirectory(engine/core)
 add_subdirectory(engine/routing)
 add_subdirectory(render/core)
 add_subdirectory(widget)
-if(SC_BUILD_WEB)
+if(EMSCRIPTEN)
     add_subdirectory(integration/web)
 else()
     add_subdirectory(integration/glfw)
@@ -199,7 +184,7 @@ endif()
 
 if(SC_BUILD_DEMOS)
     add_subdirectory(demo/common)
-    if(SC_BUILD_WEB)
+    if(EMSCRIPTEN)
         add_subdirectory(demo/web)
     else()
         add_subdirectory(demo/gl)

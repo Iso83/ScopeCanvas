@@ -27,6 +27,10 @@ bool EdgeRenderer::init() {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, static_cast<GLsizei>(sizeof(glm::vec2)), nullptr);
     glBindVertexArray(0);
+#if defined(GL_PROGRAM_POINT_SIZE)
+    // Desktop OpenGL ignores shader-written gl_PointSize unless program point size is enabled.
+    glEnable(GL_PROGRAM_POINT_SIZE);
+#endif
     return true;
 }
 

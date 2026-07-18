@@ -15,6 +15,8 @@ add_executable(ScopeCanvasDemoGL
 
 target_link_libraries(ScopeCanvasDemoGL
     ScopeCanvasDemoCommon
+    ScopeCanvasGLFWIntegration
+    glad
     glfw
 )
 

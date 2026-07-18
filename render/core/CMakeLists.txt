@@ -19,9 +19,8 @@ add_library(ScopeCanvasRender
 target_link_libraries(ScopeCanvasRender PUBLIC
     ScopeCanvasRouting
     ${SC_FREETYPE_TARGET}
-    #opengl32
 )
-if(NOT SC_BUILD_WEB)
+if(NOT EMSCRIPTEN)
     target_link_libraries(ScopeCanvasRender PUBLIC glad)
 else()
     target_compile_options(ScopeCanvasRender PUBLIC "-sUSE_FREETYPE=1")

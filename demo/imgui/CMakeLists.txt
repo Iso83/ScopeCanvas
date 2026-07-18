@@ -15,6 +15,8 @@ set_target_properties(ScopeCanvasDemoImGui PROPERTIES WIN32_EXECUTABLE TRUE)
 
 target_link_libraries(ScopeCanvasDemoImGui
     ScopeCanvasDemoCommon
+    ScopeCanvasGLFWIntegration
+    glad
     SC_ImGui
 )
 
