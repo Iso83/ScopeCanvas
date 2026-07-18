@@ -21,6 +21,10 @@ target_link_libraries(ScopeCanvasDemoCommon PUBLIC
     glm
 )
 
+if(NOT EMSCRIPTEN)
+    target_link_libraries(ScopeCanvasDemoCommon PUBLIC glfw)
+endif()
+
 if(SC_BUILD_DEMO_BENCHMARK)
     target_compile_definitions(ScopeCanvasDemoCommon PUBLIC SC_BUILD_DEMO_BENCHMARK=1)
 endif()

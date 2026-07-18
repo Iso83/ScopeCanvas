@@ -4,6 +4,8 @@
 #include <ScopeCanvas/routing/EdgeRouter.h>
 #include <ScopeCanvas/routing/Geometry.h>
 #include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 
 using namespace std;
 using namespace ScopeCanvas::Render;
@@ -223,7 +225,7 @@ void DiagramDrawCtx::processActiveMouseReleased(const DrawFrameState& frame) {
 }
 
 void DiagramDrawCtx::processActiveKeyboard(const DrawFrameState& frame) {
-    if (!frame.handler->keyState(ScopeCanvas::Input::Key::Delete).down)
+    if (!frame.handler->keyState(GLFW_KEY_DELETE).down)
         return;
 
     deleteSelection();

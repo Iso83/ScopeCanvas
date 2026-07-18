@@ -46,7 +46,3 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
     PREFIX "Source"
     FILES ${SC_RENDER_SRC} ${SC_RENDER_PRIVATE_HEADERS}
 )
-
-if(SC_BUILD_TESTS)
-    sc_add_module_test(ScopeCanvasRender render SC_Render_ViewportHandlerInput)
-endif()

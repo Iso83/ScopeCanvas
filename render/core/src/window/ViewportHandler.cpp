@@ -152,11 +152,11 @@ void ViewportHandler::processScroll(double xOffset, double yOffset) {
     });
 }
 
-void ViewportHandler::processKey(ScopeCanvas::Input::Key key, bool pressed) {
-    if (key == ScopeCanvas::Input::Key::Unknown || keyState(key).down == pressed)
+void ViewportHandler::processKey(int key, bool pressed) {
+    if (key < 0 || keyState(key).down == pressed)
         return;
 
-    m_keys[static_cast<std::size_t>(key)].down = pressed;
+    m_keys[key].down = pressed;
     if (auto* viewport = activeViewport())
         viewport->m_needsRender = true;
 

@@ -30,6 +30,7 @@ Typical use cases include:
 - Extensible interaction framework
 - Custom rendering contexts
 - OpenGL renderer
+- WebAssembly / WebGL2 support
 - GLFW integration
 - ImGui demo application
 - Modern C++20 API
@@ -51,8 +52,9 @@ Typical use cases include:
 ## Tech Stack
 
 - C++20
-- OpenGL
+- OpenGL / OpenGL ES 3.0 (WebGL2)
 - GLFW
+- Emscripten (WebAssembly)
 - GLM
 - Dear ImGui (demo)
 - CMake
@@ -65,6 +67,7 @@ Typical use cases include:
 |----------|----------|--------|
 | Windows | Visual Studio 2026 (MSVC) | ✅ Supported |
 | Linux (Ubuntu) | GCC / Clang | ✅ Supported |
+| Browser (WebAssembly/WebGL2) | Emscripten | ✅ Supported |
 
 ---
 
@@ -111,6 +114,19 @@ cmake --build build -j$(nproc)
 
 ---
 
+## Building for the Browser (WebAssembly/WebGL2)
+
+Configure the project using the Emscripten toolchain:
+
+```bash
+emcmake cmake -S . -B build-web -G Ninja
+cmake --build build-web
+```
+
+The browser build uses the same ScopeCanvas rendering and viewport architecture as the native desktop version, compiled with Emscripten and rendered through WebGL2. The generated application runs in any modern browser supporting WebAssembly and WebGL2.
+
+---
+
 ## Building on Windows
 
 ```bash
@@ -152,6 +168,7 @@ ScopeCanvas builds upon several excellent open-source projects:
 | [Dear ImGui](https://github.com/ocornut/imgui) | Demo UI and docking | MIT |
 | [FreeType](https://freetype.org/) | Font rendering | FreeType License |
 | [nlohmann/json](https://github.com/nlohmann/json) | JSON serialization | MIT |
+| [DejaVu Sans](https://github.com/senotrusov/dejavu-fonts-ttf) | Default embedded font | Bitstream Vera / DejaVu [license](third_party\fonts\LICENSE-DejaVu.txt) |
 
 Many thanks to the authors and contributors of these projects.
 
