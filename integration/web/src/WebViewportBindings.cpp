@@ -3,7 +3,9 @@
 #include <ScopeCanvas/render/window/Viewport.h>
 #include <ScopeCanvas/render/window/ViewportHandler.h>
 #include <algorithm>
+#include <cmath>
 #include <unordered_map>
+#include <emscripten/html5.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -11,6 +13,8 @@ namespace ScopeCanvas::Web {
 namespace {
 std::unordered_map<GLFWwindow*, Render::Window::ViewportHandler*> s_handlers;
 
+
+constexpr const char* CanvasSelector = "#canvas";
 
 Render::Window::ViewportHandler* handlerFor(GLFWwindow* window) {
     const auto it = s_handlers.find(window);
@@ -76,6 +80,21 @@ void bindViewportHandler(GLFWwindow* window, ScopeCanvas::Render::Window::Viewpo
 }
 
 void updateViewportSize(GLFWwindow* window, ScopeCanvas::Render::Window::Viewport* view) {
+    double cssWidth = 0.0;
+    double cssHeight = 0.0;
+    if (emscripten_get_element_css_size(CanvasSelector, &cssWidth, &cssHeight) == EMSCRIPTEN_RESULT_SUCCESS) {
+        const int displayWidth = std::max(1, static_cast<int>(std::lround(cssWidth)));
+        const int displayHeight = std::max(1, static_cast<int>(std::lround(cssHeight)));
+
+        int canvasWidth = 0;
+        int canvasHeight = 0;
+        emscripten_get_canvas_element_size(CanvasSelector, &canvasWidth, &canvasHeight);
+        if (canvasWidth != displayWidth || canvasHeight != displayHeight) {
+            emscripten_set_canvas_element_size(CanvasSelector, displayWidth, displayHeight);
+            glfwSetWindowSize(window, displayWidth, displayHeight);
+        }
+    }
+
     int width = 1;
     int height = 1;
     glfwGetFramebufferSize(window, &width, &height);
