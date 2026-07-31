@@ -1,10 +1,93 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 4.0)
 
 project(
     ScopeCanvas
-    VERSION 0.1.0
+    VERSION 0.1.1
     LANGUAGES C CXX
 )
+
+# =========================================================
+# Project configuration
+# =========================================================
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# =========================================================
+# CppCMake
+# =========================================================
+
+include(cmake/Dependencies.cmake)
+
+dependencies_fetch_cppcmake()
+
+cppcmake_project_initialize()
+
+if(CPPCMAKE_PROJECT_ALREADY_REGISTERED)
+    return()
+endif()
+
+cppcmake_githook_precommit()
+cppcmake_version_generate()
+cppcmake_test_setup()
+
+# =========================================================
+# Dependencies
+# =========================================================
+
+dependencies_setup()
+
+# ============================================================================
+# Assets
+# ============================================================================
+
+include(cmake/Assets.cmake)
+
+assets_setup_fonts()
+
+# =========================================================
+# Modules
+# =========================================================
+
+#
+# Register project modules here.
+#
+# Examples:
+#
+#   cppcmake_module_add(engine/core)
+#   cppcmake_module_add(engine/math)
+#
+#   cppcmake_module_add(apps/demo)
+#   cppcmake_module_add(apps/editor)
+#
+
+
+
+
+
+
+
+
+#[[ TODO
+
+----------------------------------------------------------------------------------------------------------------------------
+
+function(sc_add_module_test target folder name)
+    add_executable(${name} tests/${name}.cpp)
+
+    target_link_libraries(${name} PRIVATE ${target})
+    target_include_directories(${name} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/tests/common
+    )
+
+    add_test(NAME ${name} COMMAND ${name})
+
+    set_property(TARGET ${name} PROPERTY FOLDER "${SC_FOLDER}/tests/${folder}")
+endfunction()
 
 # =========================================================
 # Options
@@ -15,27 +98,6 @@ option(SC_BUILD_DEMOS "Build demos" ON)
 if(SC_BUILD_DEMOS)
     option(SC_BUILD_DEMO_BENCHMARK "Enable render benchmarking in demo applications" OFF)
 endif()
-set(
-    SC_THIRDPARTY_FOLDER
-    "third_party"
-    CACHE STRING
-    "Visual Studio folder for ScopeCanvas dependencies"
-)
-set(
-    SC_FOLDER
-    ""
-    CACHE STRING
-    "Visual Studio folder for ScopeCanvas"
-)
-
-# =========================================================
-# Global Settings
-# =========================================================
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # =========================================================
 # Testing
@@ -46,123 +108,6 @@ if(SC_BUILD_TESTS)
     include(cmake/sc_tests.cmake)
 endif()
 
-
-include(cmake/sc_dependencies.cmake)
-sc_setup_freetype(SC_FREETYPE_TARGET)
-
-include(cmake/sc_setup_fonts.cmake)
-sc_setup_fonts()
-
-# =========================================================
-# GLFW Configuration
-# =========================================================
-
-if(NOT EMSCRIPTEN)
-    set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-    set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-endif()
-
-# =========================================================
-# Dependencies
-# =========================================================
-
-include(FetchContent)
-
-if(NOT EMSCRIPTEN)
-    FetchContent_Declare(
-        sc_glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG 3.3.9
-    )
-endif()
-
-FetchContent_Declare(
-    sc_glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.1
-)
-
-FetchContent_Declare(
-    sc_nlohmann_json
-    GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
-)
-
-FetchContent_Declare(
-    sc_imgui
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG 60d7fb207eeb46d6363dd4bde10b35991bae0ce7 # ImGui docking (pinned) 2026-03
-)
-
-
-FetchContent_MakeAvailable(
-    sc_glm
-    sc_nlohmann_json
-    sc_imgui
-)
-
-if(NOT EMSCRIPTEN)
-    FetchContent_MakeAvailable(sc_glfw)
-endif()
-
-# =========================================================
-# Visual Studio Folder Helper
-# =========================================================
-
-function(sc_set_folder target folder)
-    if(TARGET ${target})
-        set_property(TARGET ${target} PROPERTY FOLDER ${folder})
-    endif()
-endfunction()
-
-# =========================================================
-# Third Party Organization
-# =========================================================
-
-sc_set_folder(glfw            "${SC_THIRDPARTY_FOLDER}/glfw")
-sc_set_folder(update_mappings "${SC_THIRDPARTY_FOLDER}/glfw")
-sc_set_folder(glm             "${SC_THIRDPARTY_FOLDER}/glm")
-sc_set_folder(nlohmann_json   "${SC_THIRDPARTY_FOLDER}/json")
-
-# =========================================================
-# GLAD
-# =========================================================
-
-if(NOT EMSCRIPTEN)
-    add_library(glad STATIC
-        third_party/glad/src/glad.c
-    )
-
-    target_include_directories(glad PUBLIC
-        third_party/glad/include
-    )
-
-    sc_set_folder(glad "${SC_THIRDPARTY_FOLDER}/glad")
-endif()
-
-# =========================================================
-# ImGui
-# =========================================================
-
-add_library(SC_ImGui STATIC
-    ${sc_imgui_SOURCE_DIR}/imgui.cpp
-    ${sc_imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${sc_imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${sc_imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${sc_imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${sc_imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-)
-
-target_include_directories(SC_ImGui PUBLIC
-    ${sc_imgui_SOURCE_DIR}
-    ${sc_imgui_SOURCE_DIR}/backends
-)
-
-target_link_libraries(SC_ImGui PUBLIC glfw)
-
-sc_set_folder(SC_ImGui "${SC_THIRDPARTY_FOLDER}/imgui")
 
 # =========================================================
 # ScopeCanvas Libraries
@@ -192,3 +137,4 @@ if(SC_BUILD_DEMOS)
         add_subdirectory(demo/flow)
     endif()
 endif()
+]]
