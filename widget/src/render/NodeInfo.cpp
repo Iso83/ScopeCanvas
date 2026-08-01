@@ -1,17 +1,17 @@
-#include <ScopeCanvas/render/camera/Camera2D.h>
-#include <ScopeCanvas/render/geometry/RoundedRect.h>
+#include <ScopeCanvas/engine/render/camera/Camera2D.h>
+#include <ScopeCanvas/engine/render/geometry/RoundedRect.h>
 #include <ScopeCanvas/widget/render/NodeInfo.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <ScopeCanvas/render/gl/OpenGLApi.h>
-#include <ScopeCanvas/render/gl/ShaderSource.h>
+#include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/engine/render/gl/ShaderSource.h>
 #include <utility>
 
 namespace ScopeCanvas::Widget::Render {
-using namespace ScopeCanvas::Render;
+using namespace ScopeCanvas::Engine::Render;
 
 namespace {
 struct Vertex {
@@ -183,34 +183,34 @@ void appendIconShape(std::vector<Vertex>& vertices, Render::Theme::NodeIconShape
     const float unit = std::min(size.x, size.y);
 
     switch (shape) {
-    case Render::Theme::NodeIconShape::Square:
-        appendRoundedRect(vertices, position + size * 0.23F, size * 0.54F, unit * 0.08F, color);
-        break;
-    case Render::Theme::NodeIconShape::Circle:
-        appendCircle(vertices, center, unit * 0.28F, color);
-        break;
-    case Render::Theme::NodeIconShape::Triangle:
-        appendTriangle(vertices, {center.x, position.y + size.y * 0.76F},
-                       {position.x + size.x * 0.26F, position.y + size.y * 0.24F},
-                       {position.x + size.x * 0.74F, position.y + size.y * 0.24F}, color);
-        break;
-    case Render::Theme::NodeIconShape::Diamond:
-        appendTriangle(vertices, {position.x + size.x * 0.24F, center.y}, {center.x, position.y + size.y * 0.76F},
-                       {position.x + size.x * 0.76F, center.y}, color);
-        appendTriangle(vertices, {position.x + size.x * 0.24F, center.y}, {center.x, position.y + size.y * 0.24F},
-                       {position.x + size.x * 0.76F, center.y}, color);
-        break;
-    case Render::Theme::NodeIconShape::Chevrons:
-        appendTriangle(vertices, {position.x + size.x * 0.28F, position.y + size.y * 0.22F},
-                       {position.x + size.x * 0.62F, center.y},
-                       {position.x + size.x * 0.28F, position.y + size.y * 0.78F}, color);
-        appendTriangle(vertices, {position.x + size.x * 0.48F, position.y + size.y * 0.22F},
-                       {position.x + size.x * 0.82F, center.y},
-                       {position.x + size.x * 0.48F, position.y + size.y * 0.78F}, color);
-        break;
-    default:
-        appendCircle(vertices, center, unit * 0.24F, color);
-        break;
+        case Render::Theme::NodeIconShape::Square:
+            appendRoundedRect(vertices, position + size * 0.23F, size * 0.54F, unit * 0.08F, color);
+            break;
+        case Render::Theme::NodeIconShape::Circle:
+            appendCircle(vertices, center, unit * 0.28F, color);
+            break;
+        case Render::Theme::NodeIconShape::Triangle:
+            appendTriangle(vertices, {center.x, position.y + size.y * 0.76F},
+                           {position.x + size.x * 0.26F, position.y + size.y * 0.24F},
+                           {position.x + size.x * 0.74F, position.y + size.y * 0.24F}, color);
+            break;
+        case Render::Theme::NodeIconShape::Diamond:
+            appendTriangle(vertices, {position.x + size.x * 0.24F, center.y}, {center.x, position.y + size.y * 0.76F},
+                           {position.x + size.x * 0.76F, center.y}, color);
+            appendTriangle(vertices, {position.x + size.x * 0.24F, center.y}, {center.x, position.y + size.y * 0.24F},
+                           {position.x + size.x * 0.76F, center.y}, color);
+            break;
+        case Render::Theme::NodeIconShape::Chevrons:
+            appendTriangle(vertices, {position.x + size.x * 0.28F, position.y + size.y * 0.22F},
+                           {position.x + size.x * 0.62F, center.y},
+                           {position.x + size.x * 0.28F, position.y + size.y * 0.78F}, color);
+            appendTriangle(vertices, {position.x + size.x * 0.48F, position.y + size.y * 0.22F},
+                           {position.x + size.x * 0.82F, center.y},
+                           {position.x + size.x * 0.48F, position.y + size.y * 0.78F}, color);
+            break;
+        default:
+            appendCircle(vertices, center, unit * 0.24F, color);
+            break;
     }
 }
 

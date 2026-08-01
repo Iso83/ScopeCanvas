@@ -1,12 +1,14 @@
-#include <ScopeCanvas/core/Connector.h>
-#include <ScopeCanvas/core/Edge.h>
-#include <ScopeCanvas/core/Node.h>
-#include <ScopeCanvas/routing/EdgeRouter.h>
-#include <ScopeCanvas/routing/IGraphView.h>
+#include <ScopeCanvas/engine/core/Connector.h>
+#include <ScopeCanvas/engine/core/Edge.h>
+#include <ScopeCanvas/engine/core/Node.h>
+#include <ScopeCanvas/engine/routing/EdgeRouter.h>
+#include <ScopeCanvas/engine/routing/IGraphView.h>
 #include <algorithm>
 #include <glm/geometric.hpp>
 
-namespace ScopeCanvas::Routing {
+using namespace ScopeCanvas::Engine::Core;
+
+namespace ScopeCanvas::Engine::Routing {
 std::vector<EdgeRoute> EdgeRouter::routeAll(const IGraphView* view) const {
     std::vector<EdgeRoute> routes;
     if (view == nullptr)
@@ -17,13 +19,13 @@ std::vector<EdgeRoute> EdgeRouter::routeAll(const IGraphView* view) const {
         if (edge == nullptr)
             return;
 
-        const ScopeCanvas::Core::Connector* from = view->getConnector(edge->fromConnector);
-        const ScopeCanvas::Core::Connector* to = view->getConnector(edge->toConnector);
+        const Connector* from = view->getConnector(edge->fromConnector);
+        const Connector* to = view->getConnector(edge->toConnector);
         if (from == nullptr || to == nullptr)
             return;
 
-        const ScopeCanvas::Core::Node* fromNode = view->getNode(from->nodeId);
-        const ScopeCanvas::Core::Node* toNode = view->getNode(to->nodeId);
+        const Node* fromNode = view->getNode(from->nodeId);
+        const Core::Node* toNode = view->getNode(to->nodeId);
         if (fromNode == nullptr || toNode == nullptr || fromNode->connectors.empty() || toNode->connectors.empty())
             return;
 
@@ -70,4 +72,4 @@ std::vector<EdgeRoute> EdgeRouter::routeAll(const IGraphView* view) const {
 
     return routes;
 }
-} // namespace ScopeCanvas::Routing
+} // namespace ScopeCanvas::Engine::Routing

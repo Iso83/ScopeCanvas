@@ -1,18 +1,19 @@
 #pragma once
-#include <ScopeCanvas/render/window/DrawContext.h>
-#include <ScopeCanvas/core/flow/FlowDocument.h>
-#include <ScopeCanvas/render/NodeRenderer.h>
-#include <ScopeCanvas/routing/flow/FlowLayout.h>
-#include <ScopeCanvas/render/flow/FlowRenderer.h>
+#include <ScopeCanvas/engine/core/flow/FlowDocument.h>
+#include <ScopeCanvas/engine/render/NodeRenderer.h>
+#include <ScopeCanvas/engine/render/flow/FlowRenderer.h>
+#include <ScopeCanvas/engine/render/window/DrawContext.h>
+#include <ScopeCanvas/engine/routing/flow/FlowLayout.h>
 
-class FlowDrawContext : public ScopeCanvas::Render::Window::DrawContext {
-  private:
-    ScopeCanvas::Core::Flow::FlowDocument m_document{};
-    ScopeCanvas::Routing::Flow::FlowLayout m_layoutEngine{};
-    ScopeCanvas::Routing::Flow::FlowLayoutResult m_layout{};
-    ScopeCanvas::Render::Flow::FlowRenderer m_renderer{};
-    ScopeCanvas::Render::NodeRenderer m_scrollbarRenderer{};
-    ScopeCanvas::Core::Ids::NodeId m_selected{};
+namespace ScopeCanvas::Demo::Flow {
+class FlowDrawContext : public Engine::Render::Window::DrawContext {
+private:
+    Engine::Core::Flow::FlowDocument m_document{};
+    Engine::Routing::Flow::FlowLayout m_layoutEngine{};
+    Engine::Routing::Flow::FlowLayoutResult m_layout{};
+    Engine::Render::Flow::FlowRenderer m_renderer{};
+    Engine::Render::NodeRenderer m_scrollbarRenderer{};
+    Engine::Core::Ids::NodeId m_selected{};
     bool m_scrollDragging{false};
     bool m_scrollbarInitialized{false};
     bool m_needsRender{true};
@@ -24,20 +25,24 @@ class FlowDrawContext : public ScopeCanvas::Render::Window::DrawContext {
         glm::vec2 thumbSize{};
     };
 
-  public:
+public:
     FlowDrawContext();
     ~FlowDrawContext();
-    void draw(ScopeCanvas::Render::Window::Viewport* view) override;
-    bool needsRender() override { return m_needsRender; }
-    void clampViewToContent(ScopeCanvas::Render::Window::Viewport* view) const;
+    void draw(Engine::Render::Window::Viewport* view) override;
+    bool needsRender() override {
+        return m_needsRender;
+    }
+    void clampViewToContent(Engine::Render::Window::Viewport* view) const;
 
-  private:
-    ScopeCanvas::Core::Ids::NodeId pickStep(glm::vec2 world) const;
-    bool pickCollapseToggle(glm::vec2 world, ScopeCanvas::Core::Ids::NodeId& stepId) const;
-    bool pickGroupToggle(ScopeCanvas::Render::Window::Viewport* view, glm::vec2 world, ScopeCanvas::Core::Flow::FlowGroupId& groupId) const;
-    bool scrollbarHit(ScopeCanvas::Render::Window::Viewport* view, glm::vec2 world) const;
-    bool scrollbarGeometry(ScopeCanvas::Render::Window::Viewport* view, ScrollbarGeometry& geometry) const;
-    void applyScrollbarDrag(ScopeCanvas::Render::Window::Viewport* view, glm::vec2 world) const;
-    void renderScrollbar(ScopeCanvas::Render::Window::Viewport* view);
+private:
+    Engine::Core::Ids::NodeId pickStep(glm::vec2 world) const;
+    bool pickCollapseToggle(glm::vec2 world, Engine::Core::Ids::NodeId& stepId) const;
+    bool pickGroupToggle(Engine::Render::Window::Viewport* view, glm::vec2 world,
+                         Engine::Core::Flow::FlowGroupId& groupId) const;
+    bool scrollbarHit(Engine::Render::Window::Viewport* view, glm::vec2 world) const;
+    bool scrollbarGeometry(Engine::Render::Window::Viewport* view, ScrollbarGeometry& geometry) const;
+    void applyScrollbarDrag(Engine::Render::Window::Viewport* view, glm::vec2 world) const;
+    void renderScrollbar(Engine::Render::Window::Viewport* view);
     void rebuildLayout();
 };
+} // namespace ScopeCanvas::Demo::Flow

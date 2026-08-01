@@ -1,20 +1,20 @@
-#include <ScopeCanvas/demo/DiagramDrawContext.h>
-#include <ScopeCanvas/render/scene/SceneBuilder.h>
-#include <ScopeCanvas/render/window/ViewportHandler.h>
-#include <ScopeCanvas/routing/EdgeRouter.h>
-#include <ScopeCanvas/routing/Geometry.h>
+#include <ScopeCanvas/demo/common/DiagramDrawContext.h>
+#include <ScopeCanvas/engine/render/scene/SceneBuilder.h>
+#include <ScopeCanvas/engine/render/window/ViewportHandler.h>
+#include <ScopeCanvas/engine/routing/EdgeRouter.h>
+#include <ScopeCanvas/engine/routing/Geometry.h>
 #include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 using namespace std;
-using namespace ScopeCanvas::Render;
-using namespace ScopeCanvas::Render::Window;
-using namespace ScopeCanvas::Core;
-using namespace ScopeCanvas::Core::Ids;
-using namespace ScopeCanvas::Routing;
+using namespace ScopeCanvas::Engine::Render;
+using namespace ScopeCanvas::Engine::Render::Window;
+using namespace ScopeCanvas::Engine::Core;
+using namespace ScopeCanvas::Engine::Core::Ids;
+using namespace ScopeCanvas::Engine::Routing;
 
-namespace ScopeCanvas::Demo {
+namespace ScopeCanvas::Demo::Common {
 DiagramDrawCtx::~DiagramDrawCtx() {
     if (m_nodeInfoRendererInitialized)
         m_nodeInfoRenderer.shutdown();
@@ -117,8 +117,8 @@ void DiagramDrawCtx::renderDiagram(const DrawFrameState& frame, const vector<Edg
 
     if (m_nodeInfoRendererInitialized) {
         static const Widget::Render::Theme::NodeVisualRegistry registry{};
-        const Render::Scene::SceneBuilder sceneBuilder{};
-        const Render::Scene::RenderScene scene = sceneBuilder.build(m_basics.model(), routes, frame.camera);
+        const Engine::Render::Scene::SceneBuilder sceneBuilder{};
+        const Engine::Render::Scene::RenderScene scene = sceneBuilder.build(m_basics.model(), routes, frame.camera);
         m_nodeInfoRenderer.render(scene.nodes, frame.camera, registry);
     }
 
@@ -400,7 +400,7 @@ glm::vec2 DiagramDrawCtx::snapToGrid(glm::vec2 position) const {
     return position;
 }
 
-glm::vec2 DiagramDrawCtx::connectorWorld(const Core::Node& node, size_t index) const {
+glm::vec2 DiagramDrawCtx::connectorWorld(const Engine::Core::Node& node, size_t index) const {
     const bool output = (index % 2U) == 1U;
     const size_t sideIndex = index / 2U;
     const size_t sideCount = output ? node.connectors.size() / 2U : (node.connectors.size() + 1U) / 2U;
@@ -420,7 +420,7 @@ glm::vec2 DiagramDrawCtx::connectorWorld(const Core::Node& node, size_t index) c
 //-------------------------------------------------------------------------
 NodeId DiagramDrawCtx::pickNode(const glm::vec2& world) const {
     for (auto it = m_basics.nodeIds().rbegin(); it != m_basics.nodeIds().rend(); ++it) {
-        const Core::Node* node = m_basics.model().getNode(*it);
+        const Engine::Core::Node* node = m_basics.model().getNode(*it);
         if (node != nullptr && pointInNode(world, *node))
             return *it;
     }
@@ -431,7 +431,7 @@ NodeId DiagramDrawCtx::pickNode(const glm::vec2& world) const {
 ConnectorId DiagramDrawCtx::pickConnector(const float camZoom, const glm::vec2& world) const {
     const float pickRadiusSquared = 100.0F / (camZoom * camZoom);
     for (auto it = m_basics.nodeIds().rbegin(); it != m_basics.nodeIds().rend(); ++it) {
-        const Core::Node* node = m_basics.model().getNode(*it);
+        const Engine::Core::Node* node = m_basics.model().getNode(*it);
         if (node == nullptr)
             continue;
 
@@ -470,4 +470,4 @@ void DiagramDrawCtx::applySelectionRect() {
 
     m_basics.setSelection(selection);
 }
-} // namespace ScopeCanvas::Demo
+} // namespace ScopeCanvas::Demo::Common

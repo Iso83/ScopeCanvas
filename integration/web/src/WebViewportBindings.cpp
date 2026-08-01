@@ -1,58 +1,25 @@
-#include <ScopeCanvas/web/WebViewportBindings.h>
-#include <ScopeCanvas/render/gl/OpenGLApi.h>
-#include <ScopeCanvas/render/window/Viewport.h>
-#include <ScopeCanvas/render/window/ViewportHandler.h>
+#include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/engine/render/window/Viewport.h>
+#include <ScopeCanvas/integration/web/WebViewportBindings.h>
 #include <algorithm>
 #include <cmath>
-#include <unordered_map>
 #include <emscripten/html5.h>
+#include <unordered_map>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-namespace ScopeCanvas::Web {
-namespace {
-std::unordered_map<GLFWwindow*, Render::Window::ViewportHandler*> s_handlers;
+using namespace ScopeCanvas::Engine::Render::Window;
 
+namespace ScopeCanvas::Integration::Web {
 
 constexpr const char* CanvasSelector = "#canvas";
 
-Render::Window::ViewportHandler* handlerFor(GLFWwindow* window) {
-    const auto it = s_handlers.find(window);
-    return it == s_handlers.end() ? nullptr : it->second;
-}
+std::unordered_map<GLFWwindow*, ViewportHandler*> s_viewportHandlers;
 
-void cursorPosCallback(GLFWwindow* window, double x, double y) {
-    if (auto* handler = handlerFor(window))
-        handler->processMouseMove({x, y});
+ViewportHandler* viewportHandler(GLFWwindow* window) {
+    const auto it = s_viewportHandlers.find(window);
+    return it == s_viewportHandlers.end() ? nullptr : it->second;
 }
-
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int /*mods*/) {
-    if (action == GLFW_REPEAT)
-        return;
-    auto* handler = handlerFor(window);
-    if (handler == nullptr)
-        return;
-    const bool pressed = action == GLFW_PRESS;
-    switch (button) {
-    case GLFW_MOUSE_BUTTON_LEFT: handler->processMouseButton(Render::Window::SC_MOUSE_BUTTON_LEFT, pressed); break;
-    case GLFW_MOUSE_BUTTON_MIDDLE: handler->processMouseButton(Render::Window::SC_MOUSE_BUTTON_MIDDLE, pressed); break;
-    case GLFW_MOUSE_BUTTON_RIGHT: handler->processMouseButton(Render::Window::SC_MOUSE_BUTTON_RIGHT, pressed); break;
-    default: break;
-    }
-}
-
-void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
-    if (auto* handler = handlerFor(window))
-        handler->processScroll(xOffset, yOffset);
-}
-
-void keyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/) {
-    if (action == GLFW_REPEAT)
-        return;
-    if (auto* handler = handlerFor(window))
-        handler->processKey(key, action == GLFW_PRESS);
-}
-} // namespace
 
 bool initializeWebGlfw() {
     return glfwInit() == GLFW_TRUE;
@@ -68,18 +35,66 @@ GLFWwindow* createWebGL2Canvas(int width, int height, const char* title) {
     return window;
 }
 
-void bindViewportHandler(GLFWwindow* window, ScopeCanvas::Render::Window::ViewportHandler* handler) {
-    if (handler != nullptr)
-        s_handlers[window] = handler;
-    else
-        s_handlers.erase(window);
+void cursorPosCallback(GLFWwindow* window, double x, double y) {
+    if (auto* handler = viewportHandler(window))
+        handler->processMouseMove({x, y});
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (action == GLFW_REPEAT)
+        return;
+
+    auto* handler = viewportHandler(window);
+    if (handler == nullptr)
+        return;
+
+    const bool pressed = action == GLFW_PRESS;
+
+    switch (button) {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            handler->processMouseButton(Engine::Render::Window::SC_MOUSE_BUTTON_LEFT, pressed);
+            break;
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            handler->processMouseButton(Engine::Render::Window::SC_MOUSE_BUTTON_MIDDLE, pressed);
+            break;
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            handler->processMouseButton(Engine::Render::Window::SC_MOUSE_BUTTON_RIGHT, pressed);
+            break;
+        default:
+            break;
+    }
+}
+
+void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
+    if (auto* handler = viewportHandler(window))
+        handler->processScroll(xOffset, yOffset);
+}
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_REPEAT)
+        return;
+
+    if (auto* handler = viewportHandler(window))
+        handler->processKey(key, action == GLFW_PRESS);
+}
+
+void installCallbacks(GLFWwindow* window) {
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetScrollCallback(window, scrollCallback);
     glfwSetKeyCallback(window, keyCallback);
 }
 
-void updateViewportSize(GLFWwindow* window, ScopeCanvas::Render::Window::Viewport* view) {
+void bindViewportHandler(GLFWwindow* window, ViewportHandler* handler) {
+    if (handler != nullptr)
+        s_viewportHandlers[window] = handler;
+    else
+        s_viewportHandlers.erase(window);
+
+    installCallbacks(window);
+}
+
+void updateViewportSize(GLFWwindow* window, Viewport* view) {
     double cssWidth = 0.0;
     double cssHeight = 0.0;
     if (emscripten_get_element_css_size(CanvasSelector, &cssWidth, &cssHeight) == EMSCRIPTEN_RESULT_SUCCESS) {
@@ -101,8 +116,8 @@ void updateViewportSize(GLFWwindow* window, ScopeCanvas::Render::Window::Viewpor
     view->setViewportSize(std::max(width, 1), std::max(height, 1));
 }
 
-void prepareFrame(float red, float green, float blue, float alpha) {
+void prepareFramebuffer(float red, float green, float blue, float alpha) {
     glClearColor(red, green, blue, alpha);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-} // namespace ScopeCanvas::Web
+} // namespace ScopeCanvas::Integration::Web

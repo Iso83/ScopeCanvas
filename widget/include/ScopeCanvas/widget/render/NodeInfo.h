@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ScopeCanvas/render/NodeRenderer.h>
-#include <ScopeCanvas/render/scene/RenderScene.h>
+#include <ScopeCanvas/engine/render/NodeRenderer.h>
+#include <ScopeCanvas/engine/render/scene/RenderScene.h>
 #include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
 #include <string>
 #include <unordered_map>
@@ -14,8 +14,8 @@ class Camera2D;
 namespace ScopeCanvas::Widget::Render {
 
 struct NodeInfo {
-    Core::Ids::NodeId id{};
-    Core::Ids::NodeTypeId typeId{};
+    Engine::Core::Ids::NodeId id{};
+    Engine::Core::Ids::NodeTypeId typeId{};
     glm::vec2 position{};
     glm::vec2 size{};
     Render::Theme::NodeVisual visual{};
@@ -29,7 +29,7 @@ struct NodeInfoFontOptions {
 };
 
 class NodeInfoRenderer {
-  private:
+private:
     struct GlyphInfo {
         unsigned int texture{0};
         glm::vec2 size{};
@@ -49,16 +49,16 @@ class NodeInfoRenderer {
     float m_fontAscent{0.0F};
     float m_fontDescent{0.0F};
 
-  public:
+public:
     explicit NodeInfoRenderer(NodeInfoFontOptions fontOptions = {});
     bool init();
     void shutdown();
-    void render(const std::vector<ScopeCanvas::Render::Scene::NodeRenderData>& nodes,
-                const ScopeCanvas::Render::Camera::Camera2D& camera,
+    void render(const std::vector<ScopeCanvas::Engine::Render::Scene::NodeRenderData>& nodes,
+                const ScopeCanvas::Engine::Render::Camera::Camera2D& camera,
                 const Render::Theme::NodeVisualRegistry& registry) const;
-    void render(const std::vector<NodeInfo>& nodes, const ScopeCanvas::Render::Camera::Camera2D& camera) const;
+    void render(const std::vector<NodeInfo>& nodes, const ScopeCanvas::Engine::Render::Camera::Camera2D& camera) const;
 
-  private:
+private:
     bool loadFont();
     void releaseFont();
 };

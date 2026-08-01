@@ -1,50 +1,94 @@
-file(GLOB_RECURSE SC_DEMOCOMMON_SRC CONFIGURE_DEPENDS
+# ============================================================================
+# Source files
+# ============================================================================
+
+file(GLOB_RECURSE MODULE_SRC CONFIGURE_DEPENDS
     src/*.cpp
 )
 
-file(GLOB_RECURSE SC_DEMOCOMMON_PRIVATE_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PRIVATE_HEADERS CONFIGURE_DEPENDS
     src/*.h
 )
 
-file(GLOB_RECURSE SC_DEMOCOMMON_PUBLIC_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PUBLIC_HEADERS CONFIGURE_DEPENDS
     include/*.h
 )
 
-add_library(ScopeCanvasDemoCommon
-    ${SC_DEMOCOMMON_SRC}
-    ${SC_DEMOCOMMON_PRIVATE_HEADERS}
-    ${SC_DEMOCOMMON_PUBLIC_HEADERS}
+# ============================================================================
+# Target
+# ============================================================================
+
+string(REPLACE "/" "_" MODULE_NAME "demo/common")
+
+set(MODULE_TARGET "${PROJECT_NAME}_${MODULE_NAME}")
+
+add_library(${MODULE_TARGET}
+    ${MODULE_SRC}
+    ${MODULE_PRIVATE_HEADERS}
+    ${MODULE_PUBLIC_HEADERS}
 )
 
-target_link_libraries(ScopeCanvasDemoCommon PUBLIC
-    ScopeCanvasWidget
-    glm
+add_library(${PROJECT_NAME}::${MODULE_NAME} ALIAS ${MODULE_TARGET})
+
+# ============================================================================
+# Build configuration
+# ============================================================================
+
+cppcmake_version_target(${MODULE_TARGET})
+
+target_include_directories(${MODULE_TARGET}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+
+target_compile_features(${MODULE_TARGET}
+    PUBLIC
+        cxx_std_20
+)
+
+if(${PROJECT_NAME}_DEMO_BENCHMARK)
+    target_compile_definitions(${MODULE_TARGET}
+        PUBLIC
+        SC_BUILD_DEMO_BENCHMARK=1
+    )
+endif()
+
+# ============================================================================
+# IDE organization
+# ============================================================================
+
+cppcmake_project_set_ide_folder(${MODULE_TARGET} "demo/common")
+
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/demo/common"
+    PREFIX "Include"
+    FILES
+        ${MODULE_PUBLIC_HEADERS}
+)
+
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PREFIX "Source"
+    FILES
+        ${MODULE_SRC}
+        ${MODULE_PRIVATE_HEADERS}
+)
+
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+target_link_libraries(${MODULE_TARGET}
+    PUBLIC
+        ${PROJECT_NAME}_widget
+        ${GLM}
 )
 
 if(NOT EMSCRIPTEN)
-    target_link_libraries(ScopeCanvasDemoCommon PUBLIC glfw)
+    target_link_libraries(${MODULE_TARGET}
+        PUBLIC
+            ${GLFW}
+    )
 endif()
-
-if(SC_BUILD_DEMO_BENCHMARK)
-    target_compile_definitions(ScopeCanvasDemoCommon PUBLIC SC_BUILD_DEMO_BENCHMARK=1)
-endif()
-
-target_include_directories(ScopeCanvasDemoCommon PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(ScopeCanvasDemoCommon PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-set_property(TARGET ScopeCanvasDemoCommon PROPERTY FOLDER "${SC_FOLDER}/demo")
-
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/demo
-    PREFIX "Include"
-    FILES ${SC_DEMOCOMMON_PUBLIC_HEADERS}
-)
-
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
-    PREFIX "Source"
-    FILES ${SC_DEMOCOMMON_SRC} ${SC_DEMOCOMMON_PRIVATE_HEADERS}
-)

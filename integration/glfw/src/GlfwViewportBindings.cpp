@@ -1,16 +1,16 @@
-#include <ScopeCanvas/glfw/GlfwInputListener.h>
-#include <ScopeCanvas/glfw/GlfwViewportBindings.h>
-#include <ScopeCanvas/render/window/Viewport.h>
+#include <ScopeCanvas/engine/render/window/Viewport.h>
+#include <ScopeCanvas/integration/glfw/GlfwInputListener.h>
+#include <ScopeCanvas/integration/glfw/GlfwViewportBindings.h>
 #include <unordered_map>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <ScopeCanvas/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
 
-namespace ScopeCanvas::GLFW {
+using namespace ScopeCanvas::Engine::Render::Window;
 
-using namespace ScopeCanvas::Render::Window;
+namespace ScopeCanvas::Integration::GLFW {
 
-std::unordered_map<GLFWwindow*, Render::Window::ViewportHandler*> s_viewportHandlers;
+std::unordered_map<GLFWwindow*, ViewportHandler*> s_viewportHandlers;
 std::unordered_map<GLFWwindow*, GlfwInputListener*> s_inputListeners;
 GlfwInputListener* s_defaultInputListener{};
 
@@ -57,17 +57,17 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     bool pressed{action == GLFW_PRESS};
 
     switch (button) {
-    case GLFW_MOUSE_BUTTON_LEFT:
-        handler->processMouseButton(SC_MOUSE_BUTTON_LEFT, pressed);
-        break;
+        case GLFW_MOUSE_BUTTON_LEFT:
+            handler->processMouseButton(SC_MOUSE_BUTTON_LEFT, pressed);
+            break;
 
-    case GLFW_MOUSE_BUTTON_MIDDLE:
-        handler->processMouseButton(SC_MOUSE_BUTTON_MIDDLE, pressed);
-        break;
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            handler->processMouseButton(SC_MOUSE_BUTTON_MIDDLE, pressed);
+            break;
 
-    case GLFW_MOUSE_BUTTON_RIGHT:
-        handler->processMouseButton(SC_MOUSE_BUTTON_RIGHT, pressed);
-        break;
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            handler->processMouseButton(SC_MOUSE_BUTTON_RIGHT, pressed);
+            break;
     }
 }
 
@@ -120,4 +120,4 @@ void prepareFramebuffer(GLFWwindow* window, GLfloat red, GLfloat green, GLfloat 
     glClearColor(red, green, blue, alpha);
     glClear(GL_COLOR_BUFFER_BIT);
 }
-} // namespace ScopeCanvas::GLFW
+} // namespace ScopeCanvas::Integration::GLFW

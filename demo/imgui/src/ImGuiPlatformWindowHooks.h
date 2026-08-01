@@ -1,24 +1,22 @@
 #pragma once
 
-#include "imgui.h"
-
-#include <ScopeCanvas/glfw/GlfwInputListener.h>
-#include <ScopeCanvas/glfw/GlfwViewportBindings.h>
-#include <ScopeCanvas/render/window/ViewportHandler.h>
+#include <ScopeCanvas/integration/glfw/GlfwInputListener.h>
+#include <ScopeCanvas/integration/glfw/GlfwViewportBindings.h>
+#include <imgui.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-namespace ScopeCanvas::Demo {
+namespace ScopeCanvas::Demo::ImGui {
 class ImGuiPlatformWindowHooks {
-  private:
+private:
     using CreateWindowCallback = void (*)(ImGuiViewport* viewport);
     using DestroyWindowCallback = void (*)(ImGuiViewport* viewport);
 
     inline static CreateWindowCallback s_previousCreateWindow{};
     inline static DestroyWindowCallback s_previousDestroyWindow{};
-    inline static GLFW::GlfwInputListener* s_listener{};
-    inline static Render::Window::ViewportHandler* s_viewportHandler{};
+    inline static Integration::GLFW::GlfwInputListener* s_listener{};
+    inline static Engine::Render::Window::ViewportHandler* s_viewportHandler{};
 
     static GLFWwindow* glfwWindowForViewport(ImGuiViewport* viewport) {
         return static_cast<GLFWwindow*>(viewport->PlatformHandle);
@@ -28,12 +26,12 @@ class ImGuiPlatformWindowHooks {
         if (!window)
             return;
 
-        GLFW::bindInputListener(window, s_listener);
+        Integration::GLFW::bindInputListener(window, s_listener);
 
         if (s_viewportHandler)
-            GLFW::bindViewportHandler(window, s_viewportHandler);
+            Integration::GLFW::bindViewportHandler(window, s_viewportHandler);
         else
-            GLFW::installCallbacks(window);
+            Integration::GLFW::installCallbacks(window);
     }
 
     static void createWindow(ImGuiViewport* viewport) {
@@ -47,8 +45,8 @@ class ImGuiPlatformWindowHooks {
         if (!window)
             return;
 
-        GLFW::bindInputListener(window, nullptr);
-        GLFW::bindViewportHandler(window, nullptr);
+        Integration::GLFW::bindInputListener(window, nullptr);
+        Integration::GLFW::bindViewportHandler(window, nullptr);
     }
 
     static void destroyWindow(ImGuiViewport* viewport) {
@@ -58,19 +56,19 @@ class ImGuiPlatformWindowHooks {
             s_previousDestroyWindow(viewport);
     }
 
-  public:
-    static void install(GLFWwindow* mainWindow, GLFW::GlfwInputListener* listener,
-                        Render::Window::ViewportHandler* viewportHandler) {
+public:
+    static void install(GLFWwindow* mainWindow, Integration::GLFW::GlfwInputListener* listener,
+                        Engine::Render::Window::ViewportHandler* viewportHandler) {
         s_listener = listener;
         s_viewportHandler = viewportHandler;
 
         attachCallbacks(mainWindow);
 
-        ImGuiPlatformIO& platformIO = ImGui::GetPlatformIO();
+        ImGuiPlatformIO& platformIO = ::ImGui::GetPlatformIO();
         s_previousCreateWindow = platformIO.Platform_CreateWindow;
         s_previousDestroyWindow = platformIO.Platform_DestroyWindow;
         platformIO.Platform_CreateWindow = createWindow;
         platformIO.Platform_DestroyWindow = destroyWindow;
     }
 };
-} // namespace ScopeCanvas::Demo
+} // namespace ScopeCanvas::Demo::ImGui

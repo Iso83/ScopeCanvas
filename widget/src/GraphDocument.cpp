@@ -3,8 +3,8 @@
 
 namespace ScopeCanvas::Widget {
 
-using namespace Core;
-using namespace Core::Ids;
+using namespace Engine::Core;
+using namespace Engine::Core::Ids;
 
 NodeId GraphDocument::createNode(NodeTypeId typeId) {
     const NodeId newNodeId = m_nodes.ids.createId();

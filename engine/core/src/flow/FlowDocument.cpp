@@ -1,7 +1,7 @@
-#include <ScopeCanvas/core/flow/FlowDocument.h>
+#include <ScopeCanvas/engine/core/flow/FlowDocument.h>
 #include <algorithm>
 
-namespace ScopeCanvas::Core::Flow {
+namespace ScopeCanvas::Engine::Core::Flow {
 namespace {
 FlowStep* findStepIn(std::vector<FlowStep>& steps, Ids::NodeId stepId) {
     for (FlowStep& step : steps) {
@@ -24,7 +24,8 @@ const FlowStep* findStepIn(const std::vector<FlowStep>& steps, Ids::NodeId stepI
 }
 
 bool eraseStepIn(std::vector<FlowStep>& steps, Ids::NodeId stepId) {
-    const auto it = std::remove_if(steps.begin(), steps.end(), [stepId](const FlowStep& step) { return step.id == stepId; });
+    const auto it =
+        std::remove_if(steps.begin(), steps.end(), [stepId](const FlowStep& step) { return step.id == stepId; });
     const bool erased = it != steps.end();
     steps.erase(it, steps.end());
     if (erased)
@@ -36,15 +37,18 @@ bool eraseStepIn(std::vector<FlowStep>& steps, Ids::NodeId stepId) {
 }
 
 auto findGroupIn(std::vector<FlowGroup>& groups, FlowGroupId groupId) {
-    return std::find_if(groups.begin(), groups.end(), [groupId](const FlowGroup& group) { return group.id == groupId; });
+    return std::find_if(groups.begin(), groups.end(),
+                        [groupId](const FlowGroup& group) { return group.id == groupId; });
 }
 
 auto findGroupIn(const std::vector<FlowGroup>& groups, FlowGroupId groupId) {
-    return std::find_if(groups.begin(), groups.end(), [groupId](const FlowGroup& group) { return group.id == groupId; });
+    return std::find_if(groups.begin(), groups.end(),
+                        [groupId](const FlowGroup& group) { return group.id == groupId; });
 }
 
 bool moveStepIn(std::vector<FlowStep>& steps, Ids::NodeId stepId, int delta) {
-    const auto it = std::find_if(steps.begin(), steps.end(), [stepId](const FlowStep& step) { return step.id == stepId; });
+    const auto it =
+        std::find_if(steps.begin(), steps.end(), [stepId](const FlowStep& step) { return step.id == stepId; });
     if (it != steps.end()) {
         const auto oldIndex = static_cast<int>(std::distance(steps.begin(), it));
         const auto newIndex = std::clamp(oldIndex + delta, 0, static_cast<int>(steps.size()) - 1);
@@ -62,11 +66,17 @@ bool moveStepIn(std::vector<FlowStep>& steps, Ids::NodeId stepId, int delta) {
 }
 } // namespace
 
-FlowGroupId FlowDocument::nextGroupId() { return FlowGroupId{m_nextId++}; }
+FlowGroupId FlowDocument::nextGroupId() {
+    return FlowGroupId{m_nextId++};
+}
 
-FlowRowId FlowDocument::nextRowId() { return FlowRowId{m_nextId++}; }
+FlowRowId FlowDocument::nextRowId() {
+    return FlowRowId{m_nextId++};
+}
 
-Ids::NodeId FlowDocument::nextStepId() { return Ids::NodeId{m_nextId++}; }
+Ids::NodeId FlowDocument::nextStepId() {
+    return Ids::NodeId{m_nextId++};
+}
 
 FlowGroup& FlowDocument::createGroup(std::string title, std::string summary) {
     FlowGroup group{};
@@ -169,4 +179,4 @@ const FlowRow* FlowDocument::rowForStep(Ids::NodeId stepId) const {
     return nullptr;
 }
 
-} // namespace ScopeCanvas::Core::Flow
+} // namespace ScopeCanvas::Engine::Core::Flow

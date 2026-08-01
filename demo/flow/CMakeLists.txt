@@ -1,31 +1,81 @@
-file(GLOB_RECURSE SC_DEMOFLOW_SRC CONFIGURE_DEPENDS
+# ============================================================================
+# Source files
+# ============================================================================
+
+file(GLOB_RECURSE MODULE_SRC CONFIGURE_DEPENDS
     src/*.cpp
 )
 
-file(GLOB_RECURSE SC_DEMOFLOW_PRIVATE_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PRIVATE_HEADERS CONFIGURE_DEPENDS
     src/*.h
 )
 
-add_executable(ScopeCanvasDemoFlow
-    ${SC_DEMOFLOW_SRC}
-    ${SC_DEMOFLOW_PRIVATE_HEADERS}
+file(GLOB_RECURSE MODULE_PUBLIC_HEADERS CONFIGURE_DEPENDS
+    include/*.h
 )
 
-target_link_libraries(ScopeCanvasDemoFlow
-    ScopeCanvasWidget
-    ScopeCanvasGLFWIntegration
-    glad
-    glm
-    glfw
+# ============================================================================
+# Target
+# ============================================================================
+
+string(REPLACE "/" "_" MODULE_NAME "demo/flow")
+
+set(MODULE_TARGET "${PROJECT_NAME}_${MODULE_NAME}")
+
+add_executable(${MODULE_TARGET}
+    ${MODULE_SRC}
+    ${MODULE_PRIVATE_HEADERS}
+    ${MODULE_PUBLIC_HEADERS}
 )
 
-target_include_directories(ScopeCanvasDemoFlow PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+# ============================================================================
+# Build configuration
+# ============================================================================
+
+cppcmake_version_target(${MODULE_TARGET})
+
+target_include_directories(${MODULE_TARGET}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-set_property(TARGET ScopeCanvasDemoFlow PROPERTY FOLDER "${SC_FOLDER}/demo")
+target_compile_features(${MODULE_TARGET}
+    PUBLIC
+        cxx_std_20
+)
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
+# ============================================================================
+# IDE organization
+# ============================================================================
+
+cppcmake_project_set_ide_folder(${MODULE_TARGET} "demo/flow")
+
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/demo/flow"
+    PREFIX "Include"
+    FILES
+        ${MODULE_PUBLIC_HEADERS}
+)
+
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PREFIX "Source"
-    FILES ${SC_DEMOFLOW_SRC} ${SC_DEMOFLOW_PRIVATE_HEADERS}
+    FILES
+        ${MODULE_SRC}
+        ${MODULE_PRIVATE_HEADERS}
+)
+
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+target_link_libraries(${MODULE_TARGET}
+    PRIVATE
+        ${PROJECT_NAME}_widget
+        ${PROJECT_NAME}_integration_glfw
+        ${GLAD}
+        ${GLM}
+        ${GLFW}
 )

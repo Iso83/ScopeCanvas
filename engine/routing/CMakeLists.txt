@@ -1,46 +1,109 @@
-file(GLOB_RECURSE SC_ROUTING_SRC CONFIGURE_DEPENDS
+# ============================================================================
+# Source files
+# ============================================================================
+
+file(GLOB_RECURSE MODULE_SRC CONFIGURE_DEPENDS
     src/*.cpp
 )
 
-file(GLOB_RECURSE SC_ROUTING_PRIVATE_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PRIVATE_HEADERS CONFIGURE_DEPENDS
     src/*.h
 )
 
-file(GLOB_RECURSE SC_ROUTING_PUBLIC_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PUBLIC_HEADERS CONFIGURE_DEPENDS
     include/*.h
 )
 
-add_library(ScopeCanvasRouting
-    ${SC_ROUTING_SRC}
-    ${SC_ROUTING_PRIVATE_HEADERS}
-    ${SC_ROUTING_PUBLIC_HEADERS}
+# ============================================================================
+# Target
+# ============================================================================
+
+string(REPLACE "/" "_" MODULE_NAME "engine/routing")
+
+set(MODULE_TARGET "${PROJECT_NAME}_${MODULE_NAME}")
+
+add_library(${MODULE_TARGET}
+    ${MODULE_SRC}
+    ${MODULE_PRIVATE_HEADERS}
+    ${MODULE_PUBLIC_HEADERS}
 )
 
-target_link_libraries(ScopeCanvasRouting PUBLIC 
-    ScopeCanvasCore
+add_library(${PROJECT_NAME}::${MODULE_NAME} ALIAS ${MODULE_TARGET})
+
+# ============================================================================
+# Build configuration
+# ============================================================================
+
+cppcmake_version_target(${MODULE_TARGET})
+
+target_include_directories(${MODULE_TARGET}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-target_include_directories(ScopeCanvasRouting PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_compile_features(${MODULE_TARGET}
+    PUBLIC
+        cxx_std_20
 )
 
-target_include_directories(ScopeCanvasRouting PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+# ============================================================================
+# IDE organization
+# ============================================================================
 
-set_property(TARGET ScopeCanvasRouting PROPERTY FOLDER "${SC_FOLDER}/engine/routing")
+cppcmake_project_set_ide_folder(${MODULE_TARGET} "engine/routing")
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/routing
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/engine/routing"
     PREFIX "Include"
-    FILES ${SC_ROUTING_PUBLIC_HEADERS}
+    FILES
+        ${MODULE_PUBLIC_HEADERS}
 )
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PREFIX "Source"
-    FILES ${SC_ROUTING_SRC} ${SC_ROUTING_PRIVATE_HEADERS}
+    FILES
+        ${MODULE_SRC}
+        ${MODULE_PRIVATE_HEADERS}
 )
 
-if(SC_BUILD_TESTS)
-    sc_add_module_test(ScopeCanvasRouting routing SC_Routing_EdgeRouter)
-    sc_add_module_test(ScopeCanvasRouting routing SC_Routing_FlowLayout)
-endif()
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+target_link_libraries(${MODULE_TARGET}
+    PUBLIC
+        ${PROJECT_NAME}_engine_core
+)
+
+# ============================================================================
+# Tests
+# ============================================================================
+
+cppcmake_test_add(
+    NAME
+        Test_${MODULE_TARGET}_FlowLayout
+    TARGET
+        ${MODULE_TARGET}
+    MODULE
+        "engine/routing/flow"
+    SOURCES
+        tests/flow/FlowLayout.cpp
+    INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+cppcmake_test_add(
+    NAME
+        Test_${MODULE_TARGET}_EdgeRouter
+    TARGET
+        ${MODULE_TARGET}
+    MODULE
+        "engine/routing"
+    SOURCES
+        tests/EdgeRouter.cpp
+    INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)

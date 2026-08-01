@@ -1,11 +1,11 @@
-#include <ScopeCanvas/demo/DiagramBasics.h>
+#include <ScopeCanvas/demo/common/DiagramBasics.h>
 #include <algorithm>
 #include <cmath>
 
-using namespace ScopeCanvas::Core;
-using namespace ScopeCanvas::Core::Ids;
+using namespace ScopeCanvas::Engine::Core;
+using namespace ScopeCanvas::Engine::Core::Ids;
 
-namespace ScopeCanvas::Demo {
+namespace ScopeCanvas::Demo::Common {
 
 DiagramBasics::DiagramBasics() {
     (void)createNode(NodeTypeId{10}, {-260.0F, -96.0F});
@@ -98,4 +98,4 @@ bool DiagramBasics::canConnect(ConnectorId a, ConnectorId b) const {
     return true;
 }
 
-} // namespace ScopeCanvas::Demo
+} // namespace ScopeCanvas::Demo::Common

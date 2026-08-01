@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 4.0)
 
 project(
     ScopeCanvas
-    VERSION 0.1.1
+    VERSION 0.3.0
     LANGUAGES C CXX
 )
 
@@ -40,101 +40,61 @@ cppcmake_test_setup()
 
 dependencies_setup()
 
-# ============================================================================
+# =========================================================
 # Assets
-# ============================================================================
+# =========================================================
 
 include(cmake/Assets.cmake)
 
 assets_setup_fonts()
 
 # =========================================================
-# Modules
+# Engine
 # =========================================================
 
-#
-# Register project modules here.
-#
-# Examples:
-#
-#   cppcmake_module_add(engine/core)
-#   cppcmake_module_add(engine/math)
-#
-#   cppcmake_module_add(apps/demo)
-#   cppcmake_module_add(apps/editor)
-#
-
-
-
-
-
-
-
-
-#[[ TODO
-
-----------------------------------------------------------------------------------------------------------------------------
-
-function(sc_add_module_test target folder name)
-    add_executable(${name} tests/${name}.cpp)
-
-    target_link_libraries(${name} PRIVATE ${target})
-    target_include_directories(${name} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/tests/common
-    )
-
-    add_test(NAME ${name} COMMAND ${name})
-
-    set_property(TARGET ${name} PROPERTY FOLDER "${SC_FOLDER}/tests/${folder}")
-endfunction()
+cppcmake_module_add(engine/core)
+cppcmake_module_add(engine/routing)
+cppcmake_module_add(engine/render)
 
 # =========================================================
-# Options
+# Widgets
 # =========================================================
 
-option(SC_BUILD_TESTS "Build tests" ON)
-option(SC_BUILD_DEMOS "Build demos" ON)
-if(SC_BUILD_DEMOS)
-    option(SC_BUILD_DEMO_BENCHMARK "Enable render benchmarking in demo applications" OFF)
-endif()
+cppcmake_module_add(widget)
 
 # =========================================================
-# Testing
+# Integration
 # =========================================================
 
-if(SC_BUILD_TESTS)
-    enable_testing()
-    include(cmake/sc_tests.cmake)
-endif()
-
-
-# =========================================================
-# ScopeCanvas Libraries
-# =========================================================
-
-add_subdirectory(engine/core)
-add_subdirectory(engine/routing)
-add_subdirectory(render/core)
-add_subdirectory(widget)
 if(EMSCRIPTEN)
-    add_subdirectory(integration/web)
+    cppcmake_module_add(integration/web)
 else()
-    add_subdirectory(integration/glfw)
+    cppcmake_module_add(integration/glfw)
 endif()
 
 # =========================================================
-# ScopeCanvas Demos
+# Demos
 # =========================================================
 
-if(SC_BUILD_DEMOS)
-    add_subdirectory(demo/common)
+set(build_demo_option "${PROJECT_NAME}_BUILD_DEMOS")
+
+option(
+    ${build_demo_option}
+    "Build demo applications."
+    ${PROJECT_IS_TOP_LEVEL}
+)
+
+if(${build_demo_option})
+    option(${PROJECT_NAME}_DEMO_BENCHMARK "Enable render benchmarking in demo applications" OFF)
+
+    cppcmake_module_add(demo/common)
+
     if(EMSCRIPTEN)
-        add_subdirectory(demo/web)
+        cppcmake_module_add(demo/web)
     else()
-        add_subdirectory(demo/gl)
-        add_subdirectory(demo/imgui)
-        add_subdirectory(demo/flow)
+        cppcmake_module_add(demo/gl)
+        cppcmake_module_add(demo/imgui)
+        cppcmake_module_add(demo/flow)
     endif()
+
 endif()
-]]

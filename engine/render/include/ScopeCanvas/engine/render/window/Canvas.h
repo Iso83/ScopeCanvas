@@ -1,0 +1,31 @@
+#pragma once
+
+#include <ScopeCanvas/engine/render/window/Viewport.h>
+#include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
+
+namespace ScopeCanvas::Engine::Render::Window {
+class Canvas : public Viewport {
+  protected:
+    GLuint m_framebuffer{0};
+    GLuint m_colorTexture{0};
+    GLuint m_depthStencil{0};
+    int m_framebufferWidth{1};
+    int m_framebufferHeight{1};
+
+  public:
+    ~Canvas() {
+        releaseRenderTarget();
+    }
+
+    using Viewport::draw;
+
+    GLuint colorTexture() const noexcept {
+        return m_colorTexture;
+    }
+
+  protected:
+    void ensureRenderTarget(int width, int height);
+    void releaseRenderTarget();
+    virtual void draw(DrawContext* ctx);
+};
+} // namespace ScopeCanvas::Render::Window

@@ -12,7 +12,7 @@ function(assets_setup_fonts)
     )
 
     set(ASSETS_DEFAULT_FONT
-        "${SC_FONT_DIR}/DejaVuSans.ttf"
+        "${ASSETS_FONT_DIR}/DejaVuSans.ttf"
         CACHE INTERNAL ""
     )
 endfunction()

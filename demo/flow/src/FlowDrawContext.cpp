@@ -1,17 +1,18 @@
 #include "FlowDrawContext.h"
-#include <ScopeCanvas/render/scene/RenderScene.h>
-#include <ScopeCanvas/render/window/ViewportHandler.h>
+
+#include <ScopeCanvas/engine/render/scene/RenderScene.h>
+#include <ScopeCanvas/engine/render/window/ViewportHandler.h>
 #include <algorithm>
 #include <cstdint>
 #include <vector>
 
-using namespace ScopeCanvas::Core::Ids;
-using namespace ScopeCanvas::Core::Flow;
-using namespace ScopeCanvas::Render;
-using namespace ScopeCanvas::Render::Scene;
-using namespace ScopeCanvas::Render::Flow;
-using namespace ScopeCanvas::Routing::Flow;
-using namespace ScopeCanvas::Render::Window;
+using namespace ScopeCanvas::Engine::Core::Ids;
+using namespace ScopeCanvas::Engine::Core::Flow;
+using namespace ScopeCanvas::Engine::Render;
+using namespace ScopeCanvas::Engine::Render::Scene;
+using namespace ScopeCanvas::Engine::Render::Flow;
+using namespace ScopeCanvas::Engine::Routing::Flow;
+using namespace ScopeCanvas::Engine::Render::Window;
 
 namespace {
 enum class DemoStepKind { Source = 1, Filter = 2, Join = 3, Transform = 4, Aggregate = 5, Export = 6 };
@@ -19,26 +20,30 @@ enum class DemoStepKind { Source = 1, Filter = 2, Join = 3, Transform = 4, Aggre
 NodeTypeId typeId(DemoStepKind kind) {
     return NodeTypeId{static_cast<std::uint32_t>(kind)};
 }
-}
+} // namespace
 
+namespace ScopeCanvas::Demo::Flow {
 FlowDrawContext::FlowDrawContext() {
     FlowGroup& customers = m_document.createGroup("Customer Import", "Build a customer overview from MySQL data");
     FlowRow& customerRow = m_document.createRow(customers, "Customer flow");
     m_document.insertStep(customerRow, 0, typeId(DemoStepKind::Source), "MySQL Customers", "Customers table",
                           "2450 rows  12 ms");
-    const NodeId filterActive = m_document.insertStep(customerRow, 1, typeId(DemoStepKind::Filter),
-                                                      "SELECT active customers", "Active customers", "1812 rows  3 ms")
+    const NodeId filterActive = m_document
+                                    .insertStep(customerRow, 1, typeId(DemoStepKind::Filter), "SELECT active customers",
+                                                "Active customers", "1812 rows  3 ms")
                                     .id;
-    const NodeId joinOrders = m_document.insertStep(customerRow, 2, typeId(DemoStepKind::Join), "JOIN customer orders",
-                                                    "Customer orders", "1812 rows  18 ms")
+    const NodeId joinOrders = m_document
+                                  .insertStep(customerRow, 2, typeId(DemoStepKind::Join), "JOIN customer orders",
+                                              "Customer orders", "1812 rows  18 ms")
                                   .id;
     m_document.insertStep(customerRow, 3, typeId(DemoStepKind::Export), "Export customer overview", "CSV export",
                           "1812 rows  9 ms");
 
     NodeId filterDetail{};
     if (FlowStep* select = m_document.getStep(filterActive); select != nullptr) {
-        filterDetail = m_document.addChildStep(*select, typeId(DemoStepKind::Filter), "Filter active customers",
-                                               "Active = 1", "1812 rows  2 ms")
+        filterDetail = m_document
+                           .addChildStep(*select, typeId(DemoStepKind::Filter), "Filter active customers", "Active = 1",
+                                         "1812 rows  2 ms")
                            .id;
     }
     if (FlowStep* filter = m_document.getStep(filterDetail); filter != nullptr) {
@@ -51,7 +56,8 @@ FlowDrawContext::FlowDrawContext() {
 
     FlowGroup& orders = m_document.createGroup("Order Summary", "Aggregate completed orders for export");
     FlowRow& orderRow = m_document.createRow(orders, "Order flow");
-    m_document.insertStep(orderRow, 0, typeId(DemoStepKind::Source), "MySQL Orders", "Orders table", "3860 rows  15 ms");
+    m_document.insertStep(orderRow, 0, typeId(DemoStepKind::Source), "MySQL Orders", "Orders table",
+                          "3860 rows  15 ms");
     m_document.insertStep(orderRow, 1, typeId(DemoStepKind::Filter), "Filter completed orders", "Status = Completed",
                           "2440 rows  4 ms");
     m_document.insertStep(orderRow, 2, typeId(DemoStepKind::Aggregate), "Group by customer", "Aggregate totals",
@@ -229,8 +235,8 @@ void FlowDrawContext::renderScrollbar(Viewport* view) {
     };
     m_scrollbarRenderer.render(parts, view->camera(), {}, [](NodeTypeId typeId) {
         NodeRenderStyle style{};
-        style.bodyColor = typeId.value() == 92U ? glm::vec4{0.62F, 0.72F, 0.86F, 0.96F}
-                                                : glm::vec4{0.18F, 0.22F, 0.28F, 0.78F};
+        style.bodyColor =
+            typeId.value() == 92U ? glm::vec4{0.62F, 0.72F, 0.86F, 0.96F} : glm::vec4{0.18F, 0.22F, 0.28F, 0.78F};
         style.borderColor = {0.34F, 0.42F, 0.52F, 0.85F};
         style.cornerRadius = 3.0F;
         style.borderThickness = 1.0F;
@@ -280,3 +286,4 @@ void FlowDrawContext::rebuildLayout() {
     m_layout = m_layoutEngine.build(m_document);
     m_needsRender = true;
 }
+} // namespace ScopeCanvas::Demo::Flow

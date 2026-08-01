@@ -1,43 +1,101 @@
-file(GLOB_RECURSE SC_CORE_SRC CONFIGURE_DEPENDS
+# ============================================================================
+# Source files
+# ============================================================================
+
+file(GLOB_RECURSE MODULE_SRC CONFIGURE_DEPENDS
     src/*.cpp
 )
 
-file(GLOB_RECURSE SC_CORE_PRIVATE_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PRIVATE_HEADERS CONFIGURE_DEPENDS
     src/*.h
 )
 
-file(GLOB_RECURSE SC_CORE_PUBLIC_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PUBLIC_HEADERS CONFIGURE_DEPENDS
     include/*.h
 )
 
-add_library(ScopeCanvasCore
-    ${SC_CORE_SRC}
-    ${SC_CORE_PRIVATE_HEADERS}
-    ${SC_CORE_PUBLIC_HEADERS}
+# ============================================================================
+# Target
+# ============================================================================
+
+string(REPLACE "/" "_" MODULE_NAME "engine/core")
+
+set(MODULE_TARGET "${PROJECT_NAME}_${MODULE_NAME}")
+
+add_library(${MODULE_TARGET}
+    ${MODULE_SRC}
+    ${MODULE_PRIVATE_HEADERS}
+    ${MODULE_PUBLIC_HEADERS}
 )
 
-target_include_directories(ScopeCanvasCore PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${sc_glm_SOURCE_DIR}
+add_library(${PROJECT_NAME}::${MODULE_NAME} ALIAS ${MODULE_TARGET})
+
+# ============================================================================
+# Build configuration
+# ============================================================================
+
+cppcmake_version_target(${MODULE_TARGET})
+
+target_include_directories(${MODULE_TARGET}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        $<TARGET_PROPERTY:glm-header-only,INTERFACE_INCLUDE_DIRECTORIES>
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-target_include_directories(ScopeCanvasCore PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+target_compile_features(${MODULE_TARGET}
+    PUBLIC
+        cxx_std_20
 )
 
-set_property(TARGET ScopeCanvasCore PROPERTY FOLDER "${SC_FOLDER}/engine/core")
+# ============================================================================
+# IDE organization
+# ============================================================================
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/core
+cppcmake_project_set_ide_folder(${MODULE_TARGET} "engine/core")
+
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/engine/core"
     PREFIX "Include"
-    FILES ${SC_CORE_PUBLIC_HEADERS}
+    FILES
+        ${MODULE_PUBLIC_HEADERS}
 )
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PREFIX "Source"
-    FILES ${SC_CORE_SRC} ${SC_CORE_PRIVATE_HEADERS}
+    FILES
+        ${MODULE_SRC}
+        ${MODULE_PRIVATE_HEADERS}
 )
 
-if(SC_BUILD_TESTS)
-    sc_add_module_test(ScopeCanvasCore core SC_Core_IdRegistry)
-    sc_add_module_test(ScopeCanvasCore core SC_Core_FlowDocument)
-endif()
+# ============================================================================
+# Tests
+# ============================================================================
+
+cppcmake_test_add(
+    NAME
+        Test_${MODULE_TARGET}_FlowDocument
+    TARGET
+        ${MODULE_TARGET}
+    MODULE
+        "engine/core/flow"
+    SOURCES
+        tests/flow/FlowDocument.cpp
+    INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+cppcmake_test_add(
+    NAME
+        Test_${MODULE_TARGET}_IdRegistry
+    TARGET
+        ${MODULE_TARGET}
+    MODULE
+        "engine/core/ids"
+    SOURCES
+        tests/ids/IdRegistry.cpp
+    INCLUDE_DIRECTORIES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)

@@ -1,11 +1,11 @@
-#include <ScopeCanvas/routing/flow/FlowLayout.h>
+#include <ScopeCanvas/engine/routing/flow/FlowLayout.h>
 #include <algorithm>
 
-namespace ScopeCanvas::Routing::Flow {
+namespace ScopeCanvas::Engine::Routing::Flow {
 namespace {
-using ScopeCanvas::Core::Flow::FlowGroup;
-using ScopeCanvas::Core::Flow::FlowRow;
-using ScopeCanvas::Core::Flow::FlowStep;
+using ScopeCanvas::Engine::Core::Flow::FlowGroup;
+using ScopeCanvas::Engine::Core::Flow::FlowRow;
+using ScopeCanvas::Engine::Core::Flow::FlowStep;
 
 struct SubtreeResult {
     glm::vec2 position{};
@@ -53,7 +53,8 @@ SubtreeResult layoutStep(const FlowStep& step, Core::Flow::FlowRowId rowId, Core
         float childX = position.x + options.childIndent;
         float childY = position.y - layout.size.y - options.childGap;
         for (const FlowStep& child : step.children) {
-            const SubtreeResult childResult = layoutStep(child, rowId, step.id, {childX, childY}, depth + 1U, options, result);
+            const SubtreeResult childResult =
+                layoutStep(child, rowId, step.id, {childX, childY}, depth + 1U, options, result);
             childX += childResult.size.x + options.stepGap;
             minX = std::min(minX, childResult.position.x);
             maxX = std::max(maxX, childResult.position.x + childResult.size.x);
@@ -70,9 +71,8 @@ SubtreeResult layoutStep(const FlowStep& step, Core::Flow::FlowRowId rowId, Core
 } // namespace
 
 const FlowStepLayout* FlowLayoutResult::step(Core::Ids::NodeId stepId) const {
-    const auto it = std::find_if(steps.begin(), steps.end(), [stepId](const FlowStepLayout& item) {
-        return item.stepId == stepId;
-    });
+    const auto it = std::find_if(steps.begin(), steps.end(),
+                                 [stepId](const FlowStepLayout& item) { return item.stepId == stepId; });
     return it == steps.end() ? nullptr : &(*it);
 }
 
@@ -114,8 +114,7 @@ FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, con
                     rowBottom = std::min(rowBottom, subtree.position.y);
                 }
 
-                const float railStartX =
-                    anchors.empty() ? options.origin.x : rowStepLeft - options.railOuterPadding;
+                const float railStartX = anchors.empty() ? options.origin.x : rowStepLeft - options.railOuterPadding;
                 const float railEndX =
                     anchors.empty() ? options.origin.x + options.stepSize.x : rowStepRight + options.railOuterPadding;
                 result.rows.push_back({row.id, {railStartX, rowY}, {railEndX, rowY}, rowTop, rowBottom});
@@ -135,7 +134,10 @@ FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, con
             contentRight = headerPos.x + options.collapsedGroupWidth;
             contentBottom = headerPos.y;
         }
-        result.groups.push_back({group.id, headerPos, headerSize, {contentLeft, contentBottom},
+        result.groups.push_back({group.id,
+                                 headerPos,
+                                 headerSize,
+                                 {contentLeft, contentBottom},
                                  {contentRight - contentLeft, groupHeaderY + options.groupHeaderHeight - contentBottom},
                                  contentBottom});
         groupHeaderY = contentBottom - options.groupGap;
@@ -144,7 +146,8 @@ FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, con
     return result;
 }
 
-std::size_t FlowLayout::insertionIndex(const FlowLayoutResult& layout, Core::Flow::FlowRowId rowId, float worldX) const {
+std::size_t FlowLayout::insertionIndex(const FlowLayoutResult& layout, Core::Flow::FlowRowId rowId,
+                                       float worldX) const {
     std::size_t index = 0;
     for (const FlowStepLayout& step : layout.steps) {
         if (step.rowId != rowId || step.depth != 0U)
@@ -156,4 +159,4 @@ std::size_t FlowLayout::insertionIndex(const FlowLayoutResult& layout, Core::Flo
     return index;
 }
 
-} // namespace ScopeCanvas::Routing::Flow
+} // namespace ScopeCanvas::Engine::Routing::Flow

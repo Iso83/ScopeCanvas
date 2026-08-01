@@ -1,10 +1,10 @@
-#include <ScopeCanvas/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/integration/glfw/GlfwBootstrap.h>
 #include <iostream>
-#include <ScopeCanvas/glfw/GlfwBootstrap.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-namespace ScopeCanvas::GLFW {
+namespace ScopeCanvas::Integration::GLFW {
 
 bool initializeGLFW() {
     if (!glfwInit())
@@ -50,4 +50,4 @@ GLFWwindow* createOpenGLWindow(int width, int height, const char* title, bool bo
     return window;
 }
 
-} // namespace ScopeCanvas::GLFW
+} // namespace ScopeCanvas::Integration::GLFW

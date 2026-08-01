@@ -1,41 +1,79 @@
-file(GLOB_RECURSE SC_WIDGET_SRC CONFIGURE_DEPENDS
+# ============================================================================
+# Source files
+# ============================================================================
+
+file(GLOB_RECURSE MODULE_SRC CONFIGURE_DEPENDS
     src/*.cpp
 )
 
-file(GLOB_RECURSE SC_WIDGET_PRIVATE_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PRIVATE_HEADERS CONFIGURE_DEPENDS
     src/*.h
 )
 
-file(GLOB_RECURSE SC_WIDGET_PUBLIC_HEADERS CONFIGURE_DEPENDS
+file(GLOB_RECURSE MODULE_PUBLIC_HEADERS CONFIGURE_DEPENDS
     include/*.h
 )
 
-add_library(ScopeCanvasWidget
-    ${SC_WIDGET_SRC}
-    ${SC_WIDGET_PRIVATE_HEADERS}
-    ${SC_WIDGET_PUBLIC_HEADERS}
+# ============================================================================
+# Target
+# ============================================================================
+
+string(REPLACE "/" "_" MODULE_NAME "widget")
+
+set(MODULE_TARGET "${PROJECT_NAME}_${MODULE_NAME}")
+
+add_library(${MODULE_TARGET}
+    ${MODULE_SRC}
+    ${MODULE_PRIVATE_HEADERS}
+    ${MODULE_PUBLIC_HEADERS}
 )
 
-target_link_libraries(ScopeCanvasWidget PUBLIC
-    ScopeCanvasRender
+add_library(${PROJECT_NAME}::${MODULE_NAME} ALIAS ${MODULE_TARGET})
+
+# ============================================================================
+# Build configuration
+# ============================================================================
+
+cppcmake_version_target(${MODULE_TARGET})
+
+target_include_directories(${MODULE_TARGET}
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-target_include_directories(ScopeCanvasWidget PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_compile_features(${MODULE_TARGET}
+    PUBLIC
+        cxx_std_20
 )
 
-target_include_directories(ScopeCanvasWidget PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
+# ============================================================================
+# IDE organization
+# ============================================================================
 
-set_property(TARGET ScopeCanvasWidget PROPERTY FOLDER "${SC_FOLDER}/widget")
+cppcmake_project_set_ide_folder(${MODULE_TARGET} "widget")
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include/ScopeCanvas/widget
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}/widget"
     PREFIX "Include"
-    FILES ${SC_WIDGET_PUBLIC_HEADERS}
+    FILES
+        ${MODULE_PUBLIC_HEADERS}
 )
 
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
     PREFIX "Source"
-    FILES ${SC_WIDGET_SRC} ${SC_WIDGET_PRIVATE_HEADERS}
+    FILES
+        ${MODULE_SRC}
+        ${MODULE_PRIVATE_HEADERS}
+)
+
+# ============================================================================
+# Dependencies
+# ============================================================================
+
+target_link_libraries(${MODULE_TARGET}
+    PUBLIC
+        ${PROJECT_NAME}_engine_render
 )
