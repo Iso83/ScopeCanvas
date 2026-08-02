@@ -63,11 +63,11 @@ struct FlowLayoutResult {
 };
 
 class FlowLayout {
-  public:
+public:
     [[nodiscard]] FlowLayoutResult build(const Core::Flow::FlowDocument& document,
                                          const FlowLayoutOptions& options = {}) const;
     [[nodiscard]] std::size_t insertionIndex(const FlowLayoutResult& layout, Core::Flow::FlowRowId rowId,
                                              float worldX) const;
 };
 
-} // namespace ScopeCanvas::Routing::Flow
+} // namespace ScopeCanvas::Engine::Routing::Flow

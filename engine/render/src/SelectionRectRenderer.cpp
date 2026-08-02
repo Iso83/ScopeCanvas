@@ -107,4 +107,4 @@ void SelectionRectRenderer::destroy() {
         m_vao = 0;
     }
 }
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

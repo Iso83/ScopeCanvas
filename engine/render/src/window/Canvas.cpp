@@ -1,6 +1,6 @@
-#include <ScopeCanvas/engine/render/window/DrawContext.h>
-#include <ScopeCanvas/engine/render/window/Canvas.h>
 #include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/engine/render/window/Canvas.h>
+#include <ScopeCanvas/engine/render/window/DrawContext.h>
 
 using namespace ScopeCanvas::Engine::Render;
 
@@ -39,8 +39,9 @@ void Canvas::ensureRenderTarget(int width, int height) {
 
     glGenTextures(1, &m_colorTexture);
     glBindTexture(GL_TEXTURE_2D, m_colorTexture);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_framebufferWidth, m_framebufferHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_framebufferWidth, m_framebufferHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture, 0);
@@ -67,4 +68,4 @@ void Canvas::releaseRenderTarget() {
     m_colorTexture = 0;
     m_framebuffer = 0;
 }
-} // namespace ScopeCanvas::Render::Window
+} // namespace ScopeCanvas::Engine::Render::Window

@@ -10,4 +10,4 @@ struct NodeRenderStyle {
     float borderThickness{1.5F};
     float cornerRadius{10.0F};
 };
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

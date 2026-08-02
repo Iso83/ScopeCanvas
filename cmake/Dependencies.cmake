@@ -39,6 +39,14 @@ macro(dependencies_setup)
     # for use by the project's CMake configuration.
     # =========================================================
     
+    cppcmake_gitsubmodule_init(
+        QUIET 
+        WORKING_DIRECTORY 
+            "${CMAKE_CURRENT_SOURCE_DIR}" 
+        PATH 
+            "extern/CppDependencies"
+    )
+    
     include(extern/CppDependencies/CppDependencies.cmake)
 
     cppdependencies_freetype(FREETYPE)

@@ -1,4 +1,5 @@
 #include "TestAssert.h"
+
 #include <ScopeCanvas/engine/core/ids/IdRegistry.h>
 #include <ScopeCanvas/engine/core/ids/StrongId.h>
 

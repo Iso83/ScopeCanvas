@@ -1,5 +1,5 @@
-#include <ScopeCanvas/engine/render/window/DrawContext.h>
 #include <ScopeCanvas/engine/render/RenderBenchmark.h>
+#include <ScopeCanvas/engine/render/window/DrawContext.h>
 #include <ScopeCanvas/engine/render/window/Viewport.h>
 #include <ScopeCanvas/engine/render/window/ViewportHandler.h>
 
@@ -36,7 +36,6 @@ void ViewportHandler::unregisterViewport(Viewport* viewport) {
         m_activeView = InvalidView;
 }
 
-
 void ViewportHandler::setActiveViewport(std::size_t index) {
     assert(index < m_viewports.size());
     if (m_activeView == index)
@@ -47,7 +46,7 @@ void ViewportHandler::setActiveViewport(std::size_t index) {
 
     m_activeView = index;
 
-    if (auto* newActive = activeViewport()) 
+    if (auto* newActive = activeViewport())
         newActive->m_needsRender = true;
 }
 
@@ -166,7 +165,6 @@ void ViewportHandler::processKey(int key, bool pressed) {
     });
 }
 
-
 void ViewportHandler::updatePrevInteraction() {
     m_mousePrevPosition = m_mousePosition;
 
@@ -177,11 +175,11 @@ void ViewportHandler::updatePrevInteraction() {
         key.prevDown = key.down;
 }
 
-template <typename Fn> void ViewportHandler::forEachInteractionRecipient(Fn &&fn) {
+template <typename Fn> void ViewportHandler::forEachInteractionRecipient(Fn&& fn) {
     for (auto* view : m_viewports)
         fn(view);
 
     if (auto* view = activeViewport())
         fn(view->activeState().drawContext);
 }
-} // namespace ScopeCanvas::Render::Window
+} // namespace ScopeCanvas::Engine::Render::Window

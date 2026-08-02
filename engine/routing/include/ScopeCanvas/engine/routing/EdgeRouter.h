@@ -7,7 +7,7 @@ namespace ScopeCanvas::Engine::Routing {
 class IGraphView;
 
 class EdgeRouter {
-  public:
+public:
     [[nodiscard]] std::vector<EdgeRoute> routeAll(const IGraphView* view) const;
 };
-} // namespace ScopeCanvas::Routing
+} // namespace ScopeCanvas::Engine::Routing

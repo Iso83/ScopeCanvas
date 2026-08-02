@@ -13,4 +13,4 @@ struct Node {
     glm::vec2 size{};
     std::vector<Ids::ConnectorId> connectors{};
 };
-} // namespace ScopeCanvas::Core
+} // namespace ScopeCanvas::Engine::Core

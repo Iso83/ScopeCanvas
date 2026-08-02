@@ -6,14 +6,14 @@
 namespace ScopeCanvas::Engine::Core::Ids {
 
 template <typename TId> class GraphRegistry {
-  protected:
+protected:
     using ValueType = typename TId::ValueType;
 
     ValueType m_nextId{1};
     std::vector<ValueType> m_freeIds{};
     std::unordered_set<ValueType> m_alive{};
 
-  public:
+public:
     using const_iterator = typename std::unordered_set<ValueType>::const_iterator;
 
     virtual ~GraphRegistry() = default;
@@ -61,9 +61,9 @@ template <typename TId> class GraphRegistry {
         return m_alive.end();
     }
 
-  protected:
+protected:
     virtual void onBeforeRemove(TId) {}
     virtual void onAfterRemove(TId) {}
 };
 
-} // namespace ScopeCanvas::Core::Ids
+} // namespace ScopeCanvas::Engine::Core::Ids

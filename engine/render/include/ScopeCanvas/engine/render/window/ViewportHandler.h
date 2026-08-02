@@ -1,8 +1,8 @@
 #pragma once
 
+#include <ScopeCanvas/engine/render/window/ViewportInteraction.h>
 #include <array>
 #include <glm/vec2.hpp>
-#include <ScopeCanvas/engine/render/window/ViewportInteraction.h>
 #include <stdexcept>
 #include <vector>
 
@@ -20,15 +20,17 @@ struct State {
         return !down && prevDown;
     }
 };
-} // namespace ScopeCanvas::Input
+} // namespace ScopeCanvas::Engine::Input
 
-namespace ScopeCanvas::Engine::Render { class RenderBenchmark; }
+namespace ScopeCanvas::Engine::Render {
+class RenderBenchmark;
+}
 
 namespace ScopeCanvas::Engine::Render::Window {
 class Viewport;
 
 class ViewportHandler {
-  protected:
+protected:
     //-------------------------------------------------------------------------
     // Viewports
     //-------------------------------------------------------------------------
@@ -44,7 +46,7 @@ class ViewportHandler {
     glm::vec2 m_mousePrevPosition{};
     std::array<Input::State, Input::MaxKeys> m_keys{};
 
-  public:
+public:
     //-------------------------------------------------------------------------
     // Viewports
     //-------------------------------------------------------------------------
@@ -88,7 +90,7 @@ class ViewportHandler {
         return m_mousePosition;
     }
     inline glm::vec2 mouseDeltaPosition() const {
-        return m_mousePosition - m_mousePrevPosition; 
+        return m_mousePosition - m_mousePrevPosition;
     }
 
     virtual void processMouseButton(MouseButton button, bool pressed);
@@ -111,7 +113,7 @@ class ViewportHandler {
 
     virtual void updatePrevInteraction();
 
-  protected:
+protected:
     template <typename Fn> void forEachInteractionRecipient(Fn&& fn);
 };
-} // namespace ScopeCanvas::Render::Window
+} // namespace ScopeCanvas::Engine::Render::Window

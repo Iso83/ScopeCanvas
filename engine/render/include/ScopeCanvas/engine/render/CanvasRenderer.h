@@ -12,7 +12,7 @@
 namespace ScopeCanvas::Engine::Routing {
 class IGraphView;
 struct EdgeRoute;
-} // namespace ScopeCanvas::Routing
+} // namespace ScopeCanvas::Engine::Routing
 
 namespace ScopeCanvas::Engine::Render::Camera {
 class Camera2D;
@@ -46,14 +46,14 @@ struct CanvasRenderOptions {
 };
 
 class CanvasRenderer {
-  private:
+private:
     GridRenderer m_grid{};
     NodeRenderer m_nodes{};
     EdgeRenderer m_edges{};
     SelectionRectRenderer m_selection{};
     Scene::SceneBuilder m_sceneBuilder{};
 
-  public:
+public:
     bool init();
     void shutdown();
 
@@ -64,4 +64,4 @@ class CanvasRenderer {
     void renderSelectionRect(const Camera::Camera2D& camera, const glm::vec2& start, const glm::vec2& end) const;
 };
 
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

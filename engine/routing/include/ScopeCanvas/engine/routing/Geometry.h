@@ -24,4 +24,4 @@ float distanceToSegmentSquared(const glm::vec2& point, const glm::vec2& a, const
     return glm::dot(d, d);
 }
 
-} // namespace ScopeCanvas::Routing
+} // namespace ScopeCanvas::Engine::Routing

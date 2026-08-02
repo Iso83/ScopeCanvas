@@ -1,11 +1,11 @@
 #pragma once
 
-#include <functional>
-#include <glm/vec2.hpp>
 #include <ScopeCanvas/engine/core/ids/CanvasIds.h>
 #include <ScopeCanvas/engine/core/ids/TypeIds.h>
 #include <ScopeCanvas/engine/render/NodeRenderStyle.h>
 #include <ScopeCanvas/engine/render/scene/RenderScene.h>
+#include <functional>
+#include <glm/vec2.hpp>
 #include <vector>
 
 namespace ScopeCanvas::Engine::Render::Camera {
@@ -15,14 +15,14 @@ class Camera2D;
 namespace ScopeCanvas::Engine::Render {
 
 class NodeRenderer {
-  private:
+private:
     unsigned int m_fillVao{0};
     unsigned int m_fillVbo{0};
     unsigned int m_lineVao{0};
     unsigned int m_lineVbo{0};
     unsigned int m_program{0};
 
-  public:
+public:
     using StyleResolver = std::function<NodeRenderStyle(Core::Ids::NodeTypeId)>;
 
     bool init();
@@ -38,4 +38,4 @@ class NodeRenderer {
     [[nodiscard]] static NodeRenderStyle defaultStyle(Core::Ids::NodeTypeId typeId);
 };
 
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

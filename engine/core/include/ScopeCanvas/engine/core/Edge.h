@@ -8,4 +8,4 @@ struct Edge {
     Ids::ConnectorId fromConnector{};
     Ids::ConnectorId toConnector{};
 };
-} // namespace ScopeCanvas::Core
+} // namespace ScopeCanvas::Engine::Core

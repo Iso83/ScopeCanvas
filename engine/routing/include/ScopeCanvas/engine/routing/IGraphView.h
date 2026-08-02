@@ -9,11 +9,11 @@ namespace ScopeCanvas::Engine::Core {
 class Node;
 class Connector;
 class Edge;
-} // namespace ScopeCanvas::Core
+} // namespace ScopeCanvas::Engine::Core
 
 namespace ScopeCanvas::Engine::Routing {
 class IGraphView {
-  public:
+public:
     virtual ~IGraphView() = default;
 
     virtual void forEachEdgeId(const std::function<void(Core::Ids::EdgeId)>& f) const = 0;
@@ -23,4 +23,4 @@ class IGraphView {
     virtual const Core::Connector* getConnector(Core::Ids::ConnectorId id) const = 0;
     virtual const Core::Node* getNode(Core::Ids::NodeId id) const = 0;
 };
-} // namespace ScopeCanvas::Routing
+} // namespace ScopeCanvas::Engine::Routing

@@ -10,4 +10,4 @@ struct EdgeTypeIdTag;
 using NodeTypeId = StrongId<NodeTypeIdTag>;
 using ConnectorTypeId = StrongId<ConnectorTypeIdTag>;
 using EdgeTypeId = StrongId<EdgeTypeIdTag>;
-} // namespace ScopeCanvas::Core::Ids
+} // namespace ScopeCanvas::Engine::Core::Ids

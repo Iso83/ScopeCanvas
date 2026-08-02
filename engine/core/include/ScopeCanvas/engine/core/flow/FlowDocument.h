@@ -33,7 +33,7 @@ struct FlowGroup {
 };
 
 class FlowDocument {
-  public:
+public:
     FlowGroup& createGroup(std::string title, std::string summary = {});
     FlowRow& createRow(FlowGroup& group, std::string title);
     FlowStep& insertStep(FlowRow& row, std::size_t index, Ids::NodeTypeId typeId, std::string title,
@@ -53,10 +53,14 @@ class FlowDocument {
     FlowRow* rowForStep(Ids::NodeId stepId);
     const FlowRow* rowForStep(Ids::NodeId stepId) const;
 
-    std::vector<FlowGroup>& groups() { return m_groups; }
-    const std::vector<FlowGroup>& groups() const { return m_groups; }
+    std::vector<FlowGroup>& groups() {
+        return m_groups;
+    }
+    const std::vector<FlowGroup>& groups() const {
+        return m_groups;
+    }
 
-  private:
+private:
     std::vector<FlowGroup> m_groups{};
     std::uint32_t m_nextId{1};
 
@@ -65,4 +69,4 @@ class FlowDocument {
     Ids::NodeId nextStepId();
 };
 
-} // namespace ScopeCanvas::Core::Flow
+} // namespace ScopeCanvas::Engine::Core::Flow

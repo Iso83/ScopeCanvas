@@ -10,7 +10,7 @@ struct CanvasFrameData {
 };
 
 class CanvasFrameBuilder {
-  public:
+public:
     [[nodiscard]] CanvasFrameData buildFrame(const Scene::RenderScene& scene) const;
 };
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

@@ -1,4 +1,5 @@
 #include "TestAssert.h"
+
 #include <ScopeCanvas/engine/core/flow/FlowDocument.h>
 
 using namespace ScopeCanvas::Engine::Core::Flow;

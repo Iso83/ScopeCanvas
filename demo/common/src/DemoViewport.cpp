@@ -1,6 +1,6 @@
 #include <ScopeCanvas/demo/common/DemoViewport.h>
-#include <ScopeCanvas/engine/render/window/DrawContext.h>
 #include <ScopeCanvas/demo/common/DiagramDrawContext.h>
+#include <ScopeCanvas/engine/render/window/DrawContext.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -90,4 +90,4 @@ void DemoViewport::draw(ScopeCanvas::Engine::Render::Window::DrawContext* ctx) {
     m_needsRender = keyStroked || ctx->needsRender();
     m_lastTime = m_nowTime;
 }
-} // namespace ScopeCanvas::Demo
+} // namespace ScopeCanvas::Demo::Common

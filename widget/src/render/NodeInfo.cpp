@@ -10,9 +10,9 @@
 #include <ScopeCanvas/engine/render/gl/ShaderSource.h>
 #include <utility>
 
-namespace ScopeCanvas::Widget::Render {
 using namespace ScopeCanvas::Engine::Render;
 
+namespace ScopeCanvas::Widget::Render {
 namespace {
 struct Vertex {
     float x;
@@ -269,15 +269,28 @@ bool NodeInfoRenderer::init() {
     glBindVertexArray(0);
 
     const std::string geometryVs = std::string(GL::ShaderVersionPrefix) + R"(
+
         layout(location = 0) in vec2 aPos;
         layout(location = 1) in vec4 aColor;
+
         uniform mat4 uVP;
+
         out vec4 vColor;
-        void main(){ gl_Position = uVP * vec4(aPos, 0.0, 1.0); vColor = aColor; })";
+
+        void main(){
+            gl_Position = uVP * vec4(aPos, 0.0, 1.0); vColor = aColor;
+        }
+    )";
     const std::string geometryFs = std::string(GL::ShaderVersionPrefix) + R"(
+
         in vec4 vColor;
+
         out vec4 FragColor;
-        void main(){ FragColor = vColor; })";
+
+        void main(){
+            FragColor = vColor;
+        }
+    )";
     const unsigned int gv = compile(GL_VERTEX_SHADER, geometryVs.c_str());
     const unsigned int gf = compile(GL_FRAGMENT_SHADER, geometryFs.c_str());
     m_program = glCreateProgram();
@@ -288,19 +301,35 @@ bool NodeInfoRenderer::init() {
     glDeleteShader(gf);
 
     const std::string textVs = std::string(GL::ShaderVersionPrefix) + R"(
+    
         layout(location = 0) in vec2 aPos;
         layout(location = 1) in vec2 aUv;
         layout(location = 2) in vec4 aColor;
+
         uniform mat4 uVP;
+
         out vec2 vUv;
         out vec4 vColor;
-        void main(){ gl_Position = uVP * vec4(aPos, 0.0, 1.0); vUv = aUv; vColor = aColor; })";
+
+        void main(){
+            gl_Position = uVP * vec4(aPos, 0.0, 1.0);
+            vUv = aUv;
+            vColor = aColor;
+        }
+    )";
     const std::string textFs = std::string(GL::ShaderVersionPrefix) + R"(
+
         in vec2 vUv;
         in vec4 vColor;
+
         uniform sampler2D uGlyph;
+
         out vec4 FragColor;
-        void main(){ FragColor = vec4(vColor.rgb, vColor.a * texture(uGlyph, vUv).r); })";
+
+        void main(){
+            FragColor = vec4(vColor.rgb, vColor.a * texture(uGlyph, vUv).r);
+        }
+    )";
     const unsigned int tv = compile(GL_VERTEX_SHADER, textVs.c_str());
     const unsigned int tf = compile(GL_FRAGMENT_SHADER, textFs.c_str());
     m_textProgram = glCreateProgram();
@@ -385,9 +414,8 @@ void NodeInfoRenderer::releaseFont() {
     m_glyphs.clear();
 }
 
-void NodeInfoRenderer::render(const std::vector<Render::Scene::NodeRenderData>& nodes,
-                              const Render::Camera::Camera2D& camera,
-                              const Render::Theme::NodeVisualRegistry& registry) const {
+void NodeInfoRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const Camera::Camera2D& camera,
+                              const Theme::NodeVisualRegistry& registry) const {
     auto appendText = [this](std::vector<TextQuad>& textVertices, const std::string& value, glm::vec2 rectPosition,
                              glm::vec2 rectSize, float size, glm::vec4 color) {
         const float scale = size / m_fontAtlasSize;
@@ -416,8 +444,8 @@ void NodeInfoRenderer::render(const std::vector<Render::Scene::NodeRenderData>& 
     std::vector<TextQuad> text;
     geometry.reserve(nodes.size() * 128U);
 
-    for (const Render::Scene::NodeRenderData& node : nodes) {
-        const Render::Theme::NodeVisual& visual = registry.getVisual(node.typeId);
+    for (const Scene::NodeRenderData& node : nodes) {
+        const Theme::NodeVisual& visual = registry.getVisual(node.typeId);
         const float borderThickness = std::clamp(visual.style.borderThickness, 1.0F, 3.5F);
         const glm::vec2 innerPosition = node.position + glm::vec2(borderThickness);
         const glm::vec2 innerSize = node.size - glm::vec2(borderThickness * 2.0F);
@@ -483,7 +511,7 @@ void NodeInfoRenderer::render(const std::vector<Render::Scene::NodeRenderData>& 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void NodeInfoRenderer::render(const std::vector<NodeInfo>& nodes, const Render::Camera::Camera2D& camera) const {
+void NodeInfoRenderer::render(const std::vector<NodeInfo>& nodes, const Camera::Camera2D& camera) const {
     auto appendText = [this](std::vector<TextQuad>& textVertices, const std::string& value, glm::vec2 rectPosition,
                              glm::vec2 rectSize, float size, glm::vec4 color) {
         const float scale = size / m_fontAtlasSize;

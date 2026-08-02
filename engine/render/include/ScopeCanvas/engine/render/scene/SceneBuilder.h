@@ -14,8 +14,8 @@ class Camera2D;
 
 namespace ScopeCanvas::Engine::Render::Scene {
 class SceneBuilder {
-  public:
+public:
     [[nodiscard]] RenderScene build(const Routing::IGraphView& model, const std::vector<Routing::EdgeRoute>& edgeRoutes,
                                     const Camera::Camera2D& camera) const;
 };
-} // namespace ScopeCanvas::Render::Scene
+} // namespace ScopeCanvas::Engine::Render::Scene

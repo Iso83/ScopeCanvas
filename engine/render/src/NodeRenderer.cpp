@@ -1,13 +1,15 @@
+#include <ScopeCanvas/engine/render/NodeRenderer.h>
 #include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/render/geometry/RoundedRect.h>
-#include <ScopeCanvas/engine/render/NodeRenderer.h>
+#include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
 #include <ScopeCanvas/engine/render/gl/ShaderSource.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
 #include <string>
 #include <vector>
+
+using namespace ScopeCanvas::Engine::Core::Ids;
 
 namespace ScopeCanvas::Engine::Render {
 namespace {
@@ -17,8 +19,6 @@ unsigned int compile(unsigned int type, const char* src) {
     glCompileShader(shader);
     return shader;
 }
-
-using namespace ScopeCanvas::Engine::Core::Ids;
 
 bool isSelected(NodeId nodeId, const std::vector<NodeId>& selectedNodeIds) {
     return std::find(selectedNodeIds.begin(), selectedNodeIds.end(), nodeId) != selectedNodeIds.end();
@@ -146,23 +146,29 @@ bool NodeRenderer::init() {
 
     glBindVertexArray(0);
 
-    const std::string vs = std::string(ScopeCanvas::Engine::Render::GL::ShaderVersionPrefix) + R"(layout(location = 0) in vec2 aPos;
-layout(location = 1) in vec4 aColor;
+    const std::string vs = std::string(ScopeCanvas::Engine::Render::GL::ShaderVersionPrefix) + R"(
 
-uniform mat4 uVP;
-out vec4 vColor;
+        layout(location = 0) in vec2 aPos;
+        layout(location = 1) in vec4 aColor;
 
-void main() {
-    gl_Position = uVP * vec4(aPos, 0.0, 1.0);
-    vColor = aColor;
-})";
+        uniform mat4 uVP;
+        out vec4 vColor;
 
-    const std::string fs = std::string(ScopeCanvas::Engine::Render::GL::ShaderVersionPrefix) + R"(in vec4 vColor;
-out vec4 FragColor;
+        void main() {
+            gl_Position = uVP * vec4(aPos, 0.0, 1.0);
+            vColor = aColor;
+        }
+    )";
 
-void main() {
-    FragColor = vColor;
-})";
+    const std::string fs = std::string(ScopeCanvas::Engine::Render::GL::ShaderVersionPrefix) + R"(
+
+        in vec4 vColor;
+        out vec4 FragColor;
+
+        void main() {
+            FragColor = vColor;
+        }
+    )";
 
     const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs.c_str());
     const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs.c_str());
@@ -272,8 +278,7 @@ void NodeRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, const
 }
 
 void NodeRenderer::renderSelectionBorders(const std::vector<Scene::NodeRenderData>& nodes,
-                                          const Camera::Camera2D& camera,
-                                          const std::vector<NodeId>& selectedNodeIds,
+                                          const Camera::Camera2D& camera, const std::vector<NodeId>& selectedNodeIds,
                                           const StyleResolver& styleResolver) const {
     if (nodes.empty() || selectedNodeIds.empty()) {
         return;
@@ -319,4 +324,4 @@ void NodeRenderer::renderSelectionBorders(const std::vector<Scene::NodeRenderDat
     glBindVertexArray(0);
 }
 
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

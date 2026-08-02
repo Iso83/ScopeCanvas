@@ -9,4 +9,4 @@ struct EdgeRoute {
     Core::Ids::EdgeId edgeId{};
     std::vector<glm::vec2> points{};
 };
-} // namespace ScopeCanvas::Routing
+} // namespace ScopeCanvas::Engine::Routing

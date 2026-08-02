@@ -8,12 +8,12 @@ class Camera2D;
 
 namespace ScopeCanvas::Engine::Render {
 class GridRenderer {
-  private:
+private:
     GL::Shader m_shader;
     GLuint m_vao;
     GLuint m_vbo;
 
-  public:
+public:
     GridRenderer();
     ~GridRenderer();
 
@@ -24,7 +24,7 @@ class GridRenderer {
     void shutdown();
     void render(const Camera::Camera2D& camera, float cellSize) const;
 
-  private:
+private:
     void destroy();
 };
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

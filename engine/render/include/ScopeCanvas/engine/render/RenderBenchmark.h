@@ -1,8 +1,8 @@
 #pragma once
 
+#include <ScopeCanvas/engine/render/window/ViewportHandler.h>
 #include <chrono>
 #include <cstdint>
-#include <ScopeCanvas/engine/render/window/ViewportHandler.h>
 
 #ifdef SC_BUILD_DEMO_BENCHMARK
 #define SC_SWAPINTERVAL 0
@@ -13,11 +13,11 @@
 namespace ScopeCanvas::Engine::Render::Window {
 class DrawContext;
 class Viewport;
-}
+} // namespace ScopeCanvas::Engine::Render::Window
 
 namespace ScopeCanvas::Engine::Render {
 class RenderBenchmark {
-  public:
+public:
     using Clock = std::chrono::steady_clock;
 
     struct Statistics {
@@ -41,20 +41,20 @@ class RenderBenchmark {
         double idleTimeMs{0.0};
     };
 
-  private:
+private:
     Statistics m_latest{};
     Clock::time_point m_intervalStart{};
     std::uint64_t m_intervalFrames{0};
     double m_intervalFrameTimeMs{0.0};
     bool m_updated{false};
 
-  public:
+public:
     void draw(Window::ViewportHandler& viewHandlert);
 
-    [[nodiscard]] const Statistics &statistics() const noexcept {
+    [[nodiscard]] const Statistics& statistics() const noexcept {
         return m_latest;
     }
 
     [[nodiscard]] bool updated() noexcept;
 };
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

@@ -12,7 +12,7 @@ namespace ScopeCanvas::Integration::GLFW {
  * callbacks.
  */
 class GlfwInputListener {
-  public:
+public:
     virtual ~GlfwInputListener() = default;
 
     virtual void cursorPosCallback(GLFWwindow* window, double x, double y) {}
@@ -23,4 +23,4 @@ class GlfwInputListener {
 
 void bindInputListener(GLFWwindow* window, GlfwInputListener* sink);
 void setInputListener(GlfwInputListener* sink);
-} // namespace ScopeCanvas::GLFW
+} // namespace ScopeCanvas::Integration::GLFW

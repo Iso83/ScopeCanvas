@@ -17,12 +17,12 @@ class Camera2D;
 
 namespace ScopeCanvas::Engine::Render {
 class EdgeRenderer {
-  private:
+private:
     GL::Shader m_shader{};
     GLuint m_vao{0};
     GLuint m_vbo{0};
 
-  public:
+public:
     EdgeRenderer();
     ~EdgeRenderer();
 
@@ -43,7 +43,7 @@ class EdgeRenderer {
     [[nodiscard]] static std::vector<glm::vec2> buildEdgeGeometry(const Routing::EdgeRoute& route,
                                                                   int segmentsPerCurve = 20);
 
-  private:
+private:
     static void computeBezierControls(const glm::vec2& p0, const glm::vec2& p3, glm::vec2& p1, glm::vec2& p2);
     static void appendBezierSamples(std::vector<glm::vec2>& points, const glm::vec2& p0, const glm::vec2& p1,
                                     const glm::vec2& p2, const glm::vec2& p3, int segments);
@@ -53,4 +53,4 @@ class EdgeRenderer {
                         float thickness, GLenum primitive = GL_LINE_STRIP) const;
     void destroy();
 };
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

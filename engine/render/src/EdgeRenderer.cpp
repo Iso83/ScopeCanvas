@@ -1,13 +1,17 @@
-#include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/render/EdgeRenderer.h>
+#include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/routing/EdgeRoute.h>
 #include <algorithm>
 #include <cmath>
 #include <glm/geometric.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace ScopeCanvas::Engine::Render {
 using namespace ScopeCanvas::Engine::Core::Ids;
+using namespace ScopeCanvas::Engine::Routing;
+using namespace ScopeCanvas::Engine::Render::Camera;
+using namespace ScopeCanvas::Engine::Render::Scene;
+
+namespace ScopeCanvas::Engine::Render {
 EdgeRenderer::EdgeRenderer() = default;
 
 EdgeRenderer::~EdgeRenderer() {
@@ -38,13 +42,13 @@ void EdgeRenderer::shutdown() {
     destroy();
 }
 
-void EdgeRenderer::render(const std::vector<Scene::EdgeRenderData>& edges, const Camera::Camera2D& camera,
-                          EdgeId hoveredEdgeId, Core::Ids::EdgeId selectedEdgeId) const {
+void EdgeRenderer::render(const std::vector<EdgeRenderData>& edges, const Camera2D& camera, EdgeId hoveredEdgeId,
+                          Core::Ids::EdgeId selectedEdgeId) const {
     for (const Scene::EdgeRenderData& edge : edges) {
         if (edge.points.size() < 2U)
             continue;
 
-        Routing::EdgeRoute route{};
+        EdgeRoute route{};
         route.edgeId = edge.edgeId;
         route.points = edge.points;
 
@@ -64,7 +68,7 @@ void EdgeRenderer::render(const std::vector<Scene::EdgeRenderData>& edges, const
 }
 
 void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRenderData>& connectors,
-                                    const Camera::Camera2D& camera, ConnectorId hoveredConnectorId,
+                                    const Camera2D& camera, ConnectorId hoveredConnectorId,
                                     ConnectorId activeConnectorId) const {
     if (connectors.empty())
         return;
@@ -80,7 +84,7 @@ void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRend
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
-    for (const Scene::ConnectorAnchorRenderData& connector : connectors) {
+    for (const ConnectorAnchorRenderData& connector : connectors) {
         const bool hovered = hoveredConnectorId.isValid() && connector.connectorId == hoveredConnectorId;
         const bool active = activeConnectorId.isValid() && connector.connectorId == activeConnectorId;
         const float pointSize = active ? 11.0F : hovered ? 9.5F : 7.0F;
@@ -98,8 +102,8 @@ void EdgeRenderer::renderConnectors(const std::vector<Scene::ConnectorAnchorRend
 }
 
 void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& end, const glm::vec2& startNormal,
-                                     const Camera::Camera2D& camera) const {
-    Routing::EdgeRoute route{};
+                                     const Camera2D& camera) const {
+    EdgeRoute route{};
     route.points.push_back(start);
 
     glm::vec2 normal = startNormal;
@@ -122,7 +126,7 @@ void EdgeRenderer::renderPreviewEdge(const glm::vec2& start, const glm::vec2& en
     renderPolyline(buildEdgeGeometry(route, 20), camera, {0.92F, 0.94F, 1.0F}, 2.0F);
 }
 
-std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const Routing::EdgeRoute& route, int segmentsPerCurve) {
+std::vector<glm::vec2> EdgeRenderer::buildEdgeGeometry(const EdgeRoute& route, int segmentsPerCurve) {
     if (route.points.size() < 2)
         return route.points;
 
@@ -229,8 +233,8 @@ void EdgeRenderer::appendQuadraticSamples(std::vector<glm::vec2>& points, const 
     }
 }
 
-void EdgeRenderer::renderPolyline(const std::vector<glm::vec2>& points, const Camera::Camera2D& camera,
-                                  const glm::vec3& color, float thickness, GLenum primitive) const {
+void EdgeRenderer::renderPolyline(const std::vector<glm::vec2>& points, const Camera2D& camera, const glm::vec3& color,
+                                  float thickness, GLenum primitive) const {
     if (points.size() < 2U && primitive != GL_POINTS)
         return;
 
@@ -263,4 +267,4 @@ void EdgeRenderer::destroy() {
         m_vao = 0;
     }
 }
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

@@ -5,10 +5,10 @@
 namespace ScopeCanvas::Engine::Render::GL {
 class Shader {
 
-  private:
+private:
     GLuint m_programId;
 
-  public:
+public:
     Shader() : m_programId(0) {}
     ~Shader() {
         destroy();
@@ -33,7 +33,7 @@ class Shader {
         return m_programId;
     }
 
-  private:
+private:
     bool compileShader(GLuint shaderId, const char* source) const;
 
     void destroy() {
@@ -50,4 +50,4 @@ const char* edgeVertexSource();
 const char* edgeFragmentSource();
 const char* selectionRectVertexSource();
 const char* selectionRectFragmentSource();
-} // namespace ScopeCanvas::Render::GL
+} // namespace ScopeCanvas::Engine::Render::GL

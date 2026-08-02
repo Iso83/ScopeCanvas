@@ -11,4 +11,4 @@ struct Connector {
     Ids::ConnectorTypeId typeId{};
     std::vector<Ids::EdgeId> edges{};
 };
-} // namespace ScopeCanvas::Core
+} // namespace ScopeCanvas::Engine::Core

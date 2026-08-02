@@ -10,8 +10,12 @@
 #include <limits>
 #include <unordered_set>
 
-namespace ScopeCanvas::Engine::Render::Scene {
+using namespace ScopeCanvas::Engine::Core;
 using namespace ScopeCanvas::Engine::Core::Ids;
+using namespace ScopeCanvas::Engine::Routing;
+using namespace ScopeCanvas::Engine::Render::Camera;
+
+namespace ScopeCanvas::Engine::Render::Scene {
 namespace {
 constexpr std::uint32_t kMaxConsecutiveMissingNodeIds = 128;
 constexpr float kCullPadding = 64.0F;
@@ -21,7 +25,7 @@ struct WorldBounds {
     glm::vec2 max{};
 };
 
-WorldBounds computeWorldBounds(const Camera::Camera2D& camera) {
+WorldBounds computeWorldBounds(const Camera2D& camera) {
     const glm::mat4 invViewProjection = camera.invViewProjection();
     const glm::vec4 corners[] = {
         {-1.0F, -1.0F, 0.0F, 1.0F},
@@ -54,40 +58,37 @@ bool intersectsBounds(const glm::vec2& position, const glm::vec2& size, const Wo
              position.y > bounds.max.y);
 }
 
-std::vector<Core::Ids::NodeId> collectNodeIds(const Routing::IGraphView& model,
-                                              const std::vector<Routing::EdgeRoute>& edgeRoutes) {
+std::vector<NodeId> collectNodeIds(const IGraphView& model, const std::vector<EdgeRoute>& edgeRoutes) {
     std::unordered_set<std::uint32_t> uniqueIds;
 
-    for (const Routing::EdgeRoute& route : edgeRoutes) {
-        const Core::Edge* edge = model.getEdge(route.edgeId);
+    for (const EdgeRoute& route : edgeRoutes) {
+        const Edge* edge = model.getEdge(route.edgeId);
         if (edge == nullptr) {
             continue;
         }
 
-        if (const Core::Connector* from = model.getConnector(edge->fromConnector);
-            from != nullptr && from->nodeId.isValid())
+        if (const Connector* from = model.getConnector(edge->fromConnector); from != nullptr && from->nodeId.isValid())
             uniqueIds.insert(from->nodeId.value());
 
-        if (const Core::Connector* to = model.getConnector(edge->toConnector); to != nullptr && to->nodeId.isValid())
+        if (const Connector* to = model.getConnector(edge->toConnector); to != nullptr && to->nodeId.isValid())
             uniqueIds.insert(to->nodeId.value());
     }
 
     std::uint32_t missStreak = 0;
     for (std::uint32_t probe = 1; missStreak < kMaxConsecutiveMissingNodeIds; ++probe) {
-        if (model.getNode(Core::Ids::NodeId{probe}) != nullptr) {
+        if (model.getNode(NodeId{probe}) != nullptr) {
             uniqueIds.insert(probe);
             missStreak = 0;
         } else
             ++missStreak;
     }
 
-    std::vector<Core::Ids::NodeId> result;
+    std::vector<NodeId> result;
     result.reserve(uniqueIds.size());
     for (const std::uint32_t id : uniqueIds)
         result.emplace_back(id);
 
-    std::sort(result.begin(), result.end(),
-              [](Core::Ids::NodeId a, Core::Ids::NodeId b) { return a.value() < b.value(); });
+    std::sort(result.begin(), result.end(), [](NodeId a, NodeId b) { return a.value() < b.value(); });
     return result;
 }
 
@@ -155,4 +156,4 @@ RenderScene SceneBuilder::build(const Routing::IGraphView& model, const std::vec
 
     return scene;
 }
-} // namespace ScopeCanvas::Render::Scene
+} // namespace ScopeCanvas::Engine::Render::Scene

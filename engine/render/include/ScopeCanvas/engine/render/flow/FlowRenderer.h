@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ScopeCanvas/engine/routing/flow/FlowLayout.h>
 #include <ScopeCanvas/engine/render/camera/Camera2D.h>
+#include <ScopeCanvas/engine/routing/flow/FlowLayout.h>
 #include <memory>
 
 namespace ScopeCanvas::Engine::Render::Flow {
@@ -18,11 +18,11 @@ struct FlowRenderOptions {
 };
 
 class FlowRenderer {
-  private:
+private:
     struct Impl;
     std::unique_ptr<Impl> m_impl;
 
-  public:
+public:
     FlowRenderer();
     ~FlowRenderer();
     FlowRenderer(const FlowRenderer&) = delete;
@@ -31,10 +31,10 @@ class FlowRenderer {
     bool init();
     void shutdown();
     void render(const Core::Flow::FlowDocument& document, const Routing::Flow::FlowLayoutResult& layout,
-                const ScopeCanvas::Engine::Render::Camera::Camera2D& camera, const FlowRenderOptions& options) const;
+                const Camera::Camera2D& camera, const FlowRenderOptions& options) const;
 };
 
 [[nodiscard]] FlowGroupHeaderGeometry groupHeaderGeometry(const Routing::Flow::FlowGroupLayout& group,
                                                           float visibleCenterX, float labelWidth = 240.0F);
 
-} // namespace ScopeCanvas::Render::Flow
+} // namespace ScopeCanvas::Engine::Render::Flow

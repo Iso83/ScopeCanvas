@@ -32,4 +32,4 @@ struct RenderScene {
     std::vector<ConnectorAnchorRenderData> connectorAnchors{};
     std::vector<EdgeRenderData> edges{};
 };
-} // namespace ScopeCanvas::Render::Scene
+} // namespace ScopeCanvas::Engine::Render::Scene

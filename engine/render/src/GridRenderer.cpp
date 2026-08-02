@@ -1,5 +1,5 @@
-#include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/render/GridRenderer.h>
+#include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/render/gl/ShaderSource.h>
 #include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
@@ -39,43 +39,51 @@ GridRenderer::~GridRenderer() {
 }
 
 bool GridRenderer::init() {
-    const std::string vs = std::string(ScopeCanvas::Engine::Render::GL::ShaderVersionPrefix) + R"(layout(location = 0) in vec2 aPos;
-out vec2 vUv;
-void main() {
-    vUv = aPos * 0.5 + 0.5;
-    gl_Position = vec4(aPos, 0.0, 1.0);
-})";
+    const std::string vs = std::string(GL::ShaderVersionPrefix) + R"(
 
-    const std::string fs = std::string(ScopeCanvas::Engine::Render::GL::ShaderVersionPrefix) + R"(in vec2 vUv;
-out vec4 FragColor;
+        layout(location = 0) in vec2 aPos;
 
-uniform mat4 uInvViewProjection;
-uniform vec2 uViewportSize;
-uniform float uMinorSpacing;
-uniform float uMajorSpacing;
+        out vec2 vUv;
 
-float gridLineAlpha(vec2 worldPos, float spacing) {
-    vec2 grid = abs(fract(worldPos / spacing - 0.5) - 0.5) / fwidth(worldPos / spacing);
-    float line = min(grid.x, grid.y);
-    return 1.0 - min(line, 1.0);
-}
+        void main() {
+            vUv = aPos * 0.5 + 0.5;
+            gl_Position = vec4(aPos, 0.0, 1.0);
+        }
+    )";
 
-void main() {
-    vec2 frag = gl_FragCoord.xy / uViewportSize;
-    vec2 ndc = vec2(frag.x * 2.0 - 1.0, frag.y * 2.0 - 1.0);
-    vec4 world = uInvViewProjection * vec4(ndc, 0.0, 1.0);
-    vec2 worldPos = world.xy / world.w;
+    const std::string fs = std::string(ScopeCanvas::Engine::Render::GL::ShaderVersionPrefix) + R"(
 
-    float minor = gridLineAlpha(worldPos, uMinorSpacing);
-    float major = gridLineAlpha(worldPos, uMajorSpacing);
+        in vec2 vUv;
+        out vec4 FragColor;
 
-    vec3 color = vec3(0.08, 0.09, 0.11);
-    color += vec3(0.10, 0.11, 0.13) * minor;
-    color += vec3(0.14, 0.16, 0.19) * major;
+        uniform mat4 uInvViewProjection;
+        uniform vec2 uViewportSize;
+        uniform float uMinorSpacing;
+        uniform float uMajorSpacing;
 
-    float alpha = max(minor * 0.55, major * 0.8);
-    FragColor = vec4(color, alpha);
-})";
+        float gridLineAlpha(vec2 worldPos, float spacing) {
+            vec2 grid = abs(fract(worldPos / spacing - 0.5) - 0.5) / fwidth(worldPos / spacing);
+            float line = min(grid.x, grid.y);
+            return 1.0 - min(line, 1.0);
+        }
+
+        void main() {
+            vec2 frag = gl_FragCoord.xy / uViewportSize;
+            vec2 ndc = vec2(frag.x * 2.0 - 1.0, frag.y * 2.0 - 1.0);
+            vec4 world = uInvViewProjection * vec4(ndc, 0.0, 1.0);
+            vec2 worldPos = world.xy / world.w;
+
+            float minor = gridLineAlpha(worldPos, uMinorSpacing);
+            float major = gridLineAlpha(worldPos, uMajorSpacing);
+
+            vec3 color = vec3(0.08, 0.09, 0.11);
+            color += vec3(0.10, 0.11, 0.13) * minor;
+            color += vec3(0.14, 0.16, 0.19) * major;
+
+            float alpha = max(minor * 0.55, major * 0.8);
+            FragColor = vec4(color, alpha);
+        }
+    )";
 
     const unsigned int vertexShader = compile(GL_VERTEX_SHADER, vs.c_str());
     const unsigned int fragmentShader = compile(GL_FRAGMENT_SHADER, fs.c_str());
@@ -156,4 +164,4 @@ void GridRenderer::destroy() {
         m_vao = 0;
     }
 }
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

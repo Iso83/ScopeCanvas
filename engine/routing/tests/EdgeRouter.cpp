@@ -1,11 +1,12 @@
 #include "TestAssert.h"
-#include <cstdint>
+
 #include <ScopeCanvas/engine/core/Connector.h>
 #include <ScopeCanvas/engine/core/Edge.h>
-#include <ScopeCanvas/engine/core/ids/CanvasIds.h>
 #include <ScopeCanvas/engine/core/Node.h>
+#include <ScopeCanvas/engine/core/ids/CanvasIds.h>
 #include <ScopeCanvas/engine/routing/EdgeRouter.h>
 #include <ScopeCanvas/engine/routing/IGraphView.h>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
@@ -15,7 +16,7 @@ using namespace ScopeCanvas::Engine::Core::Ids;
 using namespace ScopeCanvas::Engine::Routing;
 
 class TestGraphView final : public IGraphView {
-  public:
+public:
     std::unordered_map<std::uint32_t, Node> nodes{};
     std::unordered_map<std::uint32_t, Connector> connectors{};
     std::unordered_map<std::uint32_t, Edge> edges{};

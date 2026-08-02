@@ -7,4 +7,4 @@ CanvasFrameData CanvasFrameBuilder::buildFrame(const Scene::RenderScene& scene) 
     frame.edges = scene.edges;
     return frame;
 }
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

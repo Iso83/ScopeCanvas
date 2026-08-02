@@ -9,8 +9,8 @@ class ViewportHandler;
 class DrawContext : protected ViewportInteraction {
     friend ViewportHandler;
 
-  public:
+public:
     virtual void draw(Window::Viewport* view) = 0;
     virtual bool needsRender() = 0;
 };
-} // namespace ScopeCanvas::Render::Window
+} // namespace ScopeCanvas::Engine::Render::Window

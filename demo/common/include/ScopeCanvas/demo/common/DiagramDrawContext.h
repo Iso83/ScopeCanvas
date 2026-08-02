@@ -1,14 +1,14 @@
 #pragma once
 
 #include <ScopeCanvas/demo/common/DiagramBasics.h>
-#include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/render/CanvasRenderer.h>
+#include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/render/window/DrawContext.h>
 #include <ScopeCanvas/widget/render/NodeInfo.h>
 
 namespace ScopeCanvas::Demo::Common {
 class DiagramDrawCtx : public Engine::Render::Window::DrawContext {
-  private:
+private:
     struct DrawFrameState {
         Engine::Render::Window::Viewport* view{};
         Engine::Render::Window::ViewportHandler* handler{};
@@ -36,7 +36,7 @@ class DiagramDrawCtx : public Engine::Render::Window::DrawContext {
     // Interaction: Selection
     //-------------------------------------------------------------------------
     Engine::Core::Ids::EdgeId m_selectedEdge{};
-    
+
     Engine::Core::Ids::ConnectorId m_hoveredConnector{};
 
     bool m_selectionRectActive{};
@@ -71,13 +71,13 @@ class DiagramDrawCtx : public Engine::Render::Window::DrawContext {
     bool m_showGrid{true};
     bool m_needsRender{true};
 
-  public:
+public:
     ~DiagramDrawCtx();
 
     //-------------------------------------------------------------------------
     // Rendering
     //-------------------------------------------------------------------------
-    void draw(Engine::Render::Window::Viewport* view);
+    void draw(Engine::Render::Window::Viewport* view) override;
 
     bool& showGrid() {
         return m_showGrid;
@@ -98,7 +98,7 @@ class DiagramDrawCtx : public Engine::Render::Window::DrawContext {
         m_selectedEdge = {};
     }
     void deleteSelection();
-    
+
     //-------------------------------------------------------------------------
     // Helpers
     //-------------------------------------------------------------------------
@@ -108,16 +108,16 @@ class DiagramDrawCtx : public Engine::Render::Window::DrawContext {
     Engine::Core::Ids::NodeId createNodeAtCenter(const Engine::Render::Camera::Camera2D& cam,
                                                  Engine::Core::Ids::NodeTypeId typeId);
 
-  private:
+private:
     //-------------------------------------------------------------------------
     // Rendering
     //-------------------------------------------------------------------------
-      std::vector<Engine::Routing::EdgeRoute> buildRoutes() const;
-      Engine::Render::CanvasRenderOptions buildRenderOptions(const DrawFrameState& frame,
-                                                             const std::vector<Engine::Routing::EdgeRoute>& routes);
+    std::vector<Engine::Routing::EdgeRoute> buildRoutes() const;
+    Engine::Render::CanvasRenderOptions buildRenderOptions(const DrawFrameState& frame,
+                                                           const std::vector<Engine::Routing::EdgeRoute>& routes);
 
     void renderDiagram(const DrawFrameState& frame, const std::vector<Engine::Routing::EdgeRoute>& routes,
-                         const Engine::Render::CanvasRenderOptions& options);
+                       const Engine::Render::CanvasRenderOptions& options);
 
     //-------------------------------------------------------------------------
     // Interaction
@@ -162,4 +162,4 @@ class DiagramDrawCtx : public Engine::Render::Window::DrawContext {
     //-------------------------------------------------------------------------
     void applySelectionRect();
 };
-} // namespace ScopeCanvas::Demo
+} // namespace ScopeCanvas::Demo::Common

@@ -8,4 +8,4 @@ struct FlowRowIdTag;
 
 using FlowGroupId = Ids::StrongId<FlowGroupIdTag>;
 using FlowRowId = Ids::StrongId<FlowRowIdTag>;
-} // namespace ScopeCanvas::Core::Flow
+} // namespace ScopeCanvas::Engine::Core::Flow

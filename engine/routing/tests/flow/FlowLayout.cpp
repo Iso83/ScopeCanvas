@@ -1,6 +1,7 @@
+#include "TestAssert.h"
+
 #include <ScopeCanvas/engine/core/flow/FlowDocument.h>
 #include <ScopeCanvas/engine/routing/flow/FlowLayout.h>
-#include "TestAssert.h"
 
 using namespace ScopeCanvas::Engine::Core::Flow;
 using namespace ScopeCanvas::Engine::Core::Ids;

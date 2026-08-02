@@ -1,11 +1,11 @@
 #include <ScopeCanvas/engine/routing/flow/FlowLayout.h>
 #include <algorithm>
 
+using namespace ScopeCanvas::Engine::Core::Ids;
+using namespace ScopeCanvas::Engine::Core::Flow;
+
 namespace ScopeCanvas::Engine::Routing::Flow {
 namespace {
-using ScopeCanvas::Engine::Core::Flow::FlowGroup;
-using ScopeCanvas::Engine::Core::Flow::FlowRow;
-using ScopeCanvas::Engine::Core::Flow::FlowStep;
 
 struct SubtreeResult {
     glm::vec2 position{};
@@ -30,9 +30,8 @@ glm::vec2 stepSize(const FlowStep& step, const FlowLayoutOptions& options) {
     return {std::max(options.stepSize.x, contentWidth + horizontalPadding), options.stepSize.y};
 }
 
-SubtreeResult layoutStep(const FlowStep& step, Core::Flow::FlowRowId rowId, Core::Ids::NodeId parentStepId,
-                         glm::vec2 position, std::uint32_t depth, const FlowLayoutOptions& options,
-                         FlowLayoutResult& result) {
+SubtreeResult layoutStep(const FlowStep& step, FlowRowId rowId, NodeId parentStepId, glm::vec2 position,
+                         std::uint32_t depth, const FlowLayoutOptions& options, FlowLayoutResult& result) {
     FlowStepLayout layout{};
     layout.stepId = step.id;
     layout.rowId = rowId;
@@ -76,7 +75,7 @@ const FlowStepLayout* FlowLayoutResult::step(Core::Ids::NodeId stepId) const {
     return it == steps.end() ? nullptr : &(*it);
 }
 
-FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, const FlowLayoutOptions& options) const {
+FlowLayoutResult FlowLayout::build(const FlowDocument& document, const FlowLayoutOptions& options) const {
     FlowLayoutResult result{};
     float groupHeaderY = options.origin.y;
 
@@ -146,8 +145,7 @@ FlowLayoutResult FlowLayout::build(const Core::Flow::FlowDocument& document, con
     return result;
 }
 
-std::size_t FlowLayout::insertionIndex(const FlowLayoutResult& layout, Core::Flow::FlowRowId rowId,
-                                       float worldX) const {
+std::size_t FlowLayout::insertionIndex(const FlowLayoutResult& layout, FlowRowId rowId, float worldX) const {
     std::size_t index = 0;
     for (const FlowStepLayout& step : layout.steps) {
         if (step.rowId != rowId || step.depth != 0U)

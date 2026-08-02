@@ -13,4 +13,4 @@ void Camera2D::updateProjection() {
     m_projection = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, -1.0F, 1.0F);
 }
 
-} // namespace ScopeCanvas::Render::Camera
+} // namespace ScopeCanvas::Engine::Render::Camera

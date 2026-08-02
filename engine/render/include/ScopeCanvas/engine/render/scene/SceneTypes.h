@@ -10,4 +10,4 @@ struct NodeInstance {
     glm::vec3 color;
 };
 
-} // namespace ScopeCanvas::Render::Scene
+} // namespace ScopeCanvas::Engine::Render::Scene

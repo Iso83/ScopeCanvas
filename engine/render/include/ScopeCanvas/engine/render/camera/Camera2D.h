@@ -6,14 +6,14 @@
 
 namespace ScopeCanvas::Engine::Render::Camera {
 class Camera2D {
-  private:
+private:
     glm::vec2 m_position{};
     float m_zoom{1.0F};
     int m_viewportWidth{1};
     int m_viewportHeight{1};
     glm::mat4 m_projection{1.0F};
 
-  public:
+public:
     Camera2D() {
         updateProjection();
     }
@@ -67,7 +67,7 @@ class Camera2D {
         return glm::inverse(viewProjection());
     }
 
-  private:
+private:
     void updateProjection();
 };
-} // namespace ScopeCanvas::Render::Camera
+} // namespace ScopeCanvas::Engine::Render::Camera

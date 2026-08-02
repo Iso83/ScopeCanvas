@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ScopeCanvas/engine/core/helper/Attributes.h>
 #include <ScopeCanvas/engine/render/camera/Camera2D.h>
 #include <ScopeCanvas/engine/render/window/ViewportHandler.h>
 #include <vector>
@@ -11,13 +10,13 @@ class DrawContext;
 class Viewport : protected ViewportInteraction {
     friend class ViewportHandler;
 
-  public:
+public:
     struct State {
         Camera::Camera2D m_camera{};
         DrawContext* drawContext{};
     };
 
-  protected:
+protected:
     glm::vec2 m_screenPosition{};
 
     //-------------------------------------------------------------------------
@@ -33,7 +32,7 @@ class Viewport : protected ViewportInteraction {
     bool m_needsRender{false};
     ViewportHandler* m_handler{};
 
-  public:
+public:
     inline virtual void setScreenPosition(const glm::vec2& position) {
         m_screenPosition = position;
     }
@@ -45,7 +44,7 @@ class Viewport : protected ViewportInteraction {
     bool unregisterDrawContext(DrawContext* ctx);
     bool activateDrawContext(DrawContext* ctx);
 
-  protected:
+protected:
     inline State& activeState(std::size_t stateIndex) {
         assert(stateIndex < m_states.size());
         return m_states[stateIndex];
@@ -64,7 +63,7 @@ class Viewport : protected ViewportInteraction {
         return activeState(m_activeState);
     }
 
-  public:
+public:
     //-------------------------------------------------------------------------
     // Render
     //-------------------------------------------------------------------------
@@ -80,14 +79,13 @@ class Viewport : protected ViewportInteraction {
         return m_handler;
     }
 
-  protected:
+protected:
     virtual void draw(DrawContext* ctx);
 
-  public:
+public:
     //-------------------------------------------------------------------------
     // View
     //-------------------------------------------------------------------------
-    SC_DEPRECATED("remove this func --> ref obj, UB (m_stats..alloc)")
     inline const Camera::Camera2D& camera() const {
         return activeState().m_camera;
     }
@@ -116,7 +114,7 @@ class Viewport : protected ViewportInteraction {
                              cam.getViewportHeight());
     }
 
-  protected:
+protected:
     //-------------------------------------------------------------------------
     // Interaction
     //-------------------------------------------------------------------------
@@ -125,4 +123,4 @@ class Viewport : protected ViewportInteraction {
     }
     void onScroll(double xOffset, double yOffset) override;
 };
-} // namespace ScopeCanvas::Render::Window
+} // namespace ScopeCanvas::Engine::Render::Window

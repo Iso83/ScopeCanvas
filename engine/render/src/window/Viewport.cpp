@@ -117,8 +117,8 @@ glm::vec2 Viewport::screenToWorld(float sx, float sy, float w, float h) const {
 //-------------------------------------------------------------------------
 // Interaction
 //-------------------------------------------------------------------------
-void Viewport::onScroll(double xOffset, double yOffset){
-    if(yOffset != 0.0F)
+void Viewport::onScroll(double xOffset, double yOffset) {
+    if (yOffset != 0.0F)
         setViewZoom(std::max(0.05, activeState().m_camera.zoom() + yOffset * 0.1));
 }
-} // namespace ScopeCanvas::Render::Window
+} // namespace ScopeCanvas::Engine::Render::Window

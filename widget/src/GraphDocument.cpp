@@ -1,11 +1,10 @@
 #include <ScopeCanvas/widget/GraphDocument.h>
 #include <algorithm>
 
+using namespace ScopeCanvas::Engine::Core;
+using namespace ScopeCanvas::Engine::Core::Ids;
+
 namespace ScopeCanvas::Widget {
-
-using namespace Engine::Core;
-using namespace Engine::Core::Ids;
-
 NodeId GraphDocument::createNode(NodeTypeId typeId) {
     const NodeId newNodeId = m_nodes.ids.createId();
     const ConnectorId firstConnectorId = m_connectors.ids.createId();

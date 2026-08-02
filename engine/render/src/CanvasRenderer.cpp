@@ -1,7 +1,7 @@
 #include <ScopeCanvas/engine/render/CanvasRenderer.h>
 #include <ScopeCanvas/engine/render/camera/Camera2D.h>
-#include <ScopeCanvas/engine/routing/IGraphView.h>
 #include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
+#include <ScopeCanvas/engine/routing/IGraphView.h>
 
 namespace ScopeCanvas::Engine::Render {
 
@@ -58,4 +58,4 @@ void CanvasRenderer::renderSelectionRect(const Camera::Camera2D& camera, const g
                                          const glm::vec2& end) const {
     m_selection.render(camera.viewProjection(), start, end);
 }
-} // namespace ScopeCanvas::Render
+} // namespace ScopeCanvas::Engine::Render

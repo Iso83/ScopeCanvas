@@ -6,7 +6,7 @@ namespace ScopeCanvas::Engine::Render::Window {
 enum MouseButton { SC_MOUSE_BUTTON_LEFT, SC_MOUSE_BUTTON_MIDDLE, SC_MOUSE_BUTTON_RIGHT };
 
 class ViewportInteraction {
-  public:
+public:
     virtual ~ViewportInteraction() = default;
 
 #define SC_VIEWPORT_EVENT(name, ...)                                                                                   \
@@ -22,4 +22,4 @@ class ViewportInteraction {
 
 #undef SC_VIEWPORT_EVENT
 };
-} // namespace ScopeCanvas::Render::Window
+} // namespace ScopeCanvas::Engine::Render::Window

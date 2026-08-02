@@ -3,13 +3,11 @@
 #include <ScopeCanvas/engine/render/window/Viewport.h>
 
 namespace ScopeCanvas::Demo::Common {
-class DemoViewport : public ScopeCanvas::Engine::Render::Window::Viewport {
+class DemoViewport : public Engine::Render::Window::Viewport {
 private:
     double m_nowTime{}, m_lastTime{};
 
 public:
-    using ScopeCanvas::Engine::Render::Window::Viewport::draw;
-
     bool handlesKey() const override {
         return true;
     }
@@ -22,6 +20,6 @@ private:
     }
 
     bool processOnDraw_KeyStroke();
-    virtual void draw(ScopeCanvas::Engine::Render::Window::DrawContext* ctx) override;
+    virtual void draw(Engine::Render::Window::DrawContext* ctx) override;
 };
 } // namespace ScopeCanvas::Demo::Common

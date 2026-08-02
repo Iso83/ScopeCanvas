@@ -63,4 +63,4 @@ void emitRoundedRectTriangles(glm::vec2 position, glm::vec2 size, float radius, 
     for (std::size_t i = 0; i < points.size(); ++i)
         emitTriangle(center, points[i], points[(i + 1U) % points.size()]);
 }
-} // namespace ScopeCanvas::Render::Geometry
+} // namespace ScopeCanvas::Engine::Render::Geometry

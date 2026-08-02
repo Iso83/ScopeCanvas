@@ -53,10 +53,9 @@ public:
     explicit NodeInfoRenderer(NodeInfoFontOptions fontOptions = {});
     bool init();
     void shutdown();
-    void render(const std::vector<ScopeCanvas::Engine::Render::Scene::NodeRenderData>& nodes,
-                const ScopeCanvas::Engine::Render::Camera::Camera2D& camera,
-                const Render::Theme::NodeVisualRegistry& registry) const;
-    void render(const std::vector<NodeInfo>& nodes, const ScopeCanvas::Engine::Render::Camera::Camera2D& camera) const;
+    void render(const std::vector<Engine::Render::Scene::NodeRenderData>& nodes,
+                const Engine::Render::Camera::Camera2D& camera, const Theme::NodeVisualRegistry& registry) const;
+    void render(const std::vector<NodeInfo>& nodes, const Engine::Render::Camera::Camera2D& camera) const;
 
 private:
     bool loadFont();

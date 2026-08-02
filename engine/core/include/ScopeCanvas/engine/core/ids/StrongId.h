@@ -7,13 +7,13 @@ namespace ScopeCanvas::Engine::Core::Ids {
 template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
     static_assert(std::is_integral_v<ValueT>, "StrongId requires an integral value type.");
 
-  public:
+public:
     using ValueType = ValueT;
 
-  private:
+private:
     ValueType m_value{};
 
-  public:
+public:
     constexpr StrongId() = default;
     explicit constexpr StrongId(ValueType value) : m_value(value) {}
 
@@ -33,4 +33,4 @@ template <typename Tag, typename ValueT = std::uint32_t> class StrongId {
         return !(lhs == rhs);
     }
 };
-} // namespace ScopeCanvas::Core::Ids
+} // namespace ScopeCanvas::Engine::Core::Ids
