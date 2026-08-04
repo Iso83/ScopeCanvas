@@ -33,7 +33,6 @@ void DiagramDrawCtx::draw(Viewport* view) {
         m_rendererInitialized = m_renderer.init();
     if (!m_nodeInfoRendererInitialized)
         m_nodeInfoRendererInitialized = m_nodeInfoRenderer.init();
-
     const DrawFrameState frame = frameState(view);
     const vector<EdgeRoute> routes = buildRoutes();
     const CanvasRenderOptions options = buildRenderOptions(frame, routes);

@@ -2,9 +2,9 @@
 
 #include <ScopeCanvas/engine/render/NodeRenderer.h>
 #include <ScopeCanvas/engine/render/scene/RenderScene.h>
+#include <ScopeCanvas/widget/render/TextRenderer.h>
 #include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace ScopeCanvas::Render::Camera {
@@ -30,24 +30,11 @@ struct NodeInfoFontOptions {
 
 class NodeInfoRenderer {
 private:
-    struct GlyphInfo {
-        unsigned int texture{0};
-        glm::vec2 size{};
-        glm::vec2 bearing{};
-        unsigned int advance{0};
-    };
-
     unsigned int m_vao{0};
     unsigned int m_vbo{0};
     unsigned int m_program{0};
-    unsigned int m_textVao{0};
-    unsigned int m_textVbo{0};
-    unsigned int m_textProgram{0};
-    std::unordered_map<char, GlyphInfo> m_glyphs{};
+    TextRenderer m_textRenderer{};
     NodeInfoFontOptions m_fontOptions{};
-    float m_fontAtlasSize{1.0F};
-    float m_fontAscent{0.0F};
-    float m_fontDescent{0.0F};
 
 public:
     explicit NodeInfoRenderer(NodeInfoFontOptions fontOptions = {});
@@ -56,10 +43,6 @@ public:
     void render(const std::vector<Engine::Render::Scene::NodeRenderData>& nodes,
                 const Engine::Render::Camera::Camera2D& camera, const Theme::NodeVisualRegistry& registry) const;
     void render(const std::vector<NodeInfo>& nodes, const Engine::Render::Camera::Camera2D& camera) const;
-
-private:
-    bool loadFont();
-    void releaseFont();
 };
 
 } // namespace ScopeCanvas::Widget::Render
