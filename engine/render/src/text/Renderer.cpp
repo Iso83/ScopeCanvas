@@ -118,7 +118,8 @@ bool Renderer::loadFont(const std::string& path, unsigned int pixelSize) {
 
     m_impl->metrics = {static_cast<float>(face->size->metrics.ascender >> 6),
                        static_cast<float>(face->size->metrics.descender >> 6),
-                       static_cast<float>(face->size->metrics.height >> 6), pixelSize};
+                       static_cast<float>(face->size->metrics.height >> 6),
+                       static_cast<float>(face->size->metrics.max_advance >> 6), pixelSize};
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     for (unsigned int c = 32; c < 256; ++c) {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER) != 0)

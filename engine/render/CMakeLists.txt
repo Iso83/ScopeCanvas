@@ -88,6 +88,7 @@ source_group(
 target_link_libraries(${MODULE_TARGET}
     PUBLIC
         ${PROJECT_NAME}_engine_routing
+    PRIVATE
         ${FREETYPE}
 )
 
