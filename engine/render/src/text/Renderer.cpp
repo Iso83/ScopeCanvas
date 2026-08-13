@@ -1,14 +1,13 @@
-#include <ScopeCanvas/widget/render/TextRenderer.h>
 #include <array>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
 #include <ScopeCanvas/engine/render/gl/Shader.h>
 #include <ScopeCanvas/engine/render/gl/ShaderSource.h>
+#include <ScopeCanvas/engine/render/text/Renderer.h>
 #include <unordered_map>
 
-namespace ScopeCanvas::Widget::Render {
-namespace {
+namespace ScopeCanvas::Engine::Render::Text {
 struct TextVertex {
     float x, y, u, v, r, g, b, a;
 };
@@ -21,7 +20,7 @@ struct GlyphInfo {
 };
 
 std::string vertexSource() {
-    return std::string(Engine::Render::GL::ShaderVersionPrefix) + R"(
+    return std::string(GL::ShaderVersionPrefix) + R"(
         layout(location = 0) in vec2 aPos;
         layout(location = 1) in vec2 aUv;
         layout(location = 2) in vec4 aColor;
@@ -33,7 +32,7 @@ std::string vertexSource() {
 }
 
 std::string fragmentSource() {
-    return std::string(Engine::Render::GL::ShaderVersionPrefix) + R"(
+    return std::string(GL::ShaderVersionPrefix) + R"(
         in vec2 vUv;
         in vec4 vColor;
         uniform sampler2D uGlyph;
@@ -41,27 +40,27 @@ std::string fragmentSource() {
         void main() { FragColor = vec4(vColor.rgb, vColor.a * texture(uGlyph, vUv).r); }
     )";
 }
-} // namespace
 
-struct TextRenderer::Impl {
+struct Renderer::Impl {
     unsigned int vao{};
     unsigned int vbo{};
-    Engine::Render::GL::Shader shader{};
+    GL::Shader shader{};
     std::unordered_map<unsigned char, GlyphInfo> glyphs{};
     FontMetrics metrics{};
 };
 
-TextRenderer::TextRenderer() : m_impl(std::make_unique<Impl>()) {}
-TextRenderer::~TextRenderer() {
+Renderer::Renderer() : m_impl(std::make_unique<Impl>()) {}
+Renderer::~Renderer() {
     if (m_impl)
         shutdown();
 }
-TextRenderer::TextRenderer(TextRenderer&&) noexcept = default;
-TextRenderer& TextRenderer::operator=(TextRenderer&&) noexcept = default;
+Renderer::Renderer(Renderer&&) noexcept = default;
+Renderer& Renderer::operator=(Renderer&&) noexcept = default;
 
-bool TextRenderer::init() {
+bool Renderer::init() {
     if (m_impl->vao != 0)
         return true;
+
     glGenVertexArrays(1, &m_impl->vao);
     glGenBuffers(1, &m_impl->vbo);
     glBindVertexArray(m_impl->vao);
@@ -79,12 +78,14 @@ bool TextRenderer::init() {
         shutdown();
         return false;
     }
+
     return true;
 }
 
-void TextRenderer::shutdown() {
+void Renderer::shutdown() {
     if (!m_impl)
         return;
+
     releaseFont();
     m_impl->shader = {};
     if (m_impl->vbo != 0)
@@ -94,23 +95,27 @@ void TextRenderer::shutdown() {
     m_impl->vbo = m_impl->vao = 0;
 }
 
-bool TextRenderer::loadFont(const std::string& path, unsigned int pixelSize) {
+bool Renderer::loadFont(const std::string& path, unsigned int pixelSize) {
     releaseFont();
     if (m_impl->vao == 0 || path.empty() || pixelSize == 0)
         return false;
+
     FT_Library library{};
     if (FT_Init_FreeType(&library) != 0)
         return false;
+
     FT_Face face{};
     if (FT_New_Face(library, path.c_str(), 0, &face) != 0) {
         FT_Done_FreeType(library);
         return false;
     }
+
     if (FT_Set_Pixel_Sizes(face, 0, pixelSize) != 0) {
         FT_Done_Face(face);
         FT_Done_FreeType(library);
         return false;
     }
+
     m_impl->metrics = {static_cast<float>(face->size->metrics.ascender >> 6),
                        static_cast<float>(face->size->metrics.descender >> 6),
                        static_cast<float>(face->size->metrics.height >> 6), pixelSize};
@@ -118,6 +123,7 @@ bool TextRenderer::loadFont(const std::string& path, unsigned int pixelSize) {
     for (unsigned int c = 32; c < 256; ++c) {
         if (FT_Load_Char(face, c, FT_LOAD_RENDER) != 0)
             continue;
+
         unsigned int texture{};
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -140,10 +146,11 @@ bool TextRenderer::loadFont(const std::string& path, unsigned int pixelSize) {
         releaseFont();
         return false;
     }
+
     return true;
 }
 
-void TextRenderer::releaseFont() {
+void Renderer::releaseFont() {
     for (auto& [_, glyph] : m_impl->glyphs)
         if (glyph.texture != 0)
             glDeleteTextures(1, &glyph.texture);
@@ -151,13 +158,13 @@ void TextRenderer::releaseFont() {
     m_impl->metrics = {};
 }
 
-bool TextRenderer::ready() const {
+bool Renderer::ready() const {
     return m_impl->vao != 0 && m_impl->shader.id() != 0 && !m_impl->glyphs.empty();
 }
-FontMetrics TextRenderer::fontMetrics() const {
+FontMetrics Renderer::fontMetrics() const {
     return m_impl->metrics;
 }
-glm::vec2 TextRenderer::measure(std::string_view text, float worldScale) const {
+glm::vec2 Renderer::measure(std::string_view text, float worldScale) const {
     if (text.empty())
         return {};
     float width{};
@@ -169,8 +176,8 @@ glm::vec2 TextRenderer::measure(std::string_view text, float worldScale) const {
     return {width, (m_impl->metrics.ascent - m_impl->metrics.descent) * worldScale};
 }
 
-void TextRenderer::render(std::string_view text, glm::vec2 baseline, glm::vec4 color, const glm::mat4& viewProjection,
-                          std::optional<TextClipRect> clip, float worldScale) const {
+void Renderer::render(std::string_view text, glm::vec2 baseline, glm::vec4 color, const glm::mat4& viewProjection,
+                      std::optional<ClipRect> clip, float worldScale) const {
     if (!ready() || worldScale <= 0.0F)
         return;
     m_impl->shader.use();
@@ -216,5 +223,4 @@ void TextRenderer::render(std::string_view text, glm::vec2 baseline, glm::vec4 c
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
-
-} // namespace ScopeCanvas::Widget::Render
+} // namespace ScopeCanvas::Engine::Render::Text

@@ -71,27 +71,6 @@ source_group(
 )
 
 # ============================================================================
-# Tests
-# ============================================================================
-
-if(NOT EMSCRIPTEN)
-    cppcmake_test_add(
-        NAME
-            Test_${MODULE_TARGET}_TextRenderer
-        TARGET
-            ${MODULE_TARGET}
-        MODULE
-            "widget/render"
-        SOURCES
-            tests/render/TextRenderer.cpp
-        LINK_LIBRARIES
-            ${GLFW}
-        COMPILE_DEFINITIONS
-            SC_TEST_FONT_PATH="${ASSETS_DEFAULT_FONT}"
-    )
-endif()
-
-# ============================================================================
 # Dependencies
 # ============================================================================
 

@@ -2,7 +2,7 @@
 
 #include <ScopeCanvas/engine/render/NodeRenderer.h>
 #include <ScopeCanvas/engine/render/scene/RenderScene.h>
-#include <ScopeCanvas/widget/render/TextRenderer.h>
+#include <ScopeCanvas/engine/render/text/Renderer.h>
 #include <ScopeCanvas/widget/render/theme/NodeVisualRegistry.h>
 #include <string>
 #include <vector>
@@ -33,7 +33,7 @@ private:
     unsigned int m_vao{0};
     unsigned int m_vbo{0};
     unsigned int m_program{0};
-    TextRenderer m_textRenderer{};
+    Engine::Render::Text::Renderer m_textRenderer{};
     NodeInfoFontOptions m_fontOptions{};
 
 public:

@@ -1,17 +1,15 @@
 #include "TestAssert.h"
 
 #include <ScopeCanvas/engine/render/gl/OpenGLApi.h>
-#include <ScopeCanvas/widget/render/TextRenderer.h>
+#include <ScopeCanvas/engine/render/text/Renderer.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-using ScopeCanvas::Widget::Render::TextRenderer;
-
-namespace {
+using ScopeCanvas::Engine::Render::Text::Renderer;
 
 int test_font_lifecycle_and_measurement() {
-    TextRenderer renderer;
+    Renderer renderer;
     CPPTEST_ASSERT(renderer.init());
     CPPTEST_ASSERT(renderer.loadFont(SC_TEST_FONT_PATH, 24));
     CPPTEST_ASSERT(renderer.ready());
@@ -45,7 +43,7 @@ int test_font_lifecycle_and_measurement() {
 }
 
 int test_repeated_shutdown_is_safe() {
-    TextRenderer renderer;
+    Renderer renderer;
     CPPTEST_ASSERT(renderer.init());
     CPPTEST_ASSERT(renderer.loadFont(SC_TEST_FONT_PATH, 24));
     CPPTEST_ASSERT(renderer.ready());
@@ -59,8 +57,6 @@ int test_repeated_shutdown_is_safe() {
 
     return 0;
 }
-
-} // namespace
 
 int main() {
     CPPTEST_ASSERT(glfwInit());

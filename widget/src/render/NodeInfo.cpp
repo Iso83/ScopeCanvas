@@ -8,6 +8,7 @@
 #include <utility>
 
 using namespace ScopeCanvas::Engine::Render;
+using namespace ScopeCanvas::Engine::Render::Text;
 
 namespace ScopeCanvas::Widget::Render {
 namespace {
@@ -335,8 +336,8 @@ void NodeInfoRenderer::render(const std::vector<Scene::NodeRenderData>& nodes, c
         const float scale = run.fontSize / static_cast<float>(metrics.pixelSize);
         const float baselineY =
             run.position.y + (run.size.y - (metrics.ascent - metrics.descent) * scale) * 0.5F - metrics.descent * scale;
-        m_textRenderer.render(run.value, {run.position.x, baselineY}, run.color, vp,
-                              TextClipRect{run.position, run.size}, scale);
+        m_textRenderer.render(run.value, {run.position.x, baselineY}, run.color, vp, ClipRect{run.position, run.size},
+                              scale);
     }
 
     glBindVertexArray(0);
@@ -411,8 +412,8 @@ void NodeInfoRenderer::render(const std::vector<NodeInfo>& nodes, const Camera::
         const float scale = run.fontSize / static_cast<float>(metrics.pixelSize);
         const float baselineY =
             run.position.y + (run.size.y - (metrics.ascent - metrics.descent) * scale) * 0.5F - metrics.descent * scale;
-        m_textRenderer.render(run.value, {run.position.x, baselineY}, run.color, vp,
-                              TextClipRect{run.position, run.size}, scale);
+        m_textRenderer.render(run.value, {run.position.x, baselineY}, run.color, vp, ClipRect{run.position, run.size},
+                              scale);
     }
 
     glBindVertexArray(0);

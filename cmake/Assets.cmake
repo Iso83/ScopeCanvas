@@ -7,7 +7,7 @@ function(assets_setup_fonts)
     # Configures the project's font asset paths.
     # =========================================================
     set(ASSETS_FONT_DIR
-        "${CMAKE_SOURCE_DIR}/assets/fonts"
+        "${PROJECT_SOURCE_DIR}/assets/fonts"
         CACHE INTERNAL ""
     )
 
@@ -15,6 +15,12 @@ function(assets_setup_fonts)
         "${ASSETS_FONT_DIR}/DejaVuSans.ttf"
         CACHE INTERNAL ""
     )
+
+    if(NOT EXISTS "${ASSETS_DEFAULT_FONT}")
+        message(FATAL_ERROR
+            "Default font asset not found: ${ASSETS_DEFAULT_FONT}"
+        )
+    endif()
 endfunction()
 
 function(assets_setup_emscripten TARGET)

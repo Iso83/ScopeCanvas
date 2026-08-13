@@ -97,3 +97,25 @@ if(NOT EMSCRIPTEN)
             ${GLAD}
     )
 endif()
+
+# ============================================================================
+# Tests
+# ============================================================================
+
+if(NOT EMSCRIPTEN)
+    cppcmake_test_add(
+        NAME
+            Test_${MODULE_TARGET}_Renderer
+        TARGET
+            ${MODULE_TARGET}
+        MODULE
+            "engine/render/text"
+        SOURCES
+            tests/text/Renderer.cpp
+        LINK_LIBRARIES
+            ${GLFW}
+            ${FREETYPE}
+        COMPILE_DEFINITIONS
+            SC_TEST_FONT_PATH="${ASSETS_DEFAULT_FONT}"
+    )
+endif()
