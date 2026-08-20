@@ -38,7 +38,23 @@ cppcmake_test_setup()
 # Dependencies
 # =========================================================
 
-dependencies_setup()
+cppcmake_dependency_try_local_packages()
+
+cppcmake_gitsubmodule_init_missing_targets(
+    WORKING_DIRECTORY
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+
+    PATH
+        "extern/CppDependencies"
+)
+
+include(extern/CppDependencies/CppDependencies.cmake)
+
+cppdependencies_freetype(FREETYPE)
+cppdependencies_glad(GLAD)
+cppdependencies_glfw(GLFW)
+cppdependencies_glm(GLM)
+cppdependencies_imgui_docking(IMGUI)
 
 # =========================================================
 # Assets

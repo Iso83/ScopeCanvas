@@ -113,6 +113,8 @@ if(NOT EMSCRIPTEN)
             "engine/render/text"
         SOURCES
             tests/text/Renderer.cpp
+        LABELS
+            graphics
         LINK_LIBRARIES
             ${GLFW}
             ${FREETYPE}

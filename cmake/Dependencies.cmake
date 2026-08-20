@@ -27,33 +27,3 @@ function(dependencies_fetch_cppcmake)
 	
     include("${cppcmake_SOURCE_DIR}/cmake/CppCMake.cmake")
 endfunction()
-
-macro(dependencies_setup)
-    # =========================================================
-    # Summary
-    #
-    # Configures all third-party dependencies required by
-    # ScopeCanvas.
-    #
-    # The resolved targets are returned through local variables
-    # for use by the project's CMake configuration.
-    # =========================================================
-    
-    cppcmake_gitsubmodule_init(
-        QUIET 
-        WORKING_DIRECTORY 
-            "${CMAKE_CURRENT_SOURCE_DIR}" 
-        PATH 
-            "extern/CppDependencies"
-    )
-    
-    include(extern/CppDependencies/CppDependencies.cmake)
-
-    cppdependencies_freetype(FREETYPE)
-    cppdependencies_glad(GLAD)
-    cppdependencies_glfw(GLFW)
-    cppdependencies_glm(GLM)
-    cppdependencies_imgui_docking(IMGUI)
-    cppdependencies_json_nlohmann(JSON)
-    
-endmacro()
