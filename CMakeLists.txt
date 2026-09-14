@@ -86,6 +86,7 @@ if(EMSCRIPTEN)
     cppcmake_module_add(integration/web)
 else()
     cppcmake_module_add(integration/glfw)
+    cppcmake_module_add(integration/imgui)
 endif()
 
 # =========================================================
